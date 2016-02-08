@@ -32,11 +32,11 @@ class Segmentation : public QObject
 public:
     explicit Segmentation(QObject *parent = 0);
     vector<NodeSig> segmentImage(const Mat &img_org, Mat &img_seg);
-    void setSegmentationParameters(float sigma, float k, float min_size, float scale);
+    void getSegmentByIds(const Mat &img_org, Mat &img_seg, vector<int> ids);
+    void setSegmentationParameters(float sigma, float k, float min_size);
     void setParSigma(float sigma);
     void setParK(float k);
     void setParMinSize(float min_size);
-    void setParScale(float scale);
     float getParSigma();
     float getParK();
     float getParMinSize();
@@ -48,14 +48,13 @@ private:
     float sigma;
     float k;
     int min_size;
-    float scale;
 
     template <class T>
     Mat convert2Mat(image<T>* img);
     Mat blendImages(Mat img1, Mat img2, float alpha);
     vector<NodeSig> constructSegmentsGraph(Mat img, vector<BlobStats> blobs);
     vector<BlobStats> calcBlobStats(Mat img, universe* segments);
-    Mat drawBlobs(Mat img, vector<BlobStats> blobs);
+    Mat drawBlobs(Mat img, vector<BlobStats> blobs, int id = -1);
     
 public slots:
 };

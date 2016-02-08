@@ -9,15 +9,13 @@ Segmentation::Segmentation(QObject *parent) :
     sigma = SEG_SIGMA;
     k = SEG_K;
     min_size = SEG_MIN_SIZE;
-    scale = SEG_SCALE;
 }
 
-void Segmentation::setSegmentationParameters(float sigma, float k, float min_size, float scale)
+void Segmentation::setSegmentationParameters(float sigma, float k, float min_size)
 {
     this->sigma = sigma;
     this->k = k;
     this->min_size = min_size;
-    this->scale = scale;
 }
 
 void Segmentation::setParSigma(float sigma)
@@ -34,12 +32,6 @@ void Segmentation::setParMinSize(float min_size)
 {
     this->min_size = min_size;
 }
-
-void Segmentation::setParScale(float scale)
-{
-    this->scale = scale;
-}
-
 
 float Segmentation::getParSigma()
 {
@@ -58,11 +50,8 @@ float Segmentation::getParMinSize()
 
 
 
-vector<NodeSig> Segmentation::segmentImage(const Mat &img_org, Mat &img_seg)
+vector<NodeSig> Segmentation::segmentImage(const Mat &img, Mat &img_seg)
 {
-    Mat img;
-    //If desired, scale it down for performance purposes
-    resize(img_org,img,cv::Size(0,0),this->scale,this->scale);
 
     int width = img.cols;
     int height = img.rows;
@@ -89,6 +78,45 @@ vector<NodeSig> Segmentation::segmentImage(const Mat &img_org, Mat &img_seg)
     imwrite("output.jpg", img_seg);
 
     return node_signatures;
+}
+
+void Segmentation::getSegmentByIds(const Mat &img, Mat &img_seg, vector<int> ids)
+{
+    img_seg = Mat::zeros(img.size(), CV_8UC3);
+    if(ids.size() == 0)
+    {
+        return;
+    }
+
+    int width = img.cols;
+    int height = img.rows;
+
+    //Convert "Mat" to "image"
+    image<rgb> *img_ = new image<rgb>(width,height);
+    memcpy((char *)imPtr(img_, 0, 0),img.data,width * height * sizeof(rgb));
+
+    //Segment image
+    int nr_segments;
+    pair<image<rgb>*, universe*> segments;
+    segments = segment_image(img_, this->sigma, this->k, this->min_size, &nr_segments);
+
+    //Calculate statistics of segments
+    vector<BlobStats> blobs = calcBlobStats(img, segments.second);
+
+    //Construct node signatures from statistics
+    vector<NodeSig> node_signatures;
+    node_signatures = constructSegmentsGraph(img, blobs);
+
+    for(int i = 0; i < ids.size(); i++)
+    {
+        if(ids[i] >= 0 && ids[i] < blobs.size())
+        {
+            // Save segmented image
+            img_seg += drawBlobs(img, blobs, ids[i]);
+            //img_seg = convert2Mat(segments.first);
+            //imwrite("output.jpg", img_seg);
+        }
+    }
 }
 
 //Conversion from "image" to "Mat" structure
@@ -254,7 +282,7 @@ vector<BlobStats> Segmentation::calcBlobStats(Mat img, universe* segments)
     return blobs;
 }
 
-Mat Segmentation::drawBlobs(Mat img, vector<BlobStats> blobs)
+Mat Segmentation::drawBlobs(Mat img, vector<BlobStats> blobs, int id)
 {
     Mat imgSeg = Mat::zeros(img.size(), CV_8UC3);
 
@@ -282,15 +310,29 @@ Mat Segmentation::drawBlobs(Mat img, vector<BlobStats> blobs)
 
     /*RGB Drawing*/
 
-    for (int i = 0; i < blobs.size(); i++)
+    // If no blob is is specified or id exceed total number of blobs
+    // then draw all blobs
+    if(id < 0 || id > blobs.size())
     {
-        for (int j = 0; j < blobs[i].pixels.size(); j++)
+        for (int i = 0; i < blobs.size(); i++)
         {
-            imgSeg.at<Vec3b>(blobs[i].pixels[j]).val[0] = (int)blobs[i].avgB;
-            imgSeg.at<Vec3b>(blobs[i].pixels[j]).val[1] = (int)blobs[i].avgG;
-            imgSeg.at<Vec3b>(blobs[i].pixels[j]).val[2] = (int)blobs[i].avgR;
+            for (int j = 0; j < blobs[i].pixels.size(); j++)
+            {
+                imgSeg.at<Vec3b>(blobs[i].pixels[j]).val[0] = (int)blobs[i].avgB;
+                imgSeg.at<Vec3b>(blobs[i].pixels[j]).val[1] = (int)blobs[i].avgG;
+                imgSeg.at<Vec3b>(blobs[i].pixels[j]).val[2] = (int)blobs[i].avgR;
+            }
         }
     }
+    //Draw only one segment
+    else
+    {
+        for (int j = 0; j < blobs[id].pixels.size(); j++)
+        {
+            imgSeg.at<Vec3b>(blobs[id].pixels[j]) = img.at<Vec3b>(blobs[id].pixels[j]);
+        }
+    }
+
 
     /*Random RGB Drawing*/
 //    for (int i = 0; i < blobs.size(); i++)

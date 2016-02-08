@@ -40,7 +40,8 @@ SOURCES += main.cpp\
     TSC/imageprocess/imageprocess.cpp \
     TSC/tsc.cpp \
     TSC/placedetector.cpp \
-    TSC/utility.cpp
+    TSC/utility.cpp \
+    segmenttrack.cpp
 
 HEADERS  += mainwindow.h \
     segmentation.h \
@@ -67,7 +68,9 @@ HEADERS  += mainwindow.h \
     TSC/imageprocess/imageprocess.h \
     TSC/tsc.h \
     TSC/placedetector.h \
-    TSC/utility.h
+    TSC/utility.h \
+    segmenttrack.h \
+    defs.h
 
 FORMS    += mainwindow.ui
 

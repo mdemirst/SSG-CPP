@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include "placedetection.h"
+#include "segmenttrack.h"
 
 namespace Ui {
 class MainWindow;
@@ -16,6 +17,9 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
     PlaceDetection *pd;
+    SegmentTrack* seg_track;
+    GraphMatch* gm;
+    Segmentation* seg;
     
 private slots:
     void showImg1(QImage img);
@@ -23,6 +27,10 @@ private slots:
     void showMatchImage(QImage img);
     void showMap(QImage img);
     void showSSG(QImage img);
+
+    void showTrackMap(QImage img);
+    void showTrackSegment(QImage img);
+
     void on_btn_process_all_clicked();
     void on_btn_next_clicked();
     void on_scroll_sigma_valueChanged(int value);
@@ -60,6 +68,10 @@ private slots:
     void on_cb_framebyframe_clicked();
 
     void on_btn_tsc_process_clicked();
+
+    void on_btn_tracking_start_clicked();
+
+    void on_lbl_find_coherent_clicked();
 
 private:
     Ui::MainWindow *ui;

@@ -6,15 +6,7 @@
 
 PlaceDetection::PlaceDetection(QCustomPlot* coherency_plot)
 {
-    //Find image dimensions
-    string img_path = getFilePath(START_IDX);
-    Mat img = imread(img_path);
-    img_height = img.size().height*IMG_RESCALE;
-    img_width = img.size().width*IMG_RESCALE;
-
-    //Initialize new graph match and segmentation object
-    gm = new GraphMatch(0, img_width, img_height);
-    seg = new Segmentation();
+    seg_track = new SegmentTrack();
 
     // Coherency plot related settings
     pen.setWidth(PEN_WIDTH);
@@ -41,8 +33,6 @@ PlaceDetection::PlaceDetection(QCustomPlot* coherency_plot)
     // Parameter initialization
     tau_n = INIT_TAU_N;
     tau_c = INIT_TAU_C;
-    tau_w = INIT_TAU_W;
-    tau_m = INIT_TAU_M;
     tau_f = INIT_TAU_F;
     tau_d = INIT_TAU_D;
 
@@ -53,23 +43,7 @@ PlaceDetection::PlaceDetection(QCustomPlot* coherency_plot)
     coeff_coh_appear_thres = COEFF_COH_APPEAR_THRES;
 
     frameByFrameProcess = false;
-}
-
-// Given frame number returns associated file path of that frame
-string PlaceDetection::getFilePath(int frame_no)
-{
-    stringstream path;
-
-    if(frame_no < 10)
-        path << DATASET_FOLDER << "/" << DATASET_NO << "/" << IMG_FILE_PREFIX << "000" << frame_no << ".jpg";
-    else if(frame_no < 100)
-        path << DATASET_FOLDER << "/" << DATASET_NO << "/" << IMG_FILE_PREFIX << "00" << frame_no << ".jpg";
-    else if(frame_no < 1000)
-        path << DATASET_FOLDER << "/" << DATASET_NO << "/" << IMG_FILE_PREFIX << "0" << frame_no << ".jpg";
-    else
-        path << DATASET_FOLDER << "/" << DATASET_NO << "/" << IMG_FILE_PREFIX << frame_no << ".jpg";
-
-    return path.str();
+    isProcessing = false;
 }
 
 // Plots places and coherency scores
@@ -125,32 +99,14 @@ void PlaceDetection::plotPlaces(vector<float> coherency_scores, vector<int> dete
     }
 }
 
-// Plots node existence map
-void PlaceDetection::plotMap(Mat& M)
-{
-    Mat img;
-    // For drawing purposes convert positive values to 255, zero to 0.
-    // Resulting drawing will be black and white existence map drawing
-    M.convertTo(img, CV_8U, 255, 0);
-
-    if(img.size().height < EXISTENCE_MAP_H)
-    {
-        copyMakeBorder(img,img,0,EXISTENCE_MAP_H-img.size().height,0,0,BORDER_CONSTANT,0);
-    }
-
-    resize(img, img, Size(EXISTENCE_MAP_W, EXISTENCE_MAP_H),INTER_LINEAR);
-
-    emit showMap(mat2QImage(img));
-}
-
 float PlaceDetection::calcCohScore(Mat& M, vector<pair<NodeSig, int> > M_ns, vector<float>& coh_scores)
 {
     //Wait until at least tau_w frames
-    if(M.size().width < tau_w)
+    if(M.size().width < seg_track->tau_w)
         return 0.0;
     //Fill first tau_w frames with zeros
-    else if(M.size().width == tau_w)
-        coh_scores.resize(tau_w/2, 0);
+    else if(M.size().width == seg_track->tau_w)
+        coh_scores.resize(seg_track->tau_w/2, 0);
 
     int active_nodes = 0;
     float coh_score = 0;
@@ -165,7 +121,7 @@ float PlaceDetection::calcCohScore(Mat& M, vector<pair<NodeSig, int> > M_ns, vec
         //Keeps how long node appeared through window
         int nr_appear = 0;
 
-        for(int j = M.size().width-tau_w; j < M.size().width-1; j++)
+        for(int j = M.size().width-seg_track->tau_w; j < M.size().width-1; j++)
         {
             //Incoherency: Disappeared node
             if(M.at<int>(i, j) == 0 && M.at<int>(i, j+1) > 0)
@@ -192,8 +148,8 @@ float PlaceDetection::calcCohScore(Mat& M, vector<pair<NodeSig, int> > M_ns, vec
             active_nodes++;
 
         //If node appeared at least certain percent then it's a stabile node.
-        if((float)nr_appear/tau_w > coeff_coh_appear_thres)
-            coherency += (float)nr_appear/tau_w;
+        if((float)nr_appear/seg_track->tau_w > coeff_coh_appear_thres)
+            coherency += (float)nr_appear/seg_track->tau_w;
     }
 
     // Coherency score calculation ( -1 < coh_range < 1)
@@ -301,151 +257,19 @@ int  PlaceDetection::detectPlace(vector<float> coherency_scores,
     {
         return 0;
     }
-
-
 }
-
-
-void PlaceDetection::fillCoherencyWindow(Mat& coh_win,
-                                         Mat& assignment, Mat& cost)
-{
-    Mat assignmentF;
-    assignment.convertTo(assignmentF, CV_32F);
-
-    //If coherency window size is zero
-    //then fill first column of matrix
-    //with increasing numbers up to size of
-    //total number of nodes in the first image
-    if(coh_win.empty())
-    {
-        int nrRows = assignmentF.size().height;
-        coh_win = Mat::zeros(nrRows,1,CV_32F);
-        for(int i = 0; i < nrRows; i++)
-        {
-            coh_win.at<float>(i,0) = i;
-        }
-    }
-
-    int x = coh_win.size().width-1;
-    int y = 0;
-    int w = 1;
-    int h = assignmentF.size().height;
-    Mat cur_col = coh_win(cv::Rect(x,y,w,h));
-
-    transpose(assignmentF,assignmentF);
-    Mat next_col = assignmentF*cur_col;
-
-    int row_diff = next_col.size().height - coh_win.size().height;
-
-    //Make coherency window and next_col same row size
-    //Maxtrix has less number of rows
-    if(row_diff > 0)
-    {
-        copyMakeBorder(coh_win,coh_win,0,row_diff,0,0,BORDER_CONSTANT,0);
-    }
-    else if(row_diff < 0)
-    {
-        copyMakeBorder(next_col,next_col,0,-1*row_diff,0,0,BORDER_CONSTANT,0);
-    }
-
-    hconcat(coh_win,next_col,coh_win);
-
-}
-
-// Fill the new column of node existence matrix using the last tau_w permutation and
-// cost matrices. Starting from the last permutation matrix, each new segment is connected
-// to one of the previous segments where pairwise segment matching cost is below the tau_m.
-// For each new segment, optimum match with previous segments defined by permutation matrix
-// and new segment is connected to the latest segment for which matching cost is below tau_m
-float PlaceDetection::fillNodeMap(Mat& M, vector<pair<NodeSig, int> >& M_ns, const vector<vector<NodeSig> > ns_vec)
-{
-    int N = ns_vec.size(); //Number of the permutation matrices
-    float matching_cost = 0;
-    float smallest_matching_cost = 9999999;
-    vector<Mat> P(N-1), C(N-1);
-
-    //Create pairwise P and C matrices
-    //Last frame is matched with each of last tau_w frames
-    //and associated P and C matrices inserted into a vector
-    //This step is requied for matching any nonmatched nodes
-    for(int i = 2; i <= N; i++)
-    {
-        gm->matchTwoImages(ns_vec[N-i], ns_vec.back(), P[N-i], C[N-i]);
-    }
-
-
-    //Expand M(node existence matrix) to fit new column
-    copyMakeBorder(M,M,0,0,0,1,BORDER_CONSTANT,-1);
-
-    //Place each segment into M matrix
-    for(int s = 0; s < ns_vec.back().size(); s++)
-    {
-        int node_id = -1; //Node id represents new segment's id in existence map
-
-        //Check last N frames(associated permutation matrices)
-        //Find if any of previous segments matches with segment(i.e. matching cost
-        // is below threshold)
-        for(int i = 2; i <= N; i++)
-        {
-            int j = getPermuted(P[N-i],s);
-
-            //Check matching cost
-            if(j != -1 && C[N-i].at<float>(j,s) < tau_m)
-            {
-                //return index of jth node in node existence map
-                node_id = getIndexByCol(M, M.size().width-i, j);
-                matching_cost = matching_cost + C[N-i].at<float>(j,s);
-                break;
-            }
-
-            //If no matches are found, add smallest matching cost to total
-            //matching cost
-            if(j != -1 && smallest_matching_cost > C[N-i].at<float>(j,s))
-            {
-                smallest_matching_cost = C[N-i].at<float>(j,s);
-            }
-        }
-
-        // If there is no match
-        if(node_id == -1)
-        {
-            //Add new row to M matrix and set last element with new id
-            copyMakeBorder(M,M,0,1,0,0,BORDER_CONSTANT,-1);
-            M.at<int>(M.size().height-1, M.size().width-1) = s;
-            matching_cost = matching_cost + smallest_matching_cost;
-
-            //Add new empty node to M_ns
-            pair<NodeSig, int> new_node(ns_vec.back()[s], 1);
-            M_ns.push_back(new_node);
-        }
-        else
-        {
-            M.at<int>(node_id, M.size().width-1) = s;
-
-            //Update average node signatures
-            SSGProc::updateNodeSig(M_ns[node_id], ns_vec.back()[s]);
-        }
-    }
-
-    return matching_cost;
-}
-
 
 void PlaceDetection::processImages()
 {
-    Mat img1, img2;
+    static Mat img1, img2;
     Mat img_seg1, img_seg2;
     vector<NodeSig> ns1, ns2;
     vector<vector<NodeSig> > ns_vec;  //Stores last tau_w node signatures
-    vector<pair<NodeSig, int> > M_ns; //Average node signatures
     float matching_cost = 0;
-    vector<float> coherency_scores; //Stores all coherency scores
-    vector<int> detected_places_unfiltered;
-    vector<int> detected_places; //Stores all detected place ids
-    Mat M;  //Node existence "M"ap
-    vector<SSG> SSGs; //Stores SSGs
 
     bool in_place = false; //Flag whether we are in place or transition
+
+    isProcessing = true;
 
     //Process all images
     for(int frame_no = START_IDX; frame_no < END_IDX-1; frame_no++)
@@ -459,42 +283,42 @@ void PlaceDetection::processImages()
         process_next_frame = false;
 
         //getFilePath returns the path of the file given frame number
-        string filepath1 = getFilePath(frame_no);
-        string filepath2 = getFilePath(frame_no+1);
+        string filepath1 = getFilePath(DATASET_FOLDER, DATASET_NO, IMG_FILE_PREFIX, frame_no);
+        string filepath2 = getFilePath(DATASET_FOLDER, DATASET_NO, IMG_FILE_PREFIX, frame_no+1);
 
         //Segment images
         if(frame_no == START_IDX)
         {
             img2 = imread(filepath1);
-            resize(img2, img2, cv::Size(0,0), IMG_RESCALE, IMG_RESCALE);
-            ns2 = seg->segmentImage(img2,img_seg2);
+            resize(img2, img2, cv::Size(0,0), IMG_RESCALE_RAT, IMG_RESCALE_RAT);
+            ns2 = seg_track->seg->segmentImage(img2,img_seg2);
         }
         ns1 = ns2;
         img1 = img2;
         img_seg1 = img_seg2;
 
         img2 = imread(filepath2);
-        resize(img2, img2, cv::Size(0,0), IMG_RESCALE, IMG_RESCALE);
-        ns2 = seg->segmentImage(img2,img_seg2);
+        resize(img2, img2, cv::Size(0,0), IMG_RESCALE_RAT, IMG_RESCALE_RAT);
+        ns2 = seg_track->seg->segmentImage(img2,img_seg2);
 
 
         //Show original images on the window
-        emit showImg1(mat2QImage(img1));
-        emit showImg2(mat2QImage(img2));
+        //emit seg_track->shshowImg1(mat2QImage(img1));
+        //emit seg_track->showImg2(mat2QImage(img2));
 
         if(frame_no == START_IDX)
         {
             //Initialize M matrix (Existence "M"ap)
-            M = Mat(ns1.size(), 1, CV_32S, -1);
+            seg_track->M = Mat(ns1.size(), 1, CV_32S, -1);
 
             for(int i = 0; i < ns1.size(); i++)
             {
-                M.at<int>(i,0) = i; //Nodes are placed in order in the first column of M
+                seg_track->M.at<int>(i,0) = i; //Nodes are placed in order in the first column of M
 
                 //Initialize avg node signatures list
                 pair<NodeSig, int> new_node(ns1[i], 1);
 
-                M_ns.push_back(new_node);
+                seg_track->M_ns.push_back(new_node);
             }
 
             //Insert first node sig for the first time
@@ -505,22 +329,23 @@ void PlaceDetection::processImages()
         ns_vec.push_back(ns2);
 
         //Keep max size tau_w
-        if(ns_vec.size() > tau_w)
+        if(ns_vec.size() > seg_track->tau_w)
         {
             ns_vec.erase(ns_vec.begin());
         }
 
         //Drawing purposes only
-        gm->drawMatches(ns1, ns2, img_seg1, img_seg2);
+        seg_track->gm->drawMatches(ns1, ns2, img_seg1, img_seg2);
 
         //Fill node existence map
-        matching_cost = fillNodeMap(M, M_ns, ns_vec);
+        matching_cost = seg_track->fillNodeMap(seg_track->M, seg_track->M_ns, ns_vec);
+
 
         //Plot connectivity map
-        plotMap(M);
+        seg_track->plotMap(seg_track->M);
 
         //Calculate coherency based on existence map
-        calcCohScore(M, M_ns, coherency_scores);
+        calcCohScore(seg_track->M, seg_track->M_ns, coherency_scores);
 
         //Decide last frame is whether transition or place
         //Results are written into detected places
@@ -542,7 +367,7 @@ void PlaceDetection::processImages()
         //Fill SSG if frame is as place
         if(in_place)
         {
-            SSGProc::updateSSG(SSGs.back(), ns2, M);
+            SSGProc::updateSSG(SSGs.back(), ns2, seg_track->M);
         }
 
         //Show last SSG
@@ -557,7 +382,16 @@ void PlaceDetection::processImages()
 
         //Wait a little for GUI processing
         waitKey(1);
-
     }
 
+    isProcessing = false;
 }
+
+void PlaceDetection::clearPastData()
+{
+    coherency_scores.clear(); //Stores all coherency score.clear();
+    detected_places.clear();
+    SSGs.clear(); //Stores SSGs
+}
+
+

@@ -114,3 +114,37 @@ int getIndexByCol(Mat& M, int col, int val)
     return -1;
 }
 
+// Given frame number returns associated file path of that frame
+std::string getFilePath(std::string dir, std::string folder, std::string prefix, int frame_no)
+{
+    std::stringstream path;
+
+    if(frame_no < 10)
+        path << dir << "/" << folder << "/" << prefix << "00" << frame_no << ".jpg";
+    else if(frame_no < 100)
+        path << dir << "/" << folder << "/" << prefix << "0" << frame_no << ".jpg";
+    else if(frame_no < 1000)
+        path << dir << "/" << folder << "/" << prefix << "" << frame_no << ".jpg";
+    else
+        path << dir << "/" << folder << "/" << prefix << frame_no << ".jpg";
+
+    return path.str();
+}
+
+// Scales up the given image by given factor in vertical axis only
+// Sample-and-hold interpolation is used
+void scaleUpMap(Mat &img, Mat &img_scaled, int factor_x, int factor_y)
+{
+    img_scaled = Mat::zeros(img.size().height*factor_y, img.size().width*factor_x, CV_8UC3);
+    for(int i = 0; i < img.size().height; i++)
+    {
+        for(int j = 0; j < img.size().width; j++)
+        {
+            for(int a = 0; a < factor_x; a++)
+                for(int b = 0; b < factor_y; b++)
+                    img_scaled.at<Vec3b>(i*factor_y+b, j*factor_x+a) = img.at<Vec3b>(i,j);
+        }
+    }
+}
+
+
