@@ -1,7 +1,8 @@
 #include "segmentation.h"
 #include "utils.h"
 
-Segmentation::Segmentation() 
+Segmentation::Segmentation(QObject *parent) :
+    QObject(parent)
 {
     //Set segmentation parameters to predefined values
     //These can be changed by calling setSegmentationParameters() method

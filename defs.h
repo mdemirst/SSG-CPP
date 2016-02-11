@@ -12,12 +12,16 @@
 //#define START_IDX 500
 //#define END_IDX 700
 
+#define DATASET_NO "26"
+#define START_IDX 1
+#define END_IDX 135
+
 #define PEN_WIDTH 5
 #define IMG_RESCALE_RAT 0.5
 
 #define INIT_TAU_N 1
 #define INIT_TAU_C 20
-#define INIT_TAU_W 5
+#define INIT_TAU_W 15
 #define INIT_TAU_M 0.015
 #define INIT_TAU_F 30
 #define INIT_TAU_D 1.0

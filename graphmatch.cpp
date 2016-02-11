@@ -3,7 +3,8 @@
 #include "utils.h"
 #include <dlib/optimization/max_cost_assignment.h>
 
-GraphMatch::GraphMatch(int img_width, int img_height) 
+GraphMatch::GraphMatch(QObject *parent, int img_width, int img_height) :
+    QObject(parent)
 {
     this->img_width = img_width;
     this->img_height = img_height;
@@ -85,6 +86,9 @@ float GraphMatch::drawMatches(vector<NodeSig> ns1, vector<NodeSig> ns2,
         //putText(img_merged, cost_str, center_pt, cv::FONT_HERSHEY_SIMPLEX, 1.0, Scalar(255, 0, 0), 1);
     }
 
+    //Show matching results image on the window
+    emit showMatchImage(mat2QImage(img_merged));
+
     return matching_cost;
 
 }
@@ -164,7 +168,7 @@ double GraphMatch::calcN2NDistance(NodeSig s1, NodeSig s2)
 
 
     //difference between areas
-    double area_dist = fabs((double)s1.area-s2.area) / (double)(img_width*img_height);
+    double area_dist = fabs(s1.area-s2.area) / (double)(img_width*img_height);
 
     dist = dist + area_weight*pow(area_dist,2);
 
