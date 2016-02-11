@@ -1,6 +1,8 @@
 #ifndef GRAPHMATCH_H
 #define GRAPHMATCH_H
 
+#include <QObject>
+
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -11,6 +13,7 @@
 
 #include "segmentation.h"
 #include "utilTypes.h"
+#include "qcustomplot.h"
 
 using namespace cv;
 
@@ -27,10 +30,11 @@ using namespace cv;
 #define IMG_RESIZE_RATIO 0.3
 
 
-class GraphMatch
+class GraphMatch : public QObject
 {
+    Q_OBJECT
 public:
-    explicit GraphMatch(int img_width = 0, int img_height = 0);
+    explicit GraphMatch(QObject *parent = 0, int img_width = 0, int img_height = 0);
     float drawMatches(vector<NodeSig> ns1, vector<NodeSig> ns2,
                       Mat img1, Mat img2);
     float matchTwoImages(vector<NodeSig> ns1, vector<NodeSig> ns2,
@@ -42,6 +46,11 @@ public:
     float area_weight;
     
 private:
+
+signals:
+    void showMatchImage(QImage img);
+
+public slots:
 
     
 };

@@ -2,9 +2,9 @@
 #define SEGMENTATION_H
 
 //Predefined segmentation parameters
-#define SEG_SIGMA       0.3
-#define SEG_K           100
-#define SEG_MIN_SIZE    750
+#define SEG_SIGMA       0.90
+#define SEG_K           300
+#define SEG_MIN_SIZE    1500
 #define SEG_SCALE       1.0
 
 #include <opencv2/core/core.hpp>
@@ -14,6 +14,8 @@
 #include <opencv2/flann/flann.hpp>
 #include <iostream>
 #include <fstream>
+#include <QObject>
+#include <QImage>
 
 #include "utilTypes.h"
 #include "GraphSegmentation/image.h"
@@ -24,10 +26,11 @@
 using namespace std;
 using namespace cv;
 
-class Segmentation 
- {
+class Segmentation : public QObject
+{
+    Q_OBJECT
 public:
-    explicit Segmentation();
+    explicit Segmentation(QObject *parent = 0);
     vector<NodeSig> segmentImage(const Mat &img_org, Mat &img_seg);
     void getSegmentByIds(const Mat &img_org, Mat &img_seg, vector<int> ids);
     void setSegmentationParameters(float sigma, float k, float min_size);
@@ -53,6 +56,7 @@ private:
     vector<BlobStats> calcBlobStats(Mat img, universe* segments);
     Mat drawBlobs(Mat img, vector<BlobStats> blobs, int id = -1);
     
+public slots:
 };
 
 #endif // SEGMENTATION_H
