@@ -1,9 +1,6 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#include <QImage>
-#include <QDebug>
-
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -14,7 +11,6 @@
 
 using namespace cv;
 
-QImage mat2QImage(const Mat& mat);
 Mat vec2mat(vector< vector<int> > vec_matrix);
 Mat vec2matInt(vector< vector<int> > vec_matrix);
 Mat array2Mat32F(int** C, int rows, int cols);
