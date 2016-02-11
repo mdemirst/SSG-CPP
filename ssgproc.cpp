@@ -1,10 +1,10 @@
 #include "ssgproc.h"
 
 
-SSGProc::SSGProc()
-{
+//SSGProc::SSGProc()
+//{
 
-}
+//}
 
 // Given a node signature and its weight, it's value is updated
 // with new node signature values.
