@@ -8,7 +8,6 @@
 #include "ssgproc.h"
 #include <QObject>
 
-
 class SegmentTrack : public QObject
 {
     Q_OBJECT

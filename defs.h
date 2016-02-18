@@ -2,19 +2,23 @@
 #define DEFS_H
 
 #define DATASET_FOLDER "Dataset/"
-#define IMG_FILE_PREFIX "img-"
+#define IMG_FILE_PREFIX "Cold-0"
 
 //#define DATASET_NO 25
 //#define START_IDX 500
 //#define END_IDX 700
 
-//#define DATASET_NO 1
-//#define START_IDX 500
-//#define END_IDX 700
+#define DATASET_NO "1"
+#define START_IDX 139
+#define END_IDX 700
 
-#define DATASET_NO "26"
-#define START_IDX 1
-#define END_IDX 135
+//#define DATASET_NO "26"
+//#define START_IDX 1
+//#define END_IDX 135
+
+//#define DATASET_NO "12"
+//#define START_IDX 1
+//#define END_IDX 100
 
 #define PEN_WIDTH 5
 #define IMG_RESCALE_RAT 0.5

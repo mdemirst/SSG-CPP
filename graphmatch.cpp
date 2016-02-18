@@ -70,9 +70,9 @@ float GraphMatch::drawMatches(vector<NodeSig> ns1, vector<NodeSig> ns2,
     {
         Point p1 = ns1[nonzero_locs[i].y].center;
         Point p2 = ns2[nonzero_locs[i].x].center+Point(img1.size().width,0);
-        circle(img_merged,p1,MATCH_CIRCLE_RADIUS,MATCH_LINE_COLOR);
-        circle(img_merged,p2,MATCH_CIRCLE_RADIUS,MATCH_LINE_COLOR);
-        line(img_merged,p1,p2,MATCH_LINE_COLOR,MATCH_LINE_WIDTH);
+        //circle(img_merged,p1,MATCH_CIRCLE_RADIUS,MATCH_LINE_COLOR);
+        //circle(img_merged,p2,MATCH_CIRCLE_RADIUS,MATCH_LINE_COLOR);
+        //line(img_merged,p1,p2,MATCH_LINE_COLOR,MATCH_LINE_WIDTH);
 
         float dist = cost.at<float>(nonzero_locs[i].y, nonzero_locs[i].x);
 

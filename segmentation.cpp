@@ -75,7 +75,8 @@ vector<NodeSig> Segmentation::segmentImage(const Mat &img, Mat &img_seg)
     // Save segmented image
     img_seg = drawBlobs(img, blobs);
     //img_seg = convert2Mat(segments.first);
-    imwrite("output.jpg", img_seg);
+    //imwrite("output.jpg", img_seg);
+    img_seg = blendImages(img, img_seg, 0.0);
 
     return node_signatures;
 }
