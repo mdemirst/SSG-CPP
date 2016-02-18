@@ -11,6 +11,7 @@ Segmentation::Segmentation(QObject *parent) :
     min_size = SEG_MIN_SIZE;
 }
 
+
 void Segmentation::setSegmentationParameters(float sigma, float k, float min_size)
 {
     this->sigma = sigma;
