@@ -2,23 +2,23 @@
 #define DEFS_H
 
 #define DATASET_FOLDER "Dataset/"
-#define IMG_FILE_PREFIX "Cold-0"
+#define IMG_FILE_PREFIX "NewCollege-0"
 
-//#define DATASET_NO 25
-//#define START_IDX 500
-//#define END_IDX 700
+//#define DATASET_NO "25"
+//#define START_IDX 240
+//#define END_IDX 255
 
-#define DATASET_NO "1"
-#define START_IDX 139
-#define END_IDX 700
+//#define DATASET_NO "1"
+//#define START_IDX 139
+//#define END_IDX 170
 
 //#define DATASET_NO "26"
-//#define START_IDX 1
-//#define END_IDX 135
+//#define START_IDX 80
+//#define END_IDX 120
 
-//#define DATASET_NO "12"
-//#define START_IDX 1
-//#define END_IDX 100
+#define DATASET_NO "12"
+#define START_IDX 160
+#define END_IDX 200
 
 #define PEN_WIDTH 5
 #define IMG_RESCALE_RAT 0.5

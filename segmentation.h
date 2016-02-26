@@ -32,6 +32,7 @@ class Segmentation : public QObject
 public:
     explicit Segmentation(QObject *parent = 0);
     vector<NodeSig> segmentImage(const Mat &img_org, Mat &img_seg);
+    vector<Mat> segmentImage(const Mat &img);
     void getSegmentByIds(const Mat &img_org, Mat &img_seg, vector<int> ids);
     void setSegmentationParameters(float sigma, float k, float min_size);
     void setParSigma(float sigma);

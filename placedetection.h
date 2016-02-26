@@ -27,6 +27,7 @@ public:
     bool getRegionStatus(vector<int> v);
     float calcCohScore(Mat& M, vector<pair<NodeSig, int> > M_ns, vector<float>& coh_scores);
     void clearPastData();
+    void constructSceneGist(Mat& M, vector<pair<NodeSig, int> > M_ns);
 
 public:
     vector<float> coherency_scores; //Stores all coherency scores

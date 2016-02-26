@@ -11,7 +11,6 @@ Segmentation::Segmentation(QObject *parent) :
     min_size = SEG_MIN_SIZE;
 }
 
-
 void Segmentation::setSegmentationParameters(float sigma, float k, float min_size)
 {
     this->sigma = sigma;
@@ -77,9 +76,34 @@ vector<NodeSig> Segmentation::segmentImage(const Mat &img, Mat &img_seg)
     img_seg = drawBlobs(img, blobs);
     //img_seg = convert2Mat(segments.first);
     //imwrite("output.jpg", img_seg);
-    img_seg = blendImages(img, img_seg, 0.0);
+    img_seg = blendImages(img, img_seg, 0.7);
 
     return node_signatures;
+}
+
+vector<Mat> Segmentation::segmentImage(const Mat &img)
+{
+
+    int width = img.cols;
+    int height = img.rows;
+
+    //Convert "Mat" to "image"
+    image<rgb> *img_ = new image<rgb>(width,height);
+    memcpy((char *)imPtr(img_, 0, 0),img.data,width * height * sizeof(rgb));
+
+    //Segment image
+    int nr_segments;
+    pair<image<rgb>*, universe*> segments;
+    segments = segment_image(img_, this->sigma, this->k, this->min_size, &nr_segments);
+
+    //Calculate statistics of segments
+    vector<BlobStats> blobs = calcBlobStats(img, segments.second);
+
+    vector<Mat> segment_images;
+    for(int i = 0; i < blobs.size(); i++)
+        segment_images.push_back(drawBlobs(img,blobs,i));
+
+    return segment_images;
 }
 
 void Segmentation::getSegmentByIds(const Mat &img, Mat &img_seg, vector<int> ids)
@@ -120,6 +144,7 @@ void Segmentation::getSegmentByIds(const Mat &img, Mat &img_seg, vector<int> ids
         }
     }
 }
+
 
 //Conversion from "image" to "Mat" structure
 template <class T>
