@@ -11,6 +11,7 @@
 #include <iostream>
 #include <fstream>
 
+#include "defs.h"
 #include "utilTypes.h"
 
 using namespace std;

@@ -3,7 +3,7 @@
 
 #define DATASET_FOLDER "/home/isl-mahmut/Datasets/seq1_night1/std_cam/"
 
-#define START_IDX 0
+#define START_IDX 200
 #define END_IDX 1450
 
 #define PEN_WIDTH1 1
@@ -16,6 +16,7 @@
 #define INIT_TAU_M 0.015
 #define INIT_TAU_F 30
 #define INIT_TAU_D 1.0
+#define INIT_TAU_P 0.8
 
 #define COEFF_NODE_DISAPPEAR_1 2
 #define COEFF_NODE_DISAPPEAR_2 0.5
@@ -49,6 +50,8 @@
 #define COLD_MAP_B -17.5
 #define COLD_MAP_L -1.5
 #define COLD_MAP_R 5.8
+
+//#define PROCESS_EDGES
 
 
 

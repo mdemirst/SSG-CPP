@@ -76,6 +76,59 @@ void SSGProc::updateSSG(SSG& ssg, vector<NodeSig> ns, Mat& map)
             updateNodeSig(ssg.nodes[i], ns[map.at<int>(i, last_frame)]);
         }
     }
+
+#ifdef PROCESS_EDGES
+    //Update edges - add edges in new ns to ssg
+    for(int i = 0; i < ns.size(); i++)
+    {
+        NodeSig ns_ = ns[i];
+
+        int source_node = -1;
+
+        //find global id of node
+        for(int k = 0; k < map.size().height; k++)
+        {
+            //If last column of map has local node id -> get global id of node
+            if(map.at<int>(k, map.size().width-1) == i)
+            {
+                source_node = k;
+            }
+
+        }
+
+        //if source node is placed in last column of map
+        if(source_node != -1)
+        {
+            for(int j = 0; j < ns_.edges.size(); j++)
+            {
+                int target_node = -1;
+                std::pair<int,float> edge = ns_.edges[j];
+
+                //find target node edge points
+                for(int k = 0; k < map.size().height; k++)
+                {
+                    //If last column of map has local node id -> get global id of node
+                    if(map.at<int>(k,map.size().width-1) == edge.first)
+                    {
+                        target_node = k;
+                    }
+                }
+
+                if(target_node != -1)
+                {
+                    //there is an edge from source_node -> target_node
+                    std::pair<int,float> edge_;
+                    edge_.first = target_node;
+                    edge_.second = edge.second;
+
+                    ssg.nodes[source_node].first.edges.push_back(edge_);
+                }
+            }
+        }
+
+    }
+#endif
+
 }
 
 //Draws given SSG structure on image
@@ -94,7 +147,43 @@ Mat SSGProc::drawSSG(SSG& ssg, Mat &input)
 
     for(int i = 0; i < ssg.nodes.size(); i++)
     {
-        if(ssg.nodes[i].second > longestApp/2.0)
+#ifdef PROCESS_EDGES
+        //Draw edges
+        for(int j = 0; j < ssg.nodes[i].first.edges.size(); j++)
+        {
+            //If both two connecting nodes appear in SSG
+            //
+            if(ssg.nodes[i].second > longestApp*INIT_TAU_P)
+            {
+                int idx = ssg.nodes[i].first.edges[i].first;
+                if(ssg.nodes.size() > idx && ssg.nodes[idx].second > longestApp*INIT_TAU_P)
+                {
+                    Point p1 = ssg.nodes[i].first.center;
+                    Point p2 = ssg.nodes[idx].first.center;
+
+                    line(bg_img,p1,p2,Scalar(0,0,0),2);
+                }
+
+            }
+        }
+#endif
+
+        //Draw nodes
+        if(ssg.nodes[i].second > longestApp*INIT_TAU_P)
+        {
+            float img_area = bg_img.size().height*bg_img.size().width;
+            float rad = sqrt(ssg.nodes[i].first.area/M_PI)/10.0;
+            circle(bg_img, ssg.nodes[i].first.center, rad,
+                   Scalar(ssg.nodes[i].first.colorR, ssg.nodes[i].first.colorG, ssg.nodes[i].first.colorB),-1);
+            circle(bg_img, ssg.nodes[i].first.center, rad,
+                   Scalar(0,0,0),1);
+        }
+    }
+
+
+    for(int i = 0; i < ssg.nodes.size(); i++)
+    {
+        if(ssg.nodes[i].second > longestApp*INIT_TAU_P)
         {
             float img_area = bg_img.size().height*bg_img.size().width;
             float rad = sqrt(ssg.nodes[i].first.area/M_PI)/2.0;
