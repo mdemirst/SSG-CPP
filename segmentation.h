@@ -2,7 +2,7 @@
 #define SEGMENTATION_H
 
 //Predefined segmentation parameters
-#define SEG_SIGMA       0.90
+#define SEG_SIGMA       0.8 //0.90
 #define SEG_K           300
 #define SEG_MIN_SIZE    1500
 #define SEG_SCALE       1.0

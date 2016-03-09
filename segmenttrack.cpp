@@ -4,8 +4,8 @@ SegmentTrack::SegmentTrack(QObject *parent) :
     QObject(parent)
 {
     //Find image dimensions
-    string img_path = getFilePath(DATASET_FOLDER, DATASET_NO, IMG_FILE_PREFIX, START_IDX);
-    Mat img = imread(img_path);
+    img_files = getFiles(DATASET_FOLDER);
+    Mat img = imread(DATASET_FOLDER + img_files[START_IDX]);
     img_height = img.size().height*IMG_RESCALE_RAT;
     img_width = img.size().width*IMG_RESCALE_RAT;
 
@@ -88,7 +88,7 @@ bool SegmentTrack::eventFilter( QObject* watched, QEvent* event ) {
     drawMap();
 
     int segment_id = this->M.at<int>(this->cursor.y, this->cursor.x);
-    string img_path = getFilePath(DATASET_FOLDER, DATASET_NO, IMG_FILE_PREFIX, START_IDX + this->cursor.x);
+    string img_path = DATASET_FOLDER + img_files[START_IDX + this->cursor.x];
     Mat img = imread(img_path);
     resize(img, img, cv::Size(0,0), IMG_RESCALE_RAT, IMG_RESCALE_RAT);
     Mat img_seg;
@@ -166,9 +166,7 @@ void SegmentTrack::processImagesOnline()
     for(int frame_no = START_IDX; frame_no < END_IDX-1; frame_no++)
     {
         //getFilePath returns the path of the file given frame number
-        string img_path = getFilePath(DATASET_FOLDER, DATASET_NO, IMG_FILE_PREFIX, frame_no);
-
-        Mat img = imread(img_path);
+        Mat img = imread(DATASET_FOLDER + img_files[frame_no]);
         resize(img, img, cv::Size(0,0), IMG_RESCALE_RAT, IMG_RESCALE_RAT);
         processImage(img, ns_vec);
 

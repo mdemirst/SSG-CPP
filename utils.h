@@ -10,6 +10,7 @@
 #include <opencv2/features2d/features2d.hpp>
 #include <opencv2/flann/flann.hpp>
 #include <string.h>
+#include <dirent.h>
 
 
 using namespace cv;
@@ -23,5 +24,7 @@ int getPermuted(Mat& P, int j);
 int getIndexByCol(Mat& M, int col, int val);
 std::string getFilePath(std::string dir, std::string folder, std::string prefix, int frame_no);
 void scaleUpMap(Mat &img, Mat &img_scaled, int factor_x, int factor_y);
+std::vector<std::string> getFiles(std::string dir);
+cv::Point2f getCoordCold(std::string filename);
 
 #endif // UTILS_H

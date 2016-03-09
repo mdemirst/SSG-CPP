@@ -120,11 +120,11 @@ std::string getFilePath(std::string dir, std::string folder, std::string prefix,
     std::stringstream path;
 
     if(frame_no < 10)
-        path << dir << "/" << folder << "/" << prefix << "00" << frame_no << ".jpg";
+        path << dir << "/" << folder << "/" << prefix << "000" << frame_no << ".jpg";
     else if(frame_no < 100)
-        path << dir << "/" << folder << "/" << prefix << "0" << frame_no << ".jpg";
+        path << dir << "/" << folder << "/" << prefix << "00" << frame_no << ".jpg";
     else if(frame_no < 1000)
-        path << dir << "/" << folder << "/" << prefix << "" << frame_no << ".jpg";
+        path << dir << "/" << folder << "/" << prefix << "0" << frame_no << ".jpg";
     else
         path << dir << "/" << folder << "/" << prefix << frame_no << ".jpg";
 
@@ -145,6 +145,48 @@ void scaleUpMap(Mat &img, Mat &img_scaled, int factor_x, int factor_y)
                     img_scaled.at<Vec3b>(i*factor_y+b, j*factor_x+a) = img.at<Vec3b>(i,j);
         }
     }
+}
+
+//Gets list of files inside directory
+std::vector<std::string> getFiles(std::string dir)
+{
+    std::vector<std::string> files_list;
+    struct dirent **namelist;
+    int n;
+
+    n = scandir(dir.c_str(), &namelist, NULL, alphasort);
+    if (n < 0)
+        perror("scandir");
+    else {
+        for(int i = 0; i < n; i++)
+        {
+            if(namelist[i]->d_name[0] != '.')
+                files_list.push_back(namelist[i]->d_name);
+        }
+    }
+
+    return files_list;
+}
+
+cv::Point2f getCoordCold(std::string filename)
+{
+    cv::Point2f coord;
+
+    int start = filename.find("_x") + 2;
+    int end = filename.find("_y");
+
+    std::stringstream ss_x(filename.substr(start,end));
+    ss_x >> coord.y;
+
+    start = filename.find("_y") + 2;
+    end = filename.find("_a");
+
+    std::stringstream ss_y(filename.substr(start,end));
+    ss_y >> coord.x;
+
+    coord.x = -1*coord.x;
+
+    return coord;
 }
 
 

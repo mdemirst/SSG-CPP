@@ -1,7 +1,6 @@
 #include "graphmatch.h"
 #include "hungarian.h"
 #include "utils.h"
-#include <dlib/optimization/max_cost_assignment.h>
 
 GraphMatch::GraphMatch(QObject *parent, int img_width, int img_height) :
     QObject(parent)
@@ -61,17 +60,37 @@ float GraphMatch::drawMatches(vector<NodeSig> ns1, vector<NodeSig> ns2,
     //Concatenate two images
     hconcat(img1, img2, img_merged);
 
+    //Produce white image for whitening images
+    Mat img_merged_white = Mat::zeros(img_merged.size(), CV_8UC3);
+    img_merged_white = Scalar(255,255,255);
+
+    addWeighted(img_merged, 0.5, img_merged_white, 0.5, 0.0, img_merged);
+
     //Get non-zero indices which defines the optimal match(assignment)
     vector<Point> nonzero_locs;
     findNonZero(assignment,nonzero_locs);
 
-    //Draw optimal match
+    //Draw optimal match --lines
     for(int i = 0; i < nonzero_locs.size(); i++)
     {
         Point p1 = ns1[nonzero_locs[i].y].center;
         Point p2 = ns2[nonzero_locs[i].x].center+Point(img1.size().width,0);
-        //circle(img_merged,p1,MATCH_CIRCLE_RADIUS,MATCH_LINE_COLOR);
-        //circle(img_merged,p2,MATCH_CIRCLE_RADIUS,MATCH_LINE_COLOR);
+
+        line(img_merged,p1,p2,MATCH_LINE_COLOR,MATCH_LINE_WIDTH);
+    }
+
+    //Draw optimal match -- circles
+    for(int i = 0; i < nonzero_locs.size(); i++)
+    {
+        Point p1 = ns1[nonzero_locs[i].y].center;
+        Point p2 = ns2[nonzero_locs[i].x].center+Point(img1.size().width,0);
+        double r1 = sqrt(ns1[nonzero_locs[i].y].area)/4.0;
+        double r2 = sqrt(ns1[nonzero_locs[i].y].area)/4.0;
+        r1 = max(r1,1.0);
+        r2 = max(r2,1.0);
+
+        circle(img_merged,p1,r1,Scalar(ns1[nonzero_locs[i].y].colorB, ns1[nonzero_locs[i].y].colorG, ns1[nonzero_locs[i].y].colorR), -1);
+        circle(img_merged,p2,r2,Scalar(ns2[nonzero_locs[i].y].colorB, ns2[nonzero_locs[i].y].colorG, ns2[nonzero_locs[i].y].colorR), -1);
         //line(img_merged,p1,p2,MATCH_LINE_COLOR,MATCH_LINE_WIDTH);
 
         float dist = cost.at<float>(nonzero_locs[i].y, nonzero_locs[i].x);
@@ -83,7 +102,7 @@ float GraphMatch::drawMatches(vector<NodeSig> ns1, vector<NodeSig> ns2,
         ss << dist;
         string cost_str = ss.str();
         Point center_pt((p1.x + p2.x) / 2.0, (p1.y + p2.y) / 2.0);
-        //putText(img_merged, cost_str, center_pt, cv::FONT_HERSHEY_SIMPLEX, 1.0, Scalar(255, 0, 0), 1);
+        putText(img_merged, cost_str, center_pt, cv::FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0, 0, 0), 1);
     }
 
     //Show matching results image on the window

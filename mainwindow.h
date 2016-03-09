@@ -22,7 +22,6 @@ public:
     Segmentation* seg;
     
 private slots:
-    void showImg1(QImage img);
     void showImg2(QImage img);
     void showMatchImage(QImage img);
     void showMap(QImage img);
@@ -72,6 +71,8 @@ private slots:
     void on_btn_tracking_start_clicked();
 
     void on_lbl_find_coherent_clicked();
+
+    void on_btn_stop_process_clicked();
 
 private:
     Ui::MainWindow *ui;

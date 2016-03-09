@@ -14,7 +14,7 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    pd = new PlaceDetection(ui->coherency_plot);
+    pd = new PlaceDetection(ui->coherency_plot, ui->ssg_map);
     seg_track = pd->seg_track;
     gm = pd->seg_track->gm;
     seg = pd->seg_track->seg;
@@ -24,7 +24,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->scroll_min_size->setValue(seg->getParMinSize());
 
     ui->scroll_tau_n->setValue(pd->tau_n);
-    ui->scroll_tau_c->setValue(pd->tau_c);
+    ui->scroll_tau_c->setValue(pd->tau_c*10);
     ui->scroll_tau_f->setValue(pd->tau_f);
     ui->scroll_disapp_coeff1->setValue(pd->coeff_node_disappear1*10);
     ui->scroll_disapp_coeff2->setValue(pd->coeff_node_disappear2*10);
@@ -53,16 +53,15 @@ MainWindow::MainWindow(QWidget *parent) :
                      this, SLOT(showMap(QImage)));
     QObject::connect(pd, SIGNAL(showSSG(QImage)),
                      this, SLOT(showSSG(QImage)));
+    QObject::connect(pd, SIGNAL(showImg1(QImage)),
+                     this, SLOT(showImg1(QImage)));
+    QObject::connect(pd, SIGNAL(showImg2(QImage)),
+                     this, SLOT(showImg2(QImage)));
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
-}
-
-void MainWindow::showImg1(QImage img)
-{
-    ui->lbl_img1->setPixmap(QPixmap::fromImage(img));
 }
 
 void MainWindow::showImg2(QImage img)
@@ -114,8 +113,8 @@ void MainWindow::on_scroll_tau_n_valueChanged(int value)
 
 void MainWindow::on_scroll_tau_c_valueChanged(int value)
 {
-    ui->tb_tau_c->setText(QString::number(value));
-    pd->tau_c = value;
+    ui->tb_tau_c->setText(QString::number(value/10.0));
+    pd->tau_c = value/10.0;
 }
 
 void MainWindow::on_scroll_tau_w_valueChanged(int value)
@@ -211,7 +210,8 @@ void MainWindow::showTrackSegment(QImage img)
 
 void MainWindow::on_btn_process_all_clicked()
 {
-    pd->processImages();
+    if(pd->isProcessing == false)
+        pd->processImages();
 }
 
 void MainWindow::on_btn_next_clicked()
@@ -242,4 +242,9 @@ void MainWindow::on_btn_tracking_start_clicked()
 void MainWindow::on_lbl_find_coherent_clicked()
 {
     seg_track->processImagesOnline();
+}
+
+void MainWindow::on_btn_stop_process_clicked()
+{
+    pd->stopProcessing = true;
 }

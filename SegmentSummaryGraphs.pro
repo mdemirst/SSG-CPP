@@ -9,7 +9,7 @@ QT       += core gui sql
 TARGET = SegmentSummaryGraphs
 TEMPLATE = app
 
-#QMAKE_CXXFLAGS += -Wno-sign-compare
+QMAKE_CXXFLAGS += -Wno-sign-compare
 
 SOURCES += main.cpp\
       mainwindow.cpp \

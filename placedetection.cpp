@@ -1,23 +1,31 @@
 #include "placedetection.h"
 #include "utils.h"
 #include "unistd.h"
+#include <dirent.h>
 
 #include "rag.h"
 
-PlaceDetection::PlaceDetection(QCustomPlot* coherency_plot)
+PlaceDetection::PlaceDetection(QCustomPlot* coherency_plot, QCustomPlot* map)
 {
+    //Read dataset image files
+    img_files = getFiles(DATASET_FOLDER);
+
     seg_track = new SegmentTrack();
 
     // Coherency plot related settings
-    pen.setWidth(PEN_WIDTH);
-    pen.setColor(Qt::red);
-
     this->coherency_plot = coherency_plot;
 
     for(int i = 0; i <= PLOT_PLACES_IDX; i++)
         this->coherency_plot->addGraph();
 
+    pen.setWidth(PEN_WIDTH2);
+    pen.setColor(Qt::red);
     this->coherency_plot->graph(PLOT_THRES_IDX)->setPen(pen);
+
+    pen.setWidth(PEN_WIDTH2);
+    pen.setColor(Qt::black);
+    this->coherency_plot->graph(PLOT_SCORES_IDX)->setPen(pen);
+
     this->coherency_plot->setMaximumWidth(COH_PLOT_W);
     this->coherency_plot->setMinimumWidth(COH_PLOT_W);
 
@@ -30,7 +38,8 @@ PlaceDetection::PlaceDetection(QCustomPlot* coherency_plot)
     QMargins plot_margin(COH_PLOT_MARGIN,0,COH_PLOT_MARGIN,0);
     this->coherency_plot->plotLayout()->setMargins(plot_margin);
 
-    // Parameter initialization
+
+    // Parameters initialization
     tau_n = INIT_TAU_N;
     tau_c = INIT_TAU_C;
     tau_f = INIT_TAU_F;
@@ -44,59 +53,96 @@ PlaceDetection::PlaceDetection(QCustomPlot* coherency_plot)
 
     frameByFrameProcess = false;
     isProcessing = false;
+    stopProcessing = false;
 
+
+    //Traveled places plot initialization
+    this->place_map = map;
+
+    for(int i = 0; i <= PLOT_PLACES_IDX; i++)
+        this->place_map->addGraph();
+
+    this->place_map->axisRect()->setAutoMargins(QCP::msNone);
+    this->place_map->axisRect()->setMargins(QMargins(0,0,0,0));
+    this->place_map->setMaximumWidth(COLD_MAP_W);
+    this->place_map->setMinimumWidth(COLD_MAP_W);
+    this->place_map->setMinimumHeight(COLD_MAP_H);
+    this->place_map->setMaximumHeight(COLD_MAP_H);
+    this->place_map->xAxis->grid()->setVisible(false);
+    this->place_map->yAxis->grid()->setVisible(false);
+    this->place_map->xAxis->setTicks(false);
+    this->place_map->yAxis->setTicks(false);
+    this->place_map->xAxis->setVisible(false);
+    this->place_map->yAxis->setVisible(false);
+    this->place_map->xAxis->setRange(COLD_MAP_L, COLD_MAP_R);
+    this->place_map->yAxis->setRange(COLD_MAP_T, COLD_MAP_B);
+
+    //Plot dataset map
+    QCPItemPixmap *plot_bg_img = new QCPItemPixmap(this->place_map);
+    plot_bg_img->setPixmap(QPixmap("./cold.svg"));
+    plot_bg_img->topLeft->setType(QCPItemPosition::ptViewportRatio);
+    plot_bg_img->topLeft->setCoords(0,0);
+    this->place_map->addLayer("imageLayer");
+    this->place_map->addItem(plot_bg_img);
+    this->place_map->addLayer("plotLayer");
+    this->place_map->setCurrentLayer("plotLayer");
 }
 
 // Plots places and coherency scores
-void PlaceDetection::plotPlaces(vector<float> coherency_scores, vector<int> detected_places)
+void PlaceDetection::plotPlaces(vector<float> coherency_scores, vector<int> detected_places, cv::Point2f coord)
 {
     static int graph_idx = PLOT_PLACES_IDX;
+    float margin = 1.0;
     if(detected_places.size() > 1)
     {
-
         //Place->Transition or vice versa region change occur
         if(graph_idx == PLOT_PLACES_IDX || ( detected_places.back() != detected_places.rbegin()[1]) )
         {
-            //For visualization purposes
-            if(detected_places.rbegin()[1] > 0)
-            {
-                this->coherency_plot->graph(graph_idx)->setPen(QPen(Qt::blue));
-                this->coherency_plot->graph(graph_idx)->setBrush(QBrush(QColor(0, 0, 255, 50)));
-                coherency_plot->graph(graph_idx)->addData(detected_places.size(),coherency_scores[detected_places.size()-1]);
-            }
-            else
-            {
-                this->coherency_plot->graph(graph_idx)->setPen(QPen(Qt::red));
-                this->coherency_plot->graph(graph_idx)->setBrush(QBrush(QColor(255, 0, 0, 50)));
-                coherency_plot->graph(graph_idx)->addData(detected_places.size(),coherency_scores[detected_places.size()-1]);
-            }
-
             //Add new graph to change color
             this->coherency_plot->addGraph();
+            this->place_map->addGraph();
             graph_idx++;
 
             if(detected_places.back() > 0)
             {
-                this->coherency_plot->graph(graph_idx)->setPen(QPen(Qt::blue));
-                this->coherency_plot->graph(graph_idx)->setBrush(QBrush(QColor(0, 0, 255, 50)));
+                //Place
+                this->coherency_plot->graph(graph_idx)->setPen(QPen(Qt::red));
+                this->coherency_plot->graph(graph_idx)->setBrush(QBrush(QColor(255, 0, 0, 80)));
+
+                this->place_map->graph(graph_idx)->setPen(QPen(Qt::red));
+                this->place_map->graph(graph_idx)->setLineStyle(QCPGraph::lsNone);
+                this->place_map->graph(graph_idx)->setScatterStyle(QCPScatterStyle::ssDisc);
             }
             else
             {
-                this->coherency_plot->graph(graph_idx)->setPen(QPen(Qt::red));
-                this->coherency_plot->graph(graph_idx)->setBrush(QBrush(QColor(255, 0, 0, 50)));
+                //Transition
+                this->coherency_plot->graph(graph_idx)->setPen(QPen(Qt::blue));
+                this->coherency_plot->graph(graph_idx)->setBrush(QBrush(QColor(0, 0, 255, 80)));
+
+                this->place_map->graph(graph_idx)->setPen(QPen(Qt::blue));
+                this->place_map->graph(graph_idx)->setLineStyle(QCPGraph::lsNone);
+                this->place_map->graph(graph_idx)->setScatterStyle(QCPScatterStyle::ssDisc);
             }
         }
 
         //Add the new point
-        coherency_plot->graph(graph_idx)->addData(detected_places.size(),coherency_scores[detected_places.size()-1]);
+        coherency_plot->graph(graph_idx)->addData(detected_places.size(),1.0+margin);
+        place_map->graph(graph_idx)->addData(coord.x, coord.y);
+
         //Add thresold line
-        coherency_plot->graph(PLOT_THRES_IDX)->addData(detected_places.size(),tau_c);
+        coherency_plot->graph(PLOT_THRES_IDX)->addData(detected_places.size(),tau_c+margin);
+
+        //Add coh score
+        coherency_plot->graph(PLOT_SCORES_IDX)->addData(detected_places.size(),coherency_scores[detected_places.size()-1]+margin);
 
         // set axes ranges, so we see all data:
-        coherency_plot->yAxis->setRange(*min_element(coherency_scores.begin(),coherency_scores.end()), *max_element(coherency_scores.begin(),coherency_scores.end()));
-        coherency_plot->xAxis->setRange(0, detected_places.size()+1);
+        //coherency_plot->yAxis->setRange(*min_element(coherency_scores.begin(),coherency_scores.end()), *max_element(coherency_scores.begin(),coherency_scores.end()));
+        //coherency_plot->xAxis->setRange(0, detected_places.size()+1);
 
+        coherency_plot->rescaleAxes();
         coherency_plot->replot();
+        //place_map->rescaleAxes();
+        place_map->replot();
     }
 }
 
@@ -192,23 +238,27 @@ int  PlaceDetection::detectPlace(vector<float> coherency_scores,
                                   vector<int>& detected_places)
 {
     if(coherency_scores.size() == 0)
+    {
         return 0;
+    }
+
 
     //Pre-assign last frame as either transition or place candidate
-    detected_places_unfiltered.push_back(coherency_scores.back() < tau_c ? 1 : -1);
+    detected_places_unfiltered.push_back(coherency_scores.back() < tau_c ? -1 : 1);
 
 
     //Place/transition region is decided according to median of
     //last tau_w frames. Therefore wait minimum number of
-    //frames to be larger than tau_w
+    //frames to be larger than tau_n
     if(detected_places_unfiltered.size() >= tau_n)
     {
-        //For the first iteration, fill detected_places with a region type
         if(detected_places.size() == 0)
         {
-            detected_places.push_back(detected_places_unfiltered.front());
+            for(int i = 0; i < coherency_scores.size()-tau_n; i++)
+            {
+                detected_places.push_back(detected_places_unfiltered.back());
+            }
         }
-
         int last_place_type = detected_places.back();
 
         bool region_status = getRegionStatus(vector<int>(detected_places_unfiltered.end()-tau_n,
@@ -270,11 +320,19 @@ void PlaceDetection::processImages()
 
     bool in_place = false; //Flag whether we are in place or transition
 
+    clearPastData();
+
     isProcessing = true;
 
     //Process all images
     for(int frame_no = START_IDX; frame_no < END_IDX-1; frame_no++)
     {
+        if(stopProcessing == true)
+        {
+            stopProcessing = false;
+            break;
+        }
+
         //Wait until process_next_frame set to true
         while(frameByFrameProcess == true && process_next_frame == false)
         {
@@ -283,9 +341,9 @@ void PlaceDetection::processImages()
         //Set it back to false
         process_next_frame = false;
 
-        //getFilePath returns the path of the file given frame number
-        string filepath1 = getFilePath(DATASET_FOLDER, DATASET_NO, IMG_FILE_PREFIX, frame_no);
-        string filepath2 = getFilePath(DATASET_FOLDER, DATASET_NO, IMG_FILE_PREFIX, frame_no+1);
+        string filepath1 = DATASET_FOLDER + img_files[frame_no];
+        string filepath2 = DATASET_FOLDER + img_files[frame_no+1];
+
 
         //Segment images
         if(frame_no == START_IDX)
@@ -304,8 +362,8 @@ void PlaceDetection::processImages()
 
 
         //Show original images on the window
-        //emit seg_track->shshowImg1(mat2QImage(img1));
-        //emit seg_track->showImg2(mat2QImage(img2));
+        //emit showImg1(mat2QImage(img1));
+        emit showImg2(mat2QImage(img2));
 
         if(frame_no == START_IDX)
         {
@@ -359,6 +417,9 @@ void PlaceDetection::processImages()
             SSG new_ssg;
             SSGs.push_back(new_ssg);
             in_place = true;
+
+            if(SSGs.size() > 1)
+                emit showSSG(mat2QImage(SSGProc::drawSSG(SSGs.rbegin()[1], img2)));
         }
         else if(detection_result == -1)
         {
@@ -371,22 +432,17 @@ void PlaceDetection::processImages()
             SSGProc::updateSSG(SSGs.back(), ns2, seg_track->M);
         }
 
-        //Show last SSG
-        if(SSGs.size() > 0)
-        {
-            img2 = imread(filepath2);
-            //emit showSSG(mat2QImage(SSGProc::drawSSG(SSGs.back(), img2)));
-        }
+        cv::Point2f coord = getCoordCold(img_files[START_IDX+detected_places.size()]);
 
         //Plot transition and place regions
-        plotPlaces(coherency_scores, detected_places);
+        plotPlaces(coherency_scores, detected_places, coord);
 
         //Wait a little for GUI processing
         waitKey(1);
     }
 
     //Constructs average gist from all frames
-    constructSceneGist(seg_track->M, seg_track->M_ns);
+    //constructSceneGist(seg_track->M, seg_track->M_ns);
 
     isProcessing = false;
 }
@@ -395,7 +451,14 @@ void PlaceDetection::clearPastData()
 {
     coherency_scores.clear(); //Stores all coherency score.clear();
     detected_places.clear();
+    detected_places_unfiltered.clear();
     SSGs.clear(); //Stores SSGs
+    seg_track->M.release();
+    seg_track->M_ns.clear();
+    for(int i = 0; i < coherency_plot->graphCount(); i++)
+        coherency_plot->graph(i)->clearData();
+    for(int i = 0; i < place_map->graphCount(); i++)
+        place_map->graph(i)->clearData();
 }
 
 void overlayImage(const cv::Mat &background, const cv::Mat &foreground,
@@ -484,8 +547,7 @@ void PlaceDetection::constructSceneGist(Mat& M, vector<pair<NodeSig, int> > M_ns
         if(do_segmentation == false)
             continue;
 
-        string filepath = getFilePath(DATASET_FOLDER, DATASET_NO, IMG_FILE_PREFIX, i+START_IDX);
-        Mat img = imread(filepath);
+        Mat img = imread(DATASET_FOLDER + img_files[START_IDX + i]);
         resize(img, img, cv::Size(0,0), IMG_RESCALE_RAT, IMG_RESCALE_RAT);
 
         vector<Mat> segments = seg_track->seg->segmentImage(img);
@@ -555,8 +617,7 @@ void PlaceDetection::constructSceneGist(Mat& M, vector<pair<NodeSig, int> > M_ns
     }
 
     //Draw segments together
-    string filepath = getFilePath(DATASET_FOLDER, DATASET_NO, IMG_FILE_PREFIX, START_IDX);
-    Mat img = imread(filepath);
+    Mat img = imread(DATASET_FOLDER + img_files[START_IDX]);
     resize(img, img, cv::Size(0,0), IMG_RESCALE_RAT, IMG_RESCALE_RAT);
 
     Mat img_gist = Mat::zeros(img.size(),CV_8UC3);

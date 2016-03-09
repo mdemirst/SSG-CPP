@@ -34,6 +34,7 @@ public:
     float tau_m;
     int img_height;
     int img_width;
+    vector<string> img_files;
 
     
 signals:

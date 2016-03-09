@@ -17,7 +17,7 @@
 
 using namespace cv;
 
-#define MATCH_LINE_COLOR Scalar(0,0,255)
+#define MATCH_LINE_COLOR Scalar(0,0,0)
 #define MATCH_LINE_WIDTH 2
 #define MATCH_CIRCLE_RADIUS 20
 

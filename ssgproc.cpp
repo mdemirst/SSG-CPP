@@ -79,15 +79,31 @@ void SSGProc::updateSSG(SSG& ssg, vector<NodeSig> ns, Mat& map)
 }
 
 //Draws given SSG structure on image
-Mat SSGProc::drawSSG(SSG& ssg, Mat input)
+Mat SSGProc::drawSSG(SSG& ssg, Mat &input)
 {
+    Mat bg_img = Mat::zeros(input.size(), CV_8UC3);
+    bg_img = Scalar(255,255,255);
+
+    //Find longest appear
+    int longestApp = 0;
     for(int i = 0; i < ssg.nodes.size(); i++)
     {
-        float img_area = input.size().height*input.size().width;
-        float rad = input.size().width*ssg.nodes[i].first.area/img_area/2;
-        circle(input, ssg.nodes[i].first.center, rad,
-               Scalar(ssg.nodes[i].first.colorR, ssg.nodes[i].first.colorG, ssg.nodes[i].first.colorB),2);
+        if(ssg.nodes[i].second > longestApp)
+            longestApp = ssg.nodes[i].second;
     }
 
-    return input;
+    for(int i = 0; i < ssg.nodes.size(); i++)
+    {
+        if(ssg.nodes[i].second > longestApp/2.0)
+        {
+            float img_area = bg_img.size().height*bg_img.size().width;
+            float rad = sqrt(ssg.nodes[i].first.area/M_PI)/2.0;
+            circle(bg_img, ssg.nodes[i].first.center, rad,
+                   Scalar(ssg.nodes[i].first.colorR, ssg.nodes[i].first.colorG, ssg.nodes[i].first.colorB),-1);
+            circle(bg_img, ssg.nodes[i].first.center, rad,
+                   Scalar(0,0,0),1);
+        }
+    }
+
+    return bg_img;
 }
