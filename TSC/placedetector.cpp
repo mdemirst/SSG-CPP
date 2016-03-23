@@ -47,16 +47,11 @@ float PlaceDetector::processImage()
         // Calculate statistics
         bubbleStatistics statsVal =  bubbleProcess::calculateBubbleStatistics(reducedValBubble,255);
 
-        qDebug()<<"Bubble statistics: "<<statsVal.mean<<statsVal.variance;
+        //qDebug()<<"Bubble statistics: "<<statsVal.mean<<statsVal.variance;
 
         currentBasePoint.avgVal = statsVal.mean;
         currentBasePoint.varVal = statsVal.variance;
         currentBasePoint.id = image_counter;
-        QString imagefilePath = imagesPath;
-        imagefilePath.append("/Cold-");
-        imagefilePath.append(QString::number(image_counter).rightJustified(4,'0')).append(".jpg");
-        imwrite(imagefilePath.toStdString().data(),currentImage);
-
         currentBasePoint.status = 0;
 
         /*********************** WE CHECK FOR THE UNINFORMATIVENESS OF THE FRAME   *************************/
@@ -158,12 +153,11 @@ float PlaceDetector::processImage()
                 // MY VERSION FOR CHISQR, SIMPLER!!
                 double result= compareHKCHISQR(currentBasePoint.invariants,previousBasePoint.invariants);
                 dissimilarity = result;
-                qDebug()<<"Invariant diff between "<<currentBasePoint.id<<previousBasePoint.id<<"is"<<result;
+                //qDebug()<<"Invariant diff between "<<currentBasePoint.id<<previousBasePoint.id<<"is"<<result;
 
                 ///////////////////////////// IF THE FRAMES ARE COHERENT ///////////////////////////////////////////////////////////////////////////////////////////////////////
                 if(result <= tau_inv && result > 0)
                 {
-
                     ///  dbmanager.insertBasePoint(currentBasePoint);
                     wholebasepoints.push_back(currentBasePoint);
 
@@ -179,11 +173,10 @@ float PlaceDetector::processImage()
                         // Temporal window will not extend anymore, we should check whether it is really a temporal window or not
                         else
                         {
-
                             float area = this->tempwin->totalDiff/(tempwin->endPoint - tempwin->startPoint+1);
 
-                            qDebug()<<"Temporal Window Area"<<area;
-                             qDebug()<<"Temporal Window Start End"<<tempwin->startPoint<<tempwin->endPoint;
+                            //qDebug()<<"Temporal Window Area"<<area;
+                            //qDebug()<<"Temporal Window Start End"<<tempwin->startPoint<<tempwin->endPoint;
 
                             // This is a valid temporal window
                             if(tempwin->endPoint - tempwin->startPoint >= tau_w && area>= tau_avgdiff)
@@ -290,8 +283,8 @@ float PlaceDetector::processImage()
                             avgdiff = this->tempwin->totalDiff/(tempwin->endPoint - tempwin->startPoint+1);
 
 
-                            qDebug()<<"Temporal Window Average Diff"<<avgdiff;
-                            qDebug()<<"Temporal Window Start End"<<tempwin->startPoint<<tempwin->endPoint;
+                            //qDebug()<<"Temporal Window Average Diff"<<avgdiff;
+                            //qDebug()<<"Temporal Window Start End"<<tempwin->startPoint<<tempwin->endPoint;
 
                             // This is a valid temporal window
                             if(tempwin->endPoint - tempwin->startPoint >= tau_w && avgdiff >= tau_avgdiff)

@@ -6,6 +6,7 @@
 #include "placedetection.h"
 #include "segmenttrack.h"
 #include "TSC/tsc.h"
+#include "defs.h"
 
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -14,49 +15,66 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    pd = new PlaceDetection(ui->coherency_plot, ui->ssg_map);
-    seg_track = pd->seg_track;
-    gm = pd->seg_track->gm;
-    seg = pd->seg_track->seg;
+    ssg_params = new SSGParams(INIT_TAU_N,
+                               INIT_TAU_C,
+                               INIT_TAU_F,
+                               INIT_TAU_D,
+                               COEFF_NODE_DISAPPEAR_1,
+                               COEFF_NODE_DISAPPEAR_2,
+                               COEFF_NODE_APPEAR,
+                               COEFF_COH_EXP_BASE,
+                               COEFF_COH_APPEAR_THRES);
 
-    ui->scroll_sigma->setValue(seg->getParSigma()*100);
-    ui->scroll_k->setValue(seg->getParK());
-    ui->scroll_min_size->setValue(seg->getParMinSize());
+    seg_track_params = new SegmentTrackParams (INIT_TAU_W,
+                                               INIT_TAU_M);
 
-    ui->scroll_tau_n->setValue(pd->tau_n);
-    ui->scroll_tau_c->setValue(pd->tau_c*10);
-    ui->scroll_tau_f->setValue(pd->tau_f);
-    ui->scroll_disapp_coeff1->setValue(pd->coeff_node_disappear1*10);
-    ui->scroll_disapp_coeff2->setValue(pd->coeff_node_disappear2*10);
-    ui->scroll_appear_coeff->setValue(pd->coeff_node_appear*10);
-    ui->scroll_coh_base->setValue(pd->coeff_coh_exp_base);
-    ui->scroll_appear_thres->setValue(pd->coeff_coh_appear_thres*100);
+    seg_params = new SegmentationParams (SEG_SIGMA,
+                                         SEG_K,
+                                         SEG_MIN_SIZE);
 
-    ui->scroll_tau_w->setValue(seg_track->tau_w);
-    ui->scroll_tau_m->setValue(seg_track->tau_m*1000);
+    gm_params = new GraphMatchParams (POS_WEIGHT,
+                                      COLOR_WEIGHT,
+                                      AREA_WEIGHT);
 
-    ui->scroll_color_coeff->setValue(gm->color_weight*10);
-    ui->scroll_pos_coeff->setValue(gm->pos_weight*10);
-    ui->scroll_area_coeff->setValue(gm->area_weight*10);
+    ui->scroll_sigma->setValue(seg_params->sigma*100);
+    ui->scroll_k->setValue(seg_params->k);
+    ui->scroll_min_size->setValue(seg_params->min_size);
+
+    ui->scroll_tau_n->setValue(ssg_params->tau_n);
+    ui->scroll_tau_c->setValue(ssg_params->tau_c*10);
+    ui->scroll_tau_f->setValue(ssg_params->tau_f);
+    ui->scroll_disapp_coeff1->setValue(ssg_params->coeff_node_disappear1*10);
+    ui->scroll_disapp_coeff2->setValue(ssg_params->coeff_node_disappear2*10);
+    ui->scroll_appear_coeff->setValue(ssg_params->coeff_node_appear*10);
+    ui->scroll_coh_base->setValue(ssg_params->coeff_coh_exp_base);
+    ui->scroll_appear_thres->setValue(ssg_params->coeff_coh_appear_thres*100);
+
+    ui->scroll_tau_w->setValue(seg_track_params->tau_w);
+    ui->scroll_tau_m->setValue(seg_track_params->tau_m*1000);
+
+    ui->scroll_color_coeff->setValue(gm_params->color_weight*10);
+    ui->scroll_pos_coeff->setValue(gm_params->pos_weight*10);
+    ui->scroll_area_coeff->setValue(gm_params->area_weight*10);
 
 
     ui->cb_framebyframe->setChecked(false);
-    pd->frameByFrameProcess = false;
 
-    QObject::connect(gm, SIGNAL(showMatchImage(QImage)),
-                     this, SLOT(showMatchImage(QImage)));
-    QObject::connect(seg_track, SIGNAL(showImg1(QImage)),
-                     this, SLOT(showImg1(QImage)));
-    QObject::connect(seg_track, SIGNAL(showImg2(QImage)),
-                     this, SLOT(showImg2(QImage)));
-    QObject::connect(seg_track, SIGNAL(showMap(QImage)),
-                     this, SLOT(showMap(QImage)));
-    QObject::connect(pd, SIGNAL(showSSG(QImage)),
-                     this, SLOT(showSSG(QImage)));
-    QObject::connect(pd, SIGNAL(showImg1(QImage)),
-                     this, SLOT(showImg1(QImage)));
-    QObject::connect(pd, SIGNAL(showImg2(QImage)),
-                     this, SLOT(showImg2(QImage)));
+//    QObject::connect(gm, SIGNAL(showMatchImage(QImage)),
+//                     this, SLOT(showMatchImage(QImage)));
+//    QObject::connect(seg_track, SIGNAL(showImg1(QImage)),
+//                     this, SLOT(showImg1(QImage)));
+//    QObject::connect(seg_track, SIGNAL(showImg2(QImage)),
+//                     this, SLOT(showImg2(QImage)));
+//    QObject::connect(seg_track, SIGNAL(showMap(QImage)),
+//                     this, SLOT(showMap(QImage)));
+//    QObject::connect(pd, SIGNAL(showSSG(QImage)),
+//                     this, SLOT(showSSG(QImage)));
+//    QObject::connect(pd, SIGNAL(showImg1(QImage)),
+//                     this, SLOT(showImg1(QImage)));
+//    QObject::connect(pd, SIGNAL(showImg2(QImage)),
+//                     this, SLOT(showImg2(QImage)));
+
+//    ui->lbl_map->installEventFilter(pd);
 }
 
 MainWindow::~MainWindow()
@@ -64,9 +82,9 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::showImg2(QImage img)
+void MainWindow::showImgOrg(QImage img)
 {
-    ui->lbl_img2->setPixmap(QPixmap::fromImage(img));
+    ui->lbl_img_org->setPixmap(QPixmap::fromImage(img));
 }
 
 void MainWindow::showMatchImage(QImage img)
@@ -88,99 +106,99 @@ void MainWindow::on_scroll_sigma_valueChanged(int value)
 {
     ui->tb_sigma->setText(QString::number(value/100.0));
 
-    seg->setParSigma(value/100.0);
+    seg_params->sigma = value/100.0;
 }
 
 void MainWindow::on_scroll_k_valueChanged(int value)
 {
     ui->tb_k->setText(QString::number(value));
 
-    seg->setParK(value);
+    seg_params->k = value;
 }
 
 void MainWindow::on_scroll_min_size_valueChanged(int value)
 {
     ui->tb_min_size->setText(QString::number(value));
 
-    seg->setParMinSize(value);
+    seg_params->min_size = value;
 }
 
 void MainWindow::on_scroll_tau_n_valueChanged(int value)
 {
     ui->tb_tau_n->setText(QString::number(value));
-    pd->tau_n = value;
+    ssg_params->tau_n = value;
 }
 
 void MainWindow::on_scroll_tau_c_valueChanged(int value)
 {
     ui->tb_tau_c->setText(QString::number(value/10.0));
-    pd->tau_c = value/10.0;
+    ssg_params->tau_c = value/10.0;
 }
 
 void MainWindow::on_scroll_tau_w_valueChanged(int value)
 {
     ui->tb_tau_w->setText(QString::number(value));
-    seg_track->tau_w = value;
+    seg_track_params->tau_w = value;
 }
 
 void MainWindow::on_scroll_tau_f_valueChanged(int value)
 {
     ui->tb_tau_f->setText(QString::number(value));
-    pd->tau_f = value;
+    ssg_params->tau_f = value;
 }
 
 void MainWindow::on_scroll_tau_m_valueChanged(int value)
 {
     ui->tb_tau_m->setText(QString::number(value/1000.0));
-    seg_track->tau_m = value/1000.0;
+    seg_track_params->tau_m = value/1000.0;
 }
 
 void MainWindow::on_scroll_color_coeff_valueChanged(int value)
 {
     ui->tb_color->setText(QString::number(value/10.0));
-    gm->color_weight = value/10.0;
+    gm_params->color_weight = value/10.0;
 }
 
 void MainWindow::on_scroll_pos_coeff_valueChanged(int value)
 {
     ui->tb_pos->setText(QString::number(value/10.0));
-    gm->pos_weight = value/10.0;
+    gm_params->pos_weight = value/10.0;
 }
 
 void MainWindow::on_scroll_area_coeff_valueChanged(int value)
 {
     ui->tb_area->setText(QString::number(value/10.0));
-    gm->area_weight = value/10.0;
+    gm_params->area_weight = value/10.0;
 }
 
 void MainWindow::on_scroll_disapp_coeff1_valueChanged(int value)
 {
     ui->tb_disapp1->setText(QString::number(value/10.0));
-    pd->coeff_node_disappear1 = value/10.0;
+    ssg_params->coeff_node_disappear1 = value/10.0;
 }
 
 void MainWindow::on_scroll_disapp_coeff2_valueChanged(int value)
 {
     ui->tb_disapp2->setText(QString::number(value/10.0));
-    pd->coeff_node_disappear1 = value/10.0;
+    ssg_params->coeff_node_disappear1 = value/10.0;
 }
 
 void MainWindow::on_scroll_appear_coeff_valueChanged(int value)
 {
     ui->tb_appear->setText(QString::number(value/10.0));
-    pd->coeff_node_appear = value/10.0;
+    ssg_params->coeff_node_appear = value/10.0;
 }
 
 void MainWindow::on_scroll_coh_base_valueChanged(int value)
 {
     ui->tb_coh_exp_base->setText(QString::number(value));
-    pd->coeff_coh_exp_base = value;
+    ssg_params->coeff_coh_exp_base = value;
 }
 
 void MainWindow::on_scroll_appear_thres_valueChanged(int value)
 {
     ui->tb_coh_app_thres->setText(QString::number(value/100.0));
-    pd->coeff_coh_appear_thres = value/100.0;
+    ssg_params->coeff_coh_appear_thres = value/100.0;
 }
 
 void MainWindow::on_cb_framebyframe_clicked()
@@ -190,8 +208,6 @@ void MainWindow::on_cb_framebyframe_clicked()
 
 void MainWindow::on_btn_tsc_process_clicked()
 {
-    TSC *tsc = new TSC();
-    tsc->processImages();
 }
 
 void MainWindow::showTrackMap(QImage img)
@@ -210,8 +226,14 @@ void MainWindow::showTrackSegment(QImage img)
 
 void MainWindow::on_btn_process_all_clicked()
 {
-    if(pd->isProcessing == false)
-        pd->processImages();
+//    pd = new PlaceDetection(ui->coherency_plot, ui->ssg_map,
+//                            ssg_params,
+//                            seg_track_params,
+//                            seg_params,
+//                            gm_params);
+
+//    if(pd->isProcessing == false)
+//        pd->processImages();
 }
 
 void MainWindow::on_btn_next_clicked()
@@ -221,7 +243,7 @@ void MainWindow::on_btn_next_clicked()
 
 void MainWindow::on_btn_tracking_start_clicked()
 {
-    if(seg_track == NULL || seg_track->M.empty())
+    if(seg_track == NULL)
         ui->te_tracking->insertPlainText(QString("Run place detection first!\n"));
     else if(pd->isProcessing == true)
         ui->te_tracking->insertPlainText(QString("Wait place detection to finish!\n"));
@@ -247,4 +269,24 @@ void MainWindow::on_lbl_find_coherent_clicked()
 void MainWindow::on_btn_stop_process_clicked()
 {
     pd->stopProcessing = true;
+}
+
+void MainWindow::on_btn_merged_process_images_clicked()
+{
+    tsc_hybrid = new TSCHybrid(ui->custom_plot_merged_tsc, ui->custom_plot_merged_ssg, ui->place_map, ui->custom_plot_tsc_average,
+                               ssg_params,
+                               seg_track_params,
+                               seg_params,
+                               gm_params);
+    QObject::connect(tsc_hybrid, SIGNAL(showImgOrg(QImage)),
+                     this, SLOT(showImgOrg(QImage)));
+    QObject::connect(tsc_hybrid, SIGNAL(showSSG(QImage)),
+                     this, SLOT(showSSG(QImage)));
+    QObject::connect(tsc_hybrid, SIGNAL(showMap(QImage)),
+                     this, SLOT(showMap(QImage)));
+    QObject::connect(tsc_hybrid->seg_track, SIGNAL(showImgOrg(QImage)),
+                     this, SLOT(showImgOrg(QImage)));
+
+    ui->lbl_map->installEventFilter(tsc_hybrid);
+    tsc_hybrid->processImages(DATASET_FOLDER, START_IDX, END_IDX);
 }

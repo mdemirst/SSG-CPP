@@ -10,26 +10,46 @@
 
 using namespace std;
 
+class SSGParams{
+public:
+    SSGParams(int tau_n,
+              float tau_c,
+              int tau_f,
+              float tau_d,
+              float coeff_node_disappear1,
+              float coeff_node_disappear2,
+              float coeff_node_appear,
+              float coeff_coh_exp_base,
+              float coeff_coh_appear_thres);
+    int tau_n;
+    float tau_c;
+    int tau_f;
+    float tau_d;
+    float coeff_node_disappear1;
+    float coeff_node_disappear2;
+    float coeff_node_appear;
+    float coeff_coh_exp_base;
+    float coeff_coh_appear_thres;
+};
+
 class PlaceDetection : public QObject
 {
     Q_OBJECT
 public:
-    PlaceDetection(QCustomPlot* coherency_plot, QCustomPlot* map);
-    void processImages();
-    SegmentTrack* seg_track;
-    QCustomPlot* coherency_plot;
-    QCustomPlot* place_map;
+    PlaceDetection(QCustomPlot* coherency_plot, QCustomPlot* map,
+                   SSGParams* params,
+                   SegmentTrackParams* seg_track_params,
+                   SegmentationParams* seg_params,
+                   GraphMatchParams* gm_params);
+    SSGParams* params;
     int detectPlace(vector<float> coherency_scores,
                     vector<int>& detected_places_unfiltered,
                     vector<int>& detected_places);
-    void plotPlaces(vector<float> coherency_scores,
-                    vector<int> detected_places,
-                    cv::Point2f coord);
     int getMedian(vector<int> v);
     bool getRegionStatus(vector<int> v);
-    float calcCohScore(Mat& M, vector<pair<NodeSig, int> > M_ns, vector<float>& coh_scores);
     void clearPastData();
     void constructSceneGist(Mat& M, vector<pair<NodeSig, int> > M_ns);
+    bool eventFilter( QObject* watched, QEvent* event );
 
 public:
     vector<float> coherency_scores; //Stores all coherency scores
@@ -41,23 +61,13 @@ public:
     vector<string> img_files;
 
 public:
-    int tau_n;
-    float tau_c;
-    int tau_f;
-    float tau_d;
-
-    float coeff_node_disappear1;
-    float coeff_node_disappear2;
-    float coeff_node_appear;
-    float coeff_coh_exp_base;
-    float coeff_coh_appear_thres;
-
     bool frameByFrameProcess;
     bool process_next_frame;
 
 
 private:
     QPen pen;
+    int cursor;
 
 signals:
     void showSSG(QImage img);

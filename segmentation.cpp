@@ -1,54 +1,20 @@
 #include "segmentation.h"
 #include "utils.h"
 
-Segmentation::Segmentation(QObject *parent) :
-    QObject(parent)
-{
-    //Set segmentation parameters to predefined values
-    //These can be changed by calling setSegmentationParameters() method
-    sigma = SEG_SIGMA;
-    k = SEG_K;
-    min_size = SEG_MIN_SIZE;
-}
-
-void Segmentation::setSegmentationParameters(float sigma, float k, float min_size)
+SegmentationParams::SegmentationParams(float sigma,
+                                       float k,
+                                       int min_size)
 {
     this->sigma = sigma;
     this->k = k;
     this->min_size = min_size;
 }
 
-void Segmentation::setParSigma(float sigma)
+
+Segmentation::Segmentation(SegmentationParams* params)
 {
-    this->sigma = sigma;
+    this->params = params;
 }
-
-void Segmentation::setParK(float k)
-{
-    this->k = k;
-}
-
-void Segmentation::setParMinSize(float min_size)
-{
-    this->min_size = min_size;
-}
-
-float Segmentation::getParSigma()
-{
-    return this->sigma;
-}
-
-float Segmentation::getParK()
-{
-    return this->k;
-}
-
-float Segmentation::getParMinSize()
-{
-    return this->min_size;
-}
-
-
 
 vector<NodeSig> Segmentation::segmentImage(const Mat &img, Mat &img_seg)
 {
@@ -63,7 +29,7 @@ vector<NodeSig> Segmentation::segmentImage(const Mat &img, Mat &img_seg)
     //Segment image
     int nr_segments;
     pair<image<rgb>*, universe*> segments;
-    segments = segment_image(img_, this->sigma, this->k, this->min_size, &nr_segments);
+    segments = segment_image(img_, params->sigma, params->k, params->min_size, &nr_segments);
 
     //Calculate statistics of segments
     vector<BlobStats> blobs = calcBlobStats(img, segments.second);
@@ -94,7 +60,7 @@ vector<Mat> Segmentation::segmentImage(const Mat &img)
     //Segment image
     int nr_segments;
     pair<image<rgb>*, universe*> segments;
-    segments = segment_image(img_, this->sigma, this->k, this->min_size, &nr_segments);
+    segments = segment_image(img_, this->params->sigma, this->params->k, this->params->min_size, &nr_segments);
 
     //Calculate statistics of segments
     vector<BlobStats> blobs = calcBlobStats(img, segments.second);
@@ -124,7 +90,7 @@ void Segmentation::getSegmentByIds(const Mat &img, Mat &img_seg, vector<int> ids
     //Segment image
     int nr_segments;
     pair<image<rgb>*, universe*> segments;
-    segments = segment_image(img_, this->sigma, this->k, this->min_size, &nr_segments);
+    segments = segment_image(img_, this->params->sigma, this->params->k, this->params->min_size, &nr_segments);
 
     //Calculate statistics of segments
     vector<BlobStats> blobs = calcBlobStats(img, segments.second);

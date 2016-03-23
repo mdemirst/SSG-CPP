@@ -26,5 +26,7 @@ std::string getFilePath(std::string dir, std::string folder, std::string prefix,
 void scaleUpMap(Mat &img, Mat &img_scaled, int factor_x, int factor_y);
 std::vector<std::string> getFiles(std::string dir);
 cv::Point2f getCoordCold(std::string filename);
+int getMedian(vector<int> v);
+bool getRegionStatus(vector<int> v);
 
 #endif // UTILS_H

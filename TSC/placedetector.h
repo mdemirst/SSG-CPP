@@ -19,6 +19,7 @@ public:
     bool usePreviousMemory;
     std::string previousMemoryPath;
     std::string debugFilePath;
+    QString debugFilePrefix;
     QString imagesPath;
     int debugFileNo;
     int tau_w;
@@ -48,13 +49,14 @@ public:
     std::vector<BasePoint> wholebasepoints;
 
     DatabaseManager* dbmanager;
+    BasePoint currentBasePoint;
 
 private:
 
     TemporalWindow* tempwin;
     int img_counter;
     BasePoint previousBasePoint;
-    BasePoint currentBasePoint;
+
     std::vector<BasePoint> basepointReservoir;
 };
 

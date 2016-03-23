@@ -6,6 +6,8 @@
 #include "database/databasemanager.h"
 #include "placedetector.h"
 #include "utility.h"
+#include "qcustomplot.h"
+#include "defs.h"
 #include <opencv2/opencv.hpp>
 #include <QDir>
 #include <QDebug>
@@ -17,8 +19,8 @@ class TSC : public QObject
 {
     Q_OBJECT
 public:
-    explicit TSC(QObject *parent = 0);
-    void processImages();
+    TSC();
+    float processImage(const Mat& cur_img, bool isLastImage);
     bool createDirectories(QString previousMemoryPath);
     bool saveParameters(QString filepath);
     double compareHKCHISQR(Mat input1, Mat input2);

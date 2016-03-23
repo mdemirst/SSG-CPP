@@ -39,7 +39,8 @@ SOURCES += main.cpp\
       TSC/tsc.cpp \
       TSC/placedetector.cpp \
       TSC/utility.cpp \
-      segmenttrack.cpp
+      segmenttrack.cpp \
+    tschybrid.cpp
 
 HEADERS  += mainwindow.h \
       segmentation.h \
@@ -68,7 +69,8 @@ HEADERS  += mainwindow.h \
       TSC/placedetector.h \
       TSC/utility.h \
       segmenttrack.h \
-      defs.h
+      defs.h \
+    tschybrid.h
 
 FORMS    += mainwindow.ui
 

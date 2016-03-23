@@ -1,8 +1,15 @@
 #include "segmenttrack.h"
 
-SegmentTrack::SegmentTrack(QObject *parent) :
-    QObject(parent)
+SegmentTrackParams::SegmentTrackParams(int tau_w, float tau_m)
 {
+    this->tau_w = tau_w;
+    this->tau_m = tau_m;
+}
+
+SegmentTrack::SegmentTrack(SegmentTrackParams* params, SegmentationParams* seg_params, GraphMatchParams* gm_params)
+{
+    this->params = params;
+
     //Find image dimensions
     img_files = getFiles(DATASET_FOLDER);
     Mat img = imread(DATASET_FOLDER + img_files[START_IDX]);
@@ -10,12 +17,18 @@ SegmentTrack::SegmentTrack(QObject *parent) :
     img_width = img.size().width*IMG_RESCALE_RAT;
 
     //Initialize new graph match and segmentation object
-    gm = new GraphMatch(0, img_width, img_height);
-    seg = new Segmentation();
+    gm = new GraphMatch(img_width, img_height, gm_params);
+    seg = new Segmentation(seg_params);
+}
 
-    // Parameter initialization
-    tau_w = INIT_TAU_W;
-    tau_m = INIT_TAU_M;
+Mat SegmentTrack::getM()
+{
+    return M;
+}
+
+vector<pair<NodeSig, int > > SegmentTrack::getM_ns()
+{
+    return M_ns;
 }
 
 
@@ -111,7 +124,6 @@ void SegmentTrack::processImage(const Mat cur_img, vector<vector<NodeSig> > &ns_
     //If we are processing the first tau_w images
     if(ns_vec.size() == 0)
     {
-        qDebug() << "a";
         vector<NodeSig> ns = seg->segmentImage(cur_img, cur_img_seg);
 
         ns_vec.push_back(ns);
@@ -134,24 +146,21 @@ void SegmentTrack::processImage(const Mat cur_img, vector<vector<NodeSig> > &ns_
     }
     else
     {
-        qDebug() << "b";
         ns_vec.push_back(seg->segmentImage(cur_img,cur_img_seg));
 
-        if(ns_vec.size() > tau_w)
+        if(ns_vec.size() > params->tau_w)
             ns_vec.erase(ns_vec.begin());
 
         //Show original images on the window
-        emit showImg1(mat2QImage(prev_img));
-        emit showImg2(mat2QImage(cur_img));
+        //emit showImg1(mat2QImage(prev_img));
+        //emit showImg2(mat2QImage(cur_img));
+        emit showImgOrg(mat2QImage(cur_img_seg));
 
         //Drawing purposes only
-        gm->drawMatches(ns_vec[ns_vec.size()-2], ns_vec.back(), prev_img_seg, cur_img_seg);
+        //gm->drawMatches(ns_vec[ns_vec.size()-2], ns_vec.back(), prev_img_seg, cur_img_seg);
 
         //Fill node existence map
-        fillNodeMap(M, M_ns, ns_vec);
-
-        //Plot connectivity map
-        plotMap(M);
+        fillNodeMap(ns_vec);
 
         prev_img = cur_img;
         prev_img_seg = cur_img_seg;
@@ -189,18 +198,18 @@ bool pairCompare(const std::pair<int, float>& firstElem, const std::pair<int, fl
 vector<pair<int, float> > SegmentTrack::getCoherentSegments(const Mat map, const Mat img, float thres, Mat& img_seg)
 {
     vector<pair<int, float> > coherent_segments;
-    if(map.size().width >= tau_w)
+    if(map.size().width >= params->tau_w)
     {
         for(int i = 0; i < map.size().height; i++)
         {
             int nr_appear = 0;
-            for(int j = map.size().width - tau_w; j < map.size().width; j++)
+            for(int j = map.size().width - params->tau_w; j < map.size().width; j++)
             {
                 if(map.at<int>(i, j) > 0)
                     nr_appear++;
             }
 
-            float score = ((float)nr_appear/tau_w);
+            float score = ((float)nr_appear/params->tau_w);
 
             if( score > thres )
             {
@@ -221,30 +230,12 @@ vector<pair<int, float> > SegmentTrack::getCoherentSegments(const Mat map, const
     return coherent_segments;
 }
 
-// Plots node existence map
-void SegmentTrack::plotMap(Mat& M)
-{
-    Mat img;
-    // For drawing purposes convert positive values to 255, zero to 0.
-    // Resulting drawing will be black and white existence map drawing
-    M.convertTo(img, CV_8U, 255, 0);
-
-    if(img.size().height < EXISTENCE_MAP_H)
-    {
-        copyMakeBorder(img,img,0,EXISTENCE_MAP_H-img.size().height,0,0,BORDER_CONSTANT,0);
-    }
-
-    resize(img, img, Size(EXISTENCE_MAP_W, EXISTENCE_MAP_H),INTER_LINEAR);
-
-    emit showMap(mat2QImage(img));
-}
-
 // Fill the new column of node existence matrix using the last tau_w permutation and
 // cost matrices. Starting from the last permutation matrix, each new segment is connected
 // to one of the previous segments where pairwise segment matching cost is below the tau_m.
 // For each new segment, optimum match with previous segments defined by permutation matrix
 // and new segment is connected to the latest segment for which matching cost is below tau_m
-float SegmentTrack::fillNodeMap(Mat& M, vector<pair<NodeSig, int> >& M_ns, const vector<vector<NodeSig> > ns_vec)
+float SegmentTrack::fillNodeMap(const vector<vector<NodeSig> >& ns_vec)
 {
     int N = ns_vec.size(); //Number of the permutation matrices
     float matching_cost = 0;
@@ -277,7 +268,7 @@ float SegmentTrack::fillNodeMap(Mat& M, vector<pair<NodeSig, int> >& M_ns, const
             int j = getPermuted(P[N-i],s);
 
             //Check matching cost
-            if(j != -1 && C[N-i].at<float>(j,s) < tau_m)
+            if(j != -1 && C[N-i].at<float>(j,s) < params->tau_m)
             {
                 //return index of jth node in node existence map
                 node_id = getIndexByCol(M, M.size().width-i, j);

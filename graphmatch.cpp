@@ -2,15 +2,22 @@
 #include "hungarian.h"
 #include "utils.h"
 
-GraphMatch::GraphMatch(QObject *parent, int img_width, int img_height) :
-    QObject(parent)
+
+GraphMatchParams::GraphMatchParams(float pos_weight,
+                                   float color_weight,
+                                   float area_weight)
 {
+    this->pos_weight = pos_weight;
+    this->color_weight = color_weight;
+    this->area_weight = area_weight;
+}
+
+GraphMatch::GraphMatch(int img_width, int img_height, GraphMatchParams* params)
+{
+    this->params = params;
+
     this->img_width = img_width;
     this->img_height = img_height;
-
-    this->color_weight = COLOR_WEIGHT;
-    this->pos_weight = POS_WEIGHT;
-    this->area_weight = AREA_WEIGHT;
 }
 
 //Calculates matching cost and show matching results on the window
@@ -174,7 +181,7 @@ double GraphMatch::calcN2NDistance(NodeSig s1, NodeSig s2)
                                                                         //must be diagonal distance
                                                                         //of image = max distance
 
-    dist = dist + pos_weight*pow(sqrt(pow(s1.center.x-s2.center.x,2)+pow(s1.center.y-s2.center.y,2))/max_dist, 2);
+    dist = dist + params->pos_weight*pow(sqrt(pow(s1.center.x-s2.center.x,2)+pow(s1.center.y-s2.center.y,2))/max_dist, 2);
 
 
     //difference between colors
@@ -183,13 +190,13 @@ double GraphMatch::calcN2NDistance(NodeSig s1, NodeSig s2)
                          fabs(s1.colorB-s2.colorB))/255.0/3.0;
 
 
-    dist = dist + color_weight*pow(color_dist,2);
+    dist = dist + params->color_weight*pow(color_dist,2);
 
 
     //difference between areas
     double area_dist = fabs(s1.area-s2.area) / (double)(img_width*img_height);
 
-    dist = dist + area_weight*pow(area_dist,2);
+    dist = dist + params->area_weight*pow(area_dist,2);
 
     return dist;
 

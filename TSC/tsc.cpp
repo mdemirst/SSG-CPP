@@ -1,8 +1,74 @@
 #include "tsc.h"
+#include <math.h>
+#include "defs.h"
+#include "utils.h"
 
-TSC::TSC(QObject *parent) :
-    QObject(parent)
+
+
+TSC::TSC()
 {
+    std::vector<std::string> img_files = getFiles(DATASET_FOLDER);
+    Mat img = imread(DATASET_FOLDER + img_files[START_IDX]);
+    int img_height = img.size().height;
+    int img_width = img.size().width;
+
+    detector.tau_w = 5;//20;//5;
+    detector.tau_n = 5;//15;
+    detector.tau_p = 5;//3//20;
+    detector.tau_avgdiff = 0.15;//0.00;//0.15;//0.4;
+    detector.focalLengthPixels = 550;//350;//550;
+    detector.satLower = 10;
+    detector.satUpper = 255;
+    detector.valLower = 10;
+    detector.valUpper = 255;
+    detector.noHarmonics = 10;
+    detector.image_counter = START_IDX;
+    detector.shouldProcess = false;
+    detector.debugMode = true;
+    detector.debugFilePath = "/home/isl-mahmut/Datasets/New-College/";
+    detector.debugFilePrefix = "rgb_";
+    detector.debugFileNo = END_IDX-START_IDX;
+    detector.usePreviousMemory = false;
+    detector.previousMemoryPath = "";
+    detector.dbmanager = &dbmanager;
+
+
+    detector.tau_inv = 0.4;//0.1;//0.4;        //Incoherency threshold
+    detector.tau_val_mean = 0.2;//0.2;   //tau_mu
+    detector.tau_val_var = 0.01;//0.01;    //tau_sigma
+
+    // This should be done before starting the process
+    bubbleProcess::calculateImagePanAngles(detector.focalLengthPixels,img_width,img_height);
+    bubbleProcess::calculateImageTiltAngles(detector.focalLengthPixels,img_width,img_height);
+
+    QString basepath = QDir::homePath().append("/TSC");
+    basepath.append("/visual_filters");
+
+    QString path(basepath);
+
+    path.append("/filtre0.txt");
+    ImageProcess::readFilter(path,29,false,false,false);
+    path.clear();
+    path = basepath;
+
+    path.append("/filtre6.txt");
+    ImageProcess::readFilter(path,29,false,false,false);
+    path.clear();
+    path = basepath;
+
+    path.append("/filtre12.txt");
+    ImageProcess::readFilter(path,29,false,false,false);
+    path.clear();
+    path = basepath;
+
+    path.append("/filtre18.txt");
+    ImageProcess::readFilter(path,29,false,false,false);
+    path.clear();
+    path = basepath;
+
+    path.append("/filtre36.txt");
+    ImageProcess::readFilter(path,29,false,false,false);
+    createDirectories("");
 }
 
 bool TSC::createDirectories(QString previousMemoryPath)
@@ -90,45 +156,6 @@ bool TSC::createDirectories(QString previousMemoryPath)
     return true;
 }
 
-bool TSC::saveParameters(QString filepath)
-{
-    QString fullpath = filepath;
-
-    fullpath.append("/PDparams.txt");
-
-    QFile file(fullpath);
-
-    if(file.open(QFile::WriteOnly))
-    {
-        QTextStream str(&file);
-
-        str<<"tau_w "<<detector.tau_w<<"\n";
-        str<<"tau_n "<<detector.tau_n<<"\n";
-        str<<"tau_p "<<detector.tau_p<<"\n";
-        str<<"tau_inv "<<detector.tau_inv<<"\n";
-        str<<"tau_avgdiff "<<detector.tau_avgdiff<<"\n";
-        str<<"focal_length_pixels "<<detector.focalLengthPixels<<"\n";
-        str<<"tau_val_mean "<<detector.tau_val_mean<<"\n";
-        str<<"tau_val_var "<<detector.tau_val_var<<"\n";
-        str<<"sat_lower "<<detector.tau_avgdiff<<"\n";
-        str<<"sat_upper "<<detector.focalLengthPixels<<"\n";
-        str<<"val_lower "<<detector.tau_val_mean<<"\n";
-        str<<"val_upper "<<detector.tau_val_var<<"\n";
-        str<<"debug_mode "<<detector.debugMode<<"\n";
-        str<<"debug_filePath "<<QString::fromStdString(detector.debugFilePath)<<"\n";
-        str<<"debug_fileNo "<<detector.debugFileNo<<"\n";
-
-        file.close();
-    }
-    else
-    {
-        qDebug()<<"Param File could not be opened for writing!!";
-        return false;
-    }
-
-    return true;
-}
-
 double TSC::compareHistHK( InputArray _H1, InputArray _H2, int method )
 {
     Mat H1 = _H1.getMat(), H2 = _H2.getMat();
@@ -181,161 +208,47 @@ void TSC::writeInvariant(cv::Mat inv, int count)
     }
 }
 
-void TSC::processImages()
+float TSC::processImage(const Mat& cur_img, bool isLastImage)
 {
-    int img_width = 640;
-    int img_height = 480;
+    detector.currentImage =  cur_img;
 
-    detector.tau_w = 3;
-    detector.tau_n = 3;
-    detector.tau_p = 10;
-    detector.tau_avgdiff = 0.4;
-    detector.focalLengthPixels = 550;
-    detector.satLower = 10;
-    detector.satUpper = 255;
-    detector.valLower = 10;
-    detector.valUpper = 255;
-    detector.noHarmonics = 10;
-    detector.image_counter = 1;
-    detector.shouldProcess = false;
-    detector.debugMode = true;
-    detector.debugFilePath = "/home/isl-mahmut/Datasets/Cold/";
-    detector.debugFileNo = 1500;
-    detector.usePreviousMemory = false;
-    detector.previousMemoryPath = "";
-    detector.dbmanager = &dbmanager;
+    float score = detector.processImage();
 
-
-    detector.tau_inv = 0.2;
-    detector.tau_val_mean = 0.1;
-    detector.tau_val_var = 0.003;
-
-
-
-    /***********************************************************/
-    qDebug()<<"Saturation and Value thresholds"<<detector.satLower<<detector.satUpper<<detector.valLower<<detector.valUpper<<detector.tau_avgdiff;
-
-    if(detector.debugMode)
+    if(isLastImage)
     {
-        qDebug()<<"Debug mode is on!! File Path"<<QString::fromStdString(detector.debugFilePath)<<"No of files to be processed"<<detector.debugFileNo;
-    }
-    /********************************************/
-
-    // This should be done before starting the process
-    bubbleProcess::calculateImagePanAngles(detector.focalLengthPixels,img_width,img_height);
-    bubbleProcess::calculateImageTiltAngles(detector.focalLengthPixels,img_width,img_height);
-
-    QString basepath = QDir::homePath().append("/TSC");
-    basepath.append("/visual_filters");
-
-    QString path(basepath);
-
-    path.append("/filtre0.txt");
-    qDebug()<<path;
-
-    ImageProcess::readFilter(path,29,false,false,false);
-
-    path.clear();
-    path = basepath;
-
-    path.append("/filtre6.txt");
-    qDebug()<<path;
-
-    ImageProcess::readFilter(path,29,false,false,false);
-
-    path.clear();
-    path = basepath;
-
-    path.append("/filtre12.txt");
-    qDebug()<<path;
-
-
-    ImageProcess::readFilter(path,29,false,false,false);
-
-    path.clear();
-    path = basepath;
-
-    path.append("/filtre18.txt");
-    qDebug()<<path;
-
-
-    ImageProcess::readFilter(path,29,false,false,false);
-
-    path.clear();
-    path = basepath;
-
-
-    path.append("/filtre36.txt");
-    qDebug()<<path;
-
-    ImageProcess::readFilter(path,29,false,false,false);
-
-    createDirectories("");
-    saveParameters(mainDirectoryPath);
-
-
-    QFile scores_file( mainDirectoryPath.append("/").append(QString("dissimilarity_scores.txt")) );
-    scores_file.open(QIODevice::ReadWrite);
-    QTextStream scores_stream( &scores_file );
-
-    for(int i = 1; i <= detector.debugFileNo; i++)
-    {
-        QString path = QString::fromStdString(detector.debugFilePath);
-
-        path.append("Cold-").append(QString::number(i).rightJustified(4,'0')).append(".jpg");
-
-        Mat imm = imread(path.toStdString().data(),CV_LOAD_IMAGE_COLOR);
-
-        qint64 starttime = QDateTime::currentMSecsSinceEpoch();
-
-        cv::Rect rect(0,0,imm.cols,(imm.rows));
-
-        detector.currentImage = imm(rect);
-
-        scores_stream << detector.processImage() << endl;
-
-        qint64 stoptime = QDateTime::currentMSecsSinceEpoch();
-
-        qDebug()<<(float)(stoptime-starttime);
-
-    }
-
-    scores_file.close();
-
-
-    if(detector.currentPlace && detector.currentPlace->id > 0 && detector.currentPlace->members.size() > 0)
-    {
-        detector.currentPlace->calculateMeanInvariant();
-
-        qDebug()<<"Current place mean invariant: "<<detector.currentPlace->meanInvariant.rows<<detector.currentPlace->meanInvariant.cols<<detector.currentPlace->members.size();
-
-        if(detector.currentPlace->memberIds.rows >= detector.tau_p)
+        if(detector.currentPlace && detector.currentPlace->id > 0 && detector.currentPlace->members.size() > 0)
         {
+            detector.currentPlace->calculateMeanInvariant();
 
-            dbmanager.insertPlace(*detector.currentPlace);
+            if(detector.currentPlace->memberIds.rows >= detector.tau_p)
+            {
 
-            detector.detectedPlaces.push_back(*detector.currentPlace);
+                dbmanager.insertPlace(*detector.currentPlace);
 
-            detector.placeID++;
+                detector.detectedPlaces.push_back(*detector.currentPlace);
+
+                detector.placeID++;
+            }
+
+            delete detector.currentPlace;
+            detector.currentPlace = 0;
+            detector.shouldProcess = false;
+
         }
 
-        delete detector.currentPlace;
-        detector.currentPlace = 0;
-        detector.shouldProcess = false;
+        // Delete the current place
+        if(detector.currentPlace)
+        {
+            delete detector.currentPlace;
+            detector.currentPlace = 0;
+        }
 
+        // Insert basepoints to the database
+        if(detector.wholebasepoints.size()>0)
+            dbmanager.insertBasePoints(detector.wholebasepoints);
+
+        dbmanager.closeDB();
     }
 
-    // Delete the current place
-    if(detector.currentPlace)
-    {
-        delete detector.currentPlace;
-        detector.currentPlace = 0;
-    }
-
-    // Insert basepoints to the database
-    if(detector.wholebasepoints.size()>0)
-        dbmanager.insertBasePoints(detector.wholebasepoints);
-
-    dbmanager.closeDB();
-
+    return score;
 }

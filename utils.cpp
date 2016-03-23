@@ -189,4 +189,23 @@ cv::Point2f getCoordCold(std::string filename)
     return coord;
 }
 
+int getMedian(vector<int> v)
+{
+    std::nth_element(v.begin(), v.begin() + v.size()/2, v.end());
+    return v[v.size()/2];
+}
+
+// returns true iff all the elements of v are identical
+bool getRegionStatus(vector<int> v)
+{
+    for(int i = 0; i < v.size()-1; i++)
+    {
+        if(v[i] != v[i+1])
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
 
