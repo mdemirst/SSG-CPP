@@ -11,6 +11,8 @@
 #include <opencv2/flann/flann.hpp>
 #include <string.h>
 #include <dirent.h>
+#include "utilTypes.h"
+#include "graphmatch.h"
 
 
 using namespace cv;
@@ -28,5 +30,6 @@ std::vector<std::string> getFiles(std::string dir);
 cv::Point2f getCoordCold(std::string filename);
 int getMedian(vector<int> v);
 bool getRegionStatus(vector<int> v);
+
 
 #endif // UTILS_H

@@ -209,3 +209,140 @@ bool getRegionStatus(vector<int> v)
     return true;
 }
 
+
+/////////////////////////////////////
+////PlaceDistances Class Definition//
+/////////////////////////////////////
+
+//PlaceDistances::PlaceDistances(GraphMatch* gm)
+//{
+//    this->gm = gm;
+//    max_id = 0;
+//}
+
+////Calculates pairwise distace between new detected place and old detected places
+////Stores pairwise distances in the distances map structure.
+////This is used in order to prevent to re calculate previously calculated distances at each step
+////Only new pairwise distances will be calculated.
+////Please note that in a place there may be multiple members. In this case, we will take the average
+////of the distance
+//void PlaceDistances::updatePlace(PlaceSSG& place, vector<PlaceSSG>& old_places)
+//{
+//    if(find(place_ids.begin(), place_ids.end(),place.getId()) == place_ids.end())
+//    {
+//        place_ids.push_back(place.getId());
+//        if(place.getId() > max_id)  max_id = place.getId();
+//    }
+
+//    for(int i = 0; i < old_places.size(); i++)
+//    {
+//        setDistance(place, old_places[i], calculateDistance(place, old_places[i]));
+//    }
+//}
+
+
+//void PlaceDistances::deletePlace(PlaceSSG& place)
+//{
+//    int max_id = 0;
+//    typedef map<pair<int,int>,double> DistanceMap;
+
+//    for( DistanceMap::const_iterator it = distances.begin(); it != distances.end(); it++ )
+//    {
+//        pair<int,int> coord = it->first;
+
+//        if(coord.first == place.getId() || coord.second == place.getId())
+//        {
+//            distances.erase(coord);
+//        }
+//        else
+//        {
+//            if(coord.first > max_id)
+//                max_id = coord.first;
+//            else if(coord.second > max_id)
+//                max_id = coord.second;
+//        }
+//    }
+
+//    this->max_id = max_id;
+//}
+
+
+////Calculate distance between two places.
+////Note that one place can have multiple members
+//double PlaceDistances::calculateDistance(PlaceSSG& place1, PlaceSSG& place2)
+//{
+//    double distance = 0;
+//    int count = 0;
+//    for(int i = 0; i < place1.getCount(); i++)
+//    {
+//        for(int j = 0; j < place2.getCount(); j++)
+//        {
+//            Mat P, C;
+//            distance += gm->matchTwoImages(place1.getMembers()[i].getRAG(),place2.getMembers()[j].getRAG(),P,C);
+//            count++;
+//        }
+//    }
+
+//    //qDebug() << count;
+//    return distance/count;
+//}
+
+////Adds new distance value associated with two provided places into distances map structure
+//void PlaceDistances::setDistance(PlaceSSG& place1, PlaceSSG& place2, double distance)
+//{
+//    int id1 = min(place1.getId(), place2.getId());
+//    int id2 = max(place1.getId(), place2.getId());
+
+//    distances[make_pair(id1, id2)] = distance;
+//}
+
+////Constructs distance matrix in C style
+//double** PlaceDistances::getDistanceMatrix()
+//{
+//    double** dist_matrix = new double*[max_id+1];
+
+//    for (int i = 0; i < max_id+1; i++)
+//    {
+//        dist_matrix[i] = new double[max_id+1];
+//    }
+
+//    typedef map<pair<int,int>,double> DistanceMap;
+
+//    for( DistanceMap::const_iterator it = distances.begin(); it != distances.end(); it++ )
+//    {
+//        pair<int,int> coord = it->first;
+//        double dist = it->second;
+//        dist_matrix[coord.first][coord.second] = dist;
+//        dist_matrix[coord.second][coord.first] = dist;
+//    }
+
+//    return dist_matrix;
+//}
+
+//void PlaceDistances::printDistanceMatrix()
+//{
+//    double** dist_matrix = getDistanceMatrix();
+
+//    setprecision(2);
+
+//    for(int i = 0; i < max_id+1; i++)
+//    {
+//        for(int j = 0; j < max_id+1; j++)
+//        {
+//            cout << dist_matrix[i][j] << "\t";
+//        }
+//        cout << endl;
+//    }
+//}
+
+
+////class PlaceDistances
+////{
+////    Mat distances;
+////public:
+////    PlaceDistances();
+////    void addPlace(const PlaceSSG& place);
+////    void addPlaces(const vector<PlaceSSG> places);
+////    void updatePlace(const PlaceSSG& place);
+////    double getDistance(const PlaceSSG& place1, const PlaceSSG& place2);
+////};

@@ -7,6 +7,7 @@
 #include "segmenttrack.h"
 #include "TSC/tsc.h"
 #include "defs.h"
+#include "recognition.h"
 
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -286,7 +287,38 @@ void MainWindow::on_btn_merged_process_images_clicked()
                      this, SLOT(showMap(QImage)));
     QObject::connect(tsc_hybrid->seg_track, SIGNAL(showImgOrg(QImage)),
                      this, SLOT(showImgOrg(QImage)));
+    QObject::connect(tsc_hybrid->seg_track->gm, SIGNAL(showMatchImage(QImage)),
+                     this, SLOT(showMatchImage(QImage)));
 
     ui->lbl_map->installEventFilter(tsc_hybrid);
     tsc_hybrid->processImages(DATASET_FOLDER, START_IDX, END_IDX);
+}
+
+void MainWindow::on_pushButton_clicked()
+{
+    recognition = new Recognition (ssg_params,
+                                   seg_track_params,
+                                   seg_params,
+                                   gm_params);
+    QObject::connect(recognition, SIGNAL(showTree(QImage)),
+                     this, SLOT(showTree(QImage)));
+    QObject::connect(recognition, SIGNAL(printMessage(QString)),
+                     this, SLOT(printMessage(QString)));
+
+    recognition->testRecognition();
+}
+
+void MainWindow::showTree(QImage img)
+{
+    ui->lbl_tree_draw->setPixmap(QPixmap::fromImage(img));
+}
+
+void MainWindow::printMessage(QString str)
+{
+    ui->te_recognition->insertPlainText(str+"\n");
+}
+
+void MainWindow::on_btn_test_next_clicked()
+{
+    recognition->next = true;
 }

@@ -25,6 +25,7 @@ public:
     bool eventFilter( QObject* watched, QEvent* event );
     void drawMap();
     void processImage(const Mat cur_img, vector<vector<NodeSig> > &ns_vec);
+    GraphMatch* gm;
 
 public:
     int mapScaleFactor;
@@ -35,7 +36,7 @@ private:
     Mat M;
     vector<pair<NodeSig, int> > M_ns; //Average node signatures
     SegmentTrackParams* params;
-    GraphMatch* gm;
+
     Segmentation* seg;
     void drawCursor(Mat& img);
     Point cursor;

@@ -33,14 +33,21 @@
 //#define DATASET_FOLDER "/home/isl-mahmut/Datasets/seq1_sunny4/std_cam/"
 //#define END_IDX 1777
 
-#define DATASET_FOLDER "/home/isl-mahmut/Datasets/seq2_cloudy1/std_cam/"
-#define END_IDX 2267
+//#define DATASET_FOLDER "/home/isl-mahmut/Datasets/seq2_cloudy1/std_cam/"
+//#define END_IDX 2267
 
 //#define DATASET_FOLDER "/home/isl-mahmut/Datasets/sa_seq1_cloudy1/std_cam/"
 //#define END_IDX 997
 
 //#define DATASET_FOLDER "/home/isl-mahmut/Datasets/New-College/"
 //#define END_IDX 7855
+
+#define DATASET_FOLDER "/home/isl-mahmut/Datasets/CamVid-8-10/"
+//#define DATASET_FOLDER "/home/isl-mahmut/Datasets/CamVid-new-6/"
+#define END_IDX 10
+
+//#define DATASET_FOLDER "/home/isl-mahmut/Datasets/Cagatay/"
+//#define END_IDX 4
 
 
 #define PEN_WIDTH1 1
@@ -51,7 +58,7 @@
 #define INIT_TAU_N 5//10
 #define INIT_TAU_C 0.2//0.4
 #define INIT_TAU_W 15//30
-#define INIT_TAU_M 0.020//0.015
+#define INIT_TAU_M 0.05//0.020//0.015
 #define INIT_TAU_F 15//30
 #define INIT_TAU_D 1.0
 #define INIT_TAU_P 0.8

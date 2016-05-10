@@ -5,6 +5,7 @@
 #include "placedetection.h"
 #include "segmenttrack.h"
 #include "tschybrid.h"
+#include "recognition.h"
 
 namespace Ui {
 class MainWindow;
@@ -26,12 +27,15 @@ public:
     SegmentTrackParams* seg_track_params;
     SegmentationParams* seg_params;
     GraphMatchParams* gm_params;
+    Recognition* recognition;
     
 private slots:
     void showImgOrg(QImage img);
     void showMatchImage(QImage img);
     void showMap(QImage img);
     void showSSG(QImage img);
+    void showTree(QImage img);
+    void printMessage(QString str);
 
     void showTrackMap(QImage img);
     void showTrackSegment(QImage img);
@@ -81,6 +85,10 @@ private slots:
     void on_btn_stop_process_clicked();
 
     void on_btn_merged_process_images_clicked();
+
+    void on_pushButton_clicked();
+
+    void on_btn_test_next_clicked();
 
 private:
     Ui::MainWindow *ui;

@@ -77,9 +77,110 @@ class NodeSig
 
 class SSG
 {
+    int id;
 public:
+    SSG(){}
+    SSG(int id, vector<NodeSig>& nodes)
+    {
+        this->id = id;
+        for(int i = 0; i < nodes.size(); i++)
+            this->nodes.push_back(make_pair(nodes[i],1));
+    }
+    int getId(){return id;}
     vector<pair<NodeSig, int> > nodes;
 };
 
+class RAG_m
+{
+public:
+    RAG_m(){}
+    RAG_m(vector<NodeSig>& nodes){this->nodes = nodes;}
+    vector<NodeSig> nodes;
+};
+
+
+///////////////////////////////
+//BasePoint Class Declaration//
+///////////////////////////////
+
+class BasePointSSG
+{
+    int number;
+    string filename;
+    vector<NodeSig> rag;
+public:
+    BasePointSSG(int number, string filename, vector<NodeSig>& rag)
+    {
+        this->number = number;
+        this->filename = filename;
+        this->rag = rag;
+    }
+    int getNumber(){return number;}
+    string getFilename(){return filename;}
+    vector<NodeSig>& getRAG(){return rag;}
+};
+
+///////////////////////////
+//Place Class Declaration//
+///////////////////////////
+
+class PlaceSSG
+{
+    int id;
+    vector<SSG*> members;
+public:
+    PlaceSSG(int id, SSG* member)
+    {
+        this->id = id;
+        this->members.push_back(member);
+    }
+    void addMember(SSG* member){this->members.push_back(member);}
+    SSG* getMember(int member_id)
+    {
+
+        if(member_id < getCount())
+        {
+            int number = members[member_id]->nodes.size();
+            return members[member_id];
+        }
+        else
+            return NULL;
+    }
+    int getCount() {return members.size();}
+    int getId() {return id;}
+};
+
+//////////////////////////////
+//TreeNode Class Declaration//
+//////////////////////////////
+
+class TreeNode
+{
+    int label;
+    double val;
+    double x_pos;
+    TreeNode* parent;
+    vector<TreeNode*> children;
+    PlaceSSG* descriptor;
+
+public:
+    TreeNode();
+    TreeNode(int label, double val);
+    void setLabel(int label){this->label = label;}
+    int getLabel(){return label;}
+    void setVal(double val){this->val = val;}
+    double getVal(){return val;}
+    void setXPos(double x_pos){this->x_pos = x_pos;}
+    double getXPos(){return x_pos;}
+    void setParent(TreeNode* parent){this->parent = parent;}
+    TreeNode* getParent(){return parent;}
+    void addChild(TreeNode* node);
+    vector<TreeNode*>& getChildren();
+    void setDescriptor(PlaceSSG* descriptor){this->descriptor = descriptor;}
+    PlaceSSG* getDescriptor(){return descriptor;}
+    bool isTerminal(){return children.size() == 0;}
+    bool isRoot(){return parent == NULL;}
+
+};
 
 #endif // UTILTYPES_H

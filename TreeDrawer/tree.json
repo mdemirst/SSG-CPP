@@ -1,0 +1,67 @@
+{ "innerNodes": [ 
+{ 
+"value": 0.301125, 
+"toID": "13", 
+"terminalNodes" : [ 
+ { 
+"color" : "red", 
+"ids": [ 
+"jaguarZ:4"
+]}, 
+{ 
+"color" : "red", 
+"ids": [ 
+"jaguarZ:6"
+]}, 
+{ 
+"color" : "red", 
+"ids": [ 
+"jaguarZ:7"
+]}, 
+{ 
+"color" : "red", 
+"ids": [ 
+"jaguarZ:8"
+]}, 
+{ 
+"color" : "red", 
+"ids": [ 
+"jaguarZ:3"
+]} 
+],
+"otherIds": [ "-1" ]
+},
+{ 
+"value": 0.374558, 
+"toID": "14", 
+"terminalNodes" : [ 
+ { 
+"color" : "red", 
+"ids": [ 
+"jaguarZ:1"
+]}, 
+{ 
+"color" : "red", 
+"ids": [ 
+"jaguarZ:2"
+]} 
+],
+"otherIds": [ 
+"13" 
+]
+},
+{ 
+"value": 0.706997, 
+"toID": "-1", 
+"terminalNodes" : [ 
+ { 
+"color" : "red", 
+"ids": [ 
+"jaguarZ:5"
+]} 
+],
+"otherIds": [ 
+"14" 
+]
+}
+]}

@@ -40,7 +40,10 @@ SOURCES += main.cpp\
       TSC/placedetector.cpp \
       TSC/utility.cpp \
       segmenttrack.cpp \
-    tschybrid.cpp
+    tschybrid.cpp \
+    cluster.c \
+    recognition.cpp \
+    utilTypes.cpp
 
 HEADERS  += mainwindow.h \
       segmentation.h \
@@ -70,7 +73,10 @@ HEADERS  += mainwindow.h \
       TSC/utility.h \
       segmenttrack.h \
       defs.h \
-    tschybrid.h
+    tschybrid.h \
+    cluster.h \
+    recognition.h \
+    SimpleMatrix.h
 
 FORMS    += mainwindow.ui
 

@@ -76,8 +76,6 @@ public:
 class Level
 {
 public:
-    Level();
-    ~Level();
     std::vector<int> members;
     std::vector<int> parentNodes;
     double val;

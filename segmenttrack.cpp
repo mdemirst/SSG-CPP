@@ -154,10 +154,10 @@ void SegmentTrack::processImage(const Mat cur_img, vector<vector<NodeSig> > &ns_
         //Show original images on the window
         //emit showImg1(mat2QImage(prev_img));
         //emit showImg2(mat2QImage(cur_img));
-        emit showImgOrg(mat2QImage(cur_img_seg));
+        emit showImgOrg(mat2QImage(cur_img));
 
         //Drawing purposes only
-        //gm->drawMatches(ns_vec[ns_vec.size()-2], ns_vec.back(), prev_img_seg, cur_img_seg);
+        gm->drawMatches(ns_vec[ns_vec.size()-2], ns_vec.back(), prev_img_seg, cur_img_seg);
 
         //Fill node existence map
         fillNodeMap(ns_vec);

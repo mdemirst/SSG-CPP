@@ -77,13 +77,41 @@ float GraphMatch::drawMatches(vector<NodeSig> ns1, vector<NodeSig> ns2,
     vector<Point> nonzero_locs;
     findNonZero(assignment,nonzero_locs);
 
+    //Draw RAG lines
+    for(int i = 0; i < ns1.size(); i++)
+    {
+        for(int j = 0; j < ns1[i].edges.size(); j++)
+        {
+            NodeSig n1 = ns1[i];
+            NodeSig n2 = ns1[ns1[i].edges[j].first-1];
+
+            Point p1 = n1.center;
+            Point p2 = n2.center;
+
+            line(img_merged,p1,p2,MATCH_LINE_COLOR,MATCH_LINE_WIDTH);
+        }
+    }
+    for(int i = 0; i < ns2.size(); i++)
+    {
+        for(int j = 0; j < ns2[i].edges.size(); j++)
+        {
+            NodeSig n1 = ns2[i];
+            NodeSig n2 = ns2[ns2[i].edges[j].first-1];
+
+            Point p1 = n1.center+Point(img1.size().width,0);
+            Point p2 = n2.center+Point(img1.size().width,0);
+
+            line(img_merged,p1,p2,MATCH_LINE_COLOR,MATCH_LINE_WIDTH);
+        }
+    }
+
     //Draw optimal match --lines
     for(int i = 0; i < nonzero_locs.size(); i++)
     {
         Point p1 = ns1[nonzero_locs[i].y].center;
         Point p2 = ns2[nonzero_locs[i].x].center+Point(img1.size().width,0);
 
-        line(img_merged,p1,p2,MATCH_LINE_COLOR,MATCH_LINE_WIDTH);
+        //line(img_merged,p1,p2,MATCH_LINE_COLOR,MATCH_LINE_WIDTH);
     }
 
     //Draw optimal match -- circles
@@ -93,11 +121,13 @@ float GraphMatch::drawMatches(vector<NodeSig> ns1, vector<NodeSig> ns2,
         Point p2 = ns2[nonzero_locs[i].x].center+Point(img1.size().width,0);
         double r1 = sqrt(ns1[nonzero_locs[i].y].area)/4.0;
         double r2 = sqrt(ns1[nonzero_locs[i].y].area)/4.0;
-        r1 = max(r1,1.0);
-        r2 = max(r2,1.0);
+        r1 = max(r1,1.0)*1.5;
+        r2 = max(r2,1.0)*1.5;
 
         circle(img_merged,p1,r1,Scalar(ns1[nonzero_locs[i].y].colorB, ns1[nonzero_locs[i].y].colorG, ns1[nonzero_locs[i].y].colorR), -1);
         circle(img_merged,p2,r2,Scalar(ns2[nonzero_locs[i].y].colorB, ns2[nonzero_locs[i].y].colorG, ns2[nonzero_locs[i].y].colorR), -1);
+        circle(img_merged,p1,r1,Scalar(0,0,0), 1);
+        circle(img_merged,p2,r2,Scalar(0,0,0), 1);
         //line(img_merged,p1,p2,MATCH_LINE_COLOR,MATCH_LINE_WIDTH);
 
         float dist = cost.at<float>(nonzero_locs[i].y, nonzero_locs[i].x);
@@ -109,7 +139,7 @@ float GraphMatch::drawMatches(vector<NodeSig> ns1, vector<NodeSig> ns2,
         ss << dist;
         string cost_str = ss.str();
         Point center_pt((p1.x + p2.x) / 2.0, (p1.y + p2.y) / 2.0);
-        putText(img_merged, cost_str, center_pt, cv::FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0, 0, 0), 1);
+        //putText(img_merged, cost_str, center_pt, cv::FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0, 0, 0), 1);
     }
 
     //Show matching results image on the window
@@ -119,10 +149,25 @@ float GraphMatch::drawMatches(vector<NodeSig> ns1, vector<NodeSig> ns2,
 
 }
 
+float GraphMatch::matchTwoImages(SSG& ssg1, SSG& ssg2, Mat& assignment, Mat& cost)
+{
+    vector<NodeSig> ns1, ns2;
+
+    for(int i = 0; i < ssg1.nodes.size(); i++)
+        ns1.push_back(ssg1.nodes[i].first);
+    for(int i = 0; i < ssg2.nodes.size(); i++)
+        ns2.push_back(ssg2.nodes[i].first);
+
+    return matchTwoImages(ns1, ns2, assignment, cost);
+}
+
 //Calculates matching cost and show matching results on the window
 float GraphMatch::matchTwoImages(vector<NodeSig> ns1, vector<NodeSig> ns2,
                                  Mat& assignment, Mat& cost)
 {
+    if(ns1.size() == 0 || ns2.size() == 0)
+        return -1;
+
     //Construct [rowsxcols] cost matrix using pairwise
     //distance between node signature
     int rows = ns1.size();

@@ -45,6 +45,8 @@ public:
                       Mat img1, Mat img2);
     float matchTwoImages(vector<NodeSig> ns1, vector<NodeSig> ns2,
                          Mat& assignment, Mat& cost);
+    float matchTwoImages(SSG& ssg1, SSG& ssg2,
+                         Mat& assignment, Mat& cost);
     double calcN2NDistance(NodeSig s1, NodeSig s2);
     GraphMatchParams* params;
     int img_width, img_height;
