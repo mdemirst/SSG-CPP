@@ -6,6 +6,15 @@
 #include "placedetection.h"
 #include "qcustomplot.h"
 #include "TSC/utility.h"
+#include "recognition.h"
+
+enum{
+    DETECTION_NOT_STARTED,
+    DETECTION_PLACE_STARTED,
+    DETECTION_PLACE_ENDED,
+    DETECTION_IN_PLACE,
+    DETECTION_IN_TRANSITION
+};
 
 using namespace std;
 
@@ -20,9 +29,12 @@ public:
               SSGParams* ssg_params,
               SegmentTrackParams* seg_track_params,
               SegmentationParams* seg_params,
-              GraphMatchParams* gm_params);
+              GraphMatchParams* gm_params,
+              RecognitionParams* rec_params);
     void processImages(const string folder, const int start_idx, const int end_idx);
+    void processImagesHierarchical(const string folder, const int start_idx, const int end_idx);
     SegmentTrack* seg_track;
+    Recognition* recognition;
     bool eventFilter( QObject* watched, QEvent* event );
 
 
@@ -35,8 +47,10 @@ private:
     SegmentTrackParams* seg_track_params;
     SegmentationParams* seg_params;
     GraphMatchParams* gm_params;
+    RecognitionParams* rec_params;
     int cursor;
     vector<string> img_files;
+    vector<SSG*> SSGs; //Stores SSGs
     float calcCohScore(SegmentTrack* seg_track, vector<float>& coh_scores);
     void plotScoresSSG(vector<float> coherency_scores, vector<int> detected_places, cv::Point2f coord);
     void plotScoresTSC(vector<float> scores, Place* current_place, BasePoint cur_base_point, vector<Place> detected_places, vector<int>& tsc_detected_places);

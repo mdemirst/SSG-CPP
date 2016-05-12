@@ -22,8 +22,8 @@ class SSGProc : public QObject
     Q_OBJECT
 public:
     SSGProc();
-    static void updateSSG(SSG& ssg, vector<NodeSig> ns, Mat& map);
-    static Mat drawSSG(SSG& ssg, Mat& input);
+    static void updateSSG(SSG& ssg, vector<NodeSig>& ns, Mat& map);
+    static Mat drawSSG(SSG& ssg, Mat& input, float tau_p);
     static void updateNodeSig(pair<NodeSig, int>& ns, NodeSig new_ns);
 
 public:

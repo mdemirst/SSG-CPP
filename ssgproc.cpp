@@ -52,7 +52,7 @@ void SSGProc::updateNodeSig(pair<NodeSig, int>& ns, NodeSig new_ns)
 }
 
 //Updates SSG
-void SSGProc::updateSSG(SSG& ssg, vector<NodeSig> ns, Mat& map)
+void SSGProc::updateSSG(SSG& ssg, vector<NodeSig>& ns, Mat& map)
 {
     int last_frame = map.size().width-1;//0 based frame no
 
@@ -132,7 +132,7 @@ void SSGProc::updateSSG(SSG& ssg, vector<NodeSig> ns, Mat& map)
 }
 
 //Draws given SSG structure on image
-Mat SSGProc::drawSSG(SSG& ssg, Mat &input)
+Mat SSGProc::drawSSG(SSG& ssg, Mat &input, float tau_p)
 {
     Mat bg_img = Mat::zeros(input.size(), CV_8UC3);
     bg_img = Scalar(255,255,255);
@@ -153,10 +153,10 @@ Mat SSGProc::drawSSG(SSG& ssg, Mat &input)
         {
             //If both two connecting nodes appear in SSG
             //
-            if(ssg.nodes[i].second > longestApp*INIT_TAU_P)
+            if(ssg.nodes[i].second > longestApp*tau_p)
             {
                 int idx = ssg.nodes[i].first.edges[i].first;
-                if(ssg.nodes.size() > idx && ssg.nodes[idx].second > longestApp*INIT_TAU_P)
+                if(ssg.nodes.size() > idx && ssg.nodes[idx].second > longestApp*tau_p)
                 {
                     Point p1 = ssg.nodes[i].first.center;
                     Point p2 = ssg.nodes[idx].first.center;
@@ -169,7 +169,7 @@ Mat SSGProc::drawSSG(SSG& ssg, Mat &input)
 #endif
 
         //Draw nodes
-        if(ssg.nodes[i].second > longestApp*INIT_TAU_P)
+        if(ssg.nodes[i].second > longestApp*tau_p)
         {
             float img_area = bg_img.size().height*bg_img.size().width;
             float rad = sqrt(ssg.nodes[i].first.area/M_PI)/10.0;
@@ -183,7 +183,7 @@ Mat SSGProc::drawSSG(SSG& ssg, Mat &input)
 
     for(int i = 0; i < ssg.nodes.size(); i++)
     {
-        if(ssg.nodes[i].second > longestApp*INIT_TAU_P)
+        if(ssg.nodes[i].second > longestApp*tau_p)
         {
             float img_area = bg_img.size().height*bg_img.size().width;
             float rad = sqrt(ssg.nodes[i].first.area/M_PI)/2.0;

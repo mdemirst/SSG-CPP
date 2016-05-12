@@ -8,7 +8,8 @@ TSCHybrid::TSCHybrid(QCustomPlot* tsc_plot,
                      SSGParams* ssg_params,
                      SegmentTrackParams* seg_track_params,
                      SegmentationParams* seg_params,
-                     GraphMatchParams* gm_params)
+                     GraphMatchParams* gm_params,
+                     RecognitionParams* rec_params)
 {
     this->tsc_plot = tsc_plot;
     this->ssg_plot = ssg_plot;
@@ -17,6 +18,7 @@ TSCHybrid::TSCHybrid(QCustomPlot* tsc_plot,
     this->seg_track_params = seg_track_params;
     this->seg_params = seg_params;
     this->gm_params = gm_params;
+    this->rec_params = rec_params;
 
 
     ///////////////////
@@ -138,6 +140,12 @@ TSCHybrid::TSCHybrid(QCustomPlot* tsc_plot,
 
 
     seg_track = new SegmentTrack(seg_track_params, seg_params, gm_params);
+
+    recognition = new Recognition (rec_params,
+                                   ssg_params,
+                                   seg_track_params,
+                                   seg_params,
+                                   gm_params);
 
 
 }
@@ -276,6 +284,83 @@ void TSCHybrid::processImages(const string folder, const int start_idx, const in
     tsc_avg_plot->rescaleAxes();
     tsc_avg_plot->replot();
 
+}
+
+void TSCHybrid::processImagesHierarchical(const string folder, const int start_idx, const int end_idx)
+{
+
+    //Read dataset image files
+    img_files = getFiles(folder);
+
+    Mat img_org, img;
+    qint64 start_time, stop_time;
+
+    //SSG related variables
+    vector<vector<NodeSig> > ns_vec;  //Stores last tau_w node signatures
+    vector<float> coherency_scores_ssg;   //Stores all coherency scores
+    vector<int> detected_places_unfiltered;
+    vector<int> detected_places; //Stores all detected place ids
+    SSGs.push_back(new SSG(0));
+    TreeNode* hierarchy_tree;
+    vector<PlaceSSG> places;
+
+
+    //Process all images
+    for(int frame_no = start_idx; frame_no < end_idx-1; frame_no++)
+    {
+        img_org = imread(folder + img_files[frame_no]);
+        resize(img_org, img, cv::Size(0,0), IMG_RESCALE_RAT, IMG_RESCALE_RAT);
+        //emit showImgOrg(mat2QImage(img));
+
+        ///////////////
+        //Process SSG//
+        ///////////////
+
+        start_time = QDateTime::currentMSecsSinceEpoch();
+
+        seg_track->processImage(img, ns_vec);
+
+        //Calculate coherency based on existence map
+        calcCohScore(seg_track, coherency_scores_ssg);
+
+        stop_time = QDateTime::currentMSecsSinceEpoch();
+        //cout << "SSG time elapsed: " << stop_time-start_time << endl;
+
+        //Show connectivity map
+        showMap(seg_track->getM());
+
+        //Decide last frame is whether transition or place
+        //Results are written into detected places
+        int detection_result = detectPlace(coherency_scores_ssg,detected_places_unfiltered,detected_places);
+
+        cv::Point2f coord = getCoordCold(img_files[START_IDX+detected_places.size()]);
+
+        //Plot transition and place regions
+        plotScoresSSG(coherency_scores_ssg, detected_places, coord);
+
+        //If started for new place
+        //Create new SSG
+        if(detection_result == DETECTION_PLACE_STARTED)
+        {
+            SSGs.push_back(new SSG(SSGs.size()));
+            SSGProc::updateSSG(*SSGs.back(), ns_vec.back(), seg_track->getM());
+        }
+        else if(detection_result == DETECTION_PLACE_ENDED)
+        {
+            emit showSSG(mat2QImage(SSGProc::drawSSG(*SSGs.back(), img, params->tau_p)));
+
+            PlaceSSG new_place(SSGs.size()-1, SSGs.back());
+
+            recognition->performRecognition(places, new_place, hierarchy_tree);
+        }
+        else if(detection_result == DETECTION_IN_PLACE)
+        {
+            SSGProc::updateSSG(*SSGs.back(), ns_vec.back(), seg_track->getM());
+        }
+
+        //Wait a little for GUI processing
+        waitKey(1);
+    }
 }
 
 float TSCHybrid::calcCohScore(SegmentTrack* seg_track, vector<float>& coh_scores)
@@ -641,7 +726,7 @@ int  TSCHybrid::detectPlace(vector<float> coherency_scores,
 {
     if(coherency_scores.size() == 0)
     {
-        return 0;
+        return DETECTION_NOT_STARTED;
     }
 
 
@@ -699,16 +784,16 @@ int  TSCHybrid::detectPlace(vector<float> coherency_scores,
         if(last_place_type != detected_places.back())
         {
             if(detected_places.back() < 0)
-                return -1;
+                return DETECTION_PLACE_ENDED;
             else
-                return 1;
+                return DETECTION_PLACE_STARTED;
         }
         else
-            return 0;
+            return last_place_type > 0 ? DETECTION_IN_PLACE : DETECTION_IN_TRANSITION;
     }
     else
     {
-        return 0;
+        return DETECTION_NOT_STARTED;
     }
 }
 

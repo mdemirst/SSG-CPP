@@ -29,7 +29,7 @@ public:
 
 public:
     int mapScaleFactor;
-    Mat getM();
+    Mat& getM();
     vector<pair<NodeSig, int > > getM_ns();
 
 private:

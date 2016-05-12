@@ -27,6 +27,7 @@ public:
     SegmentTrackParams* seg_track_params;
     SegmentationParams* seg_params;
     GraphMatchParams* gm_params;
+    RecognitionParams* rec_params;
     Recognition* recognition;
     
 private slots:
@@ -89,6 +90,12 @@ private slots:
     void on_pushButton_clicked();
 
     void on_btn_test_next_clicked();
+
+    void on_scroll_tau_r_valueChanged(int value);
+
+    void on_btn_process_hierarchical_clicked();
+
+    void on_scroll_tau_p_valueChanged(int value);
 
 private:
     Ui::MainWindow *ui;

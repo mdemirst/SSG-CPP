@@ -4,11 +4,13 @@
 #include "segmentation.h"
 
 
-Recognition::Recognition(SSGParams* ssg_params,
+Recognition::Recognition(RecognitionParams* rec_params,
+                         SSGParams* ssg_params,
                          SegmentTrackParams* seg_track_params,
                          SegmentationParams* seg_params,
                          GraphMatchParams* gm_params)
 {
+    this->rec_params = rec_params;
     this->ssg_params = ssg_params;
     this->seg_track_params = seg_track_params;
     this->seg_params = seg_params;
@@ -19,6 +21,8 @@ Recognition::Recognition(SSGParams* ssg_params,
     Mat img = imread(DATASET_FOLDER + img_files[START_IDX]);
     img_height = img.size().height*IMG_RESCALE_RAT;
     img_width = img.size().width*IMG_RESCALE_RAT;
+
+    plot_offset = 100;
 
     //Initialize new graph match and segmentation object
     gm = new GraphMatch(img_width, img_height, gm_params);
@@ -40,6 +44,32 @@ void Recognition::processTree(Node* tree, int size)
     }
 }
 
+void Recognition::drawSSG(Mat& img, SSG* ssg, Point coord, int height)
+{
+    Mat img_ssg(img_height, img_width, CV_8UC3, Scalar(255,255,255));
+
+    for(int i = 0; i < ssg->nodes.size(); i++)
+    {
+        Point p = ssg->nodes[i].first.center;
+        double r = sqrt(ssg->nodes[i].first.area)/4.0;
+        r = max(r,1.0);
+
+        circle(img_ssg,p,r,Scalar(ssg->nodes[i].first.colorB, ssg->nodes[i].first.colorG, ssg->nodes[i].first.colorR), -1);
+    }
+
+    //Predefined size
+    resize(img_ssg, img_ssg, cv::Size(80,60));
+
+    rectangle(img_ssg, Rect(0,0,img_ssg.size().width-1, img_ssg.size().height-1),Scalar(0,0,0));
+
+    Rect roi = Rect(coord.x-img_ssg.size().width/2.0, coord.y, img_ssg.size().width, img_ssg.size().height);
+
+    Mat image_roi = img(roi);
+
+    img_ssg.copyTo(image_roi);
+
+}
+
 void Recognition::drawBranch(Mat& img, TreeNode* node, int height, double scale_x, double scale_y)
 {
     if(!node->isTerminal())
@@ -47,9 +77,9 @@ void Recognition::drawBranch(Mat& img, TreeNode* node, int height, double scale_
         for(int i = 0; i < node->getChildren().size(); i++)
         {
             //qDebug() <<node->x_pos << node->children[i]->x_pos;
-            Point top(node->getXPos()*scale_x, height - 1 - node->getVal()*scale_y);
-            Point middle(node->getChildren()[i]->getXPos()*scale_x, height - 1 - node->getVal()*scale_y);
-            Point bottom(node->getChildren()[i]->getXPos()*scale_x, height - 1 - node->getChildren()[i]->getVal()*scale_y);
+            Point top(plot_offset+node->getXPos()*scale_x, height - plot_offset - 1 - node->getVal()*scale_y);
+            Point middle(plot_offset+node->getChildren()[i]->getXPos()*scale_x, height - plot_offset - 1 - node->getVal()*scale_y);
+            Point bottom(plot_offset+node->getChildren()[i]->getXPos()*scale_x, height - plot_offset - 1 - node->getChildren()[i]->getVal()*scale_y);
 
             line(img, top, middle, Scalar(0,0,0), 2);
             line(img, middle, bottom, Scalar(0,0,0), 2);
@@ -61,15 +91,18 @@ void Recognition::drawBranch(Mat& img, TreeNode* node, int height, double scale_
     }
     else
     {
-        int x_offset = 5;
-        int y_offset = 5;
+        int x_offset = 0;
+        int y_offset = 0;
         stringstream ss;
         for(int i = 0; i < node->getDescriptor()->getCount(); i++)
         {
             ss << node->getDescriptor()->getMember(i)->getId();
             if(i+1 < node->getDescriptor()->getCount()) ss << ", ";
         }
-        putText(img, ss.str(), Point(node->getXPos()*scale_x + x_offset, height - 1 - node->getVal()*scale_y - y_offset), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0,0,255),2);
+        Point coord(plot_offset+node->getXPos()*scale_x + x_offset, height - plot_offset - 1 - node->getVal()*scale_y - y_offset);
+        drawSSG(img, node->getDescriptor()->getMember(0), coord, height);
+        putText(img, ss.str(), coord, FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0,0,255),2);
+
     }
 }
 
@@ -77,12 +110,12 @@ void Recognition::drawTree(TreeNode* root_node, int nrPlaces, int height, int wi
 {
     Mat img(height, width, CV_8UC3, Scalar(255,255,255));
 
-    double scale_x = (double) width / nrPlaces;
-    double scale_y = (double) height / root_node->getVal();
+    double scale_x = (double) (width - 2*plot_offset) / nrPlaces;
+    double scale_y = (double) (height - 2*plot_offset) / root_node->getVal();
 
     drawBranch(img, root_node, height, scale_x, scale_y);
     int border_size = 50;
-    copyMakeBorder(img, img, border_size, border_size, border_size, border_size, BORDER_CONSTANT, Scalar(255, 255, 255));
+    //copyMakeBorder(img, img, border_size, border_size, border_size, border_size, BORDER_CONSTANT, Scalar(255, 255, 255));
 
 
     emit showTree(mat2QImage(img));
@@ -185,7 +218,7 @@ double** Recognition::calculateDistanceMatrix(vector<PlaceSSG>& places)
     return dist_matrix;
 }
 
-int Recognition::performRecognition(vector<PlaceSSG>& places, PlaceSSG new_place, TreeNode* hierarchy, double tau_r)
+int Recognition::performRecognition(vector<PlaceSSG>& places, PlaceSSG new_place, TreeNode* hierarchy)
 {
     int recognition_status = NOT_RECOGNIZED;
     //TODO: Incremental distance matrix creation
@@ -199,6 +232,7 @@ int Recognition::performRecognition(vector<PlaceSSG>& places, PlaceSSG new_place
         return RECOGNITION_ERROR;
 
     int nrPlaces = places.size();
+    thumbnail_scale = 1.0 / (nrPlaces+1);
 
     double** dist_matrix = calculateDistanceMatrix(places);
 
@@ -231,7 +265,7 @@ int Recognition::performRecognition(vector<PlaceSSG>& places, PlaceSSG new_place
                 int new_place_label = new_place_node->getLabel();
 
                 double dist = dist_matrix[sibling_label][new_place_label];
-                if(dist < tau_r)
+                if(dist < rec_params->tau_r)
                 {
                     TreeNode* recognized_node = new_place_parent->getChildren()[i];
                     PlaceSSG* detected_place = new_place_node->getDescriptor();
@@ -282,7 +316,7 @@ void Recognition::testRecognition()
 
 
         double tau_r = 0.01;
-        performRecognition(places, new_place, hierarchy_tree, tau_r);
+        performRecognition(places, new_place, hierarchy_tree);
 
         while(next == false) cvWaitKey(1);
         next = false;

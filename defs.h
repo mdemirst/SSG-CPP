@@ -3,8 +3,8 @@
 
 #define START_IDX 0
 
-//#define DATASET_FOLDER "/home/isl-mahmut/Datasets/seq1_cloudy1/std_cam/"
-//#define END_IDX 1458
+#define DATASET_FOLDER "/home/isl-mahmut/Datasets/seq1_cloudy1/std_cam/"
+#define END_IDX 1458
 
 //#define DATASET_FOLDER "/home/isl-mahmut/Datasets/seq1_cloudy2/std_cam/"
 //#define END_IDX 1832
@@ -39,15 +39,17 @@
 //#define DATASET_FOLDER "/home/isl-mahmut/Datasets/sa_seq1_cloudy1/std_cam/"
 //#define END_IDX 997
 
-//#define DATASET_FOLDER "/home/isl-mahmut/Datasets/New-College/"
-//#define END_IDX 7855
+#define DATASET_FOLDER "/home/isl-mahmut/Datasets/New-College/"
+#define END_IDX 7855
 
-#define DATASET_FOLDER "/home/isl-mahmut/Datasets/CamVid-8-10/"
-//#define DATASET_FOLDER "/home/isl-mahmut/Datasets/CamVid-new-6/"
-#define END_IDX 10
+//#define DATASET_FOLDER "/home/isl-mahmut/Datasets/CamVid-8-10/"
+//#define END_IDX 10
 
 //#define DATASET_FOLDER "/home/isl-mahmut/Datasets/Cagatay/"
 //#define END_IDX 4
+
+//#define DATASET_FOLDER "/home/isl-mahmut/Datasets/CamVid-Full/"
+//#define END_IDX 500
 
 
 #define PEN_WIDTH1 1
@@ -79,6 +81,8 @@
 #define COLOR_WEIGHT 0.5
 #define AREA_WEIGHT 0.7
 
+//Recognition parameters
+#define INIT_TAU_R 0.01
 
 #define MAP_FILTER_SIZE 3
 

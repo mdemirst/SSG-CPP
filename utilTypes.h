@@ -79,7 +79,7 @@ class SSG
 {
     int id;
 public:
-    SSG(){}
+    SSG(int id){this->id = id;}
     SSG(int id, vector<NodeSig>& nodes)
     {
         this->id = id;

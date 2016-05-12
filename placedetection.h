@@ -16,6 +16,7 @@ public:
               float tau_c,
               int tau_f,
               float tau_d,
+              float tau_p,
               float coeff_node_disappear1,
               float coeff_node_disappear2,
               float coeff_node_appear,
@@ -25,6 +26,7 @@ public:
     float tau_c;
     int tau_f;
     float tau_d;
+    float tau_p;
     float coeff_node_disappear1;
     float coeff_node_disappear2;
     float coeff_node_appear;

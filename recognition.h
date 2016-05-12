@@ -9,7 +9,7 @@
 #include <string>
 #include <sstream>
 #include "TSC/utility.h"
-#include <QThread>
+
 
 extern "C" {
 #include "cluster.h"
@@ -17,72 +17,56 @@ extern "C" {
 
 using namespace std;
 
-class Sleeper : public QThread
-{
-public:
-    static void usleep(unsigned long usecs){QThread::usleep(usecs);}
-    static void msleep(unsigned long msecs){QThread::msleep(msecs);}
-    static void sleep(unsigned long secs){QThread::sleep(secs);}
-};
-
 enum RecognitionStatus {RECOGNITION_ERROR, NOT_RECOGNIZED, RECOGNIZED};
 
-class TreeLeaf
+class RecognitionParams
 {
 public:
-    int left;
-    int right;
-    float val;
-    int parentConnection;
-    bool isused;
+    RecognitionParams(float tau_r){this->tau_r = tau_r;}
+    float tau_r;
 };
 
-
-class BDST : public QObject
-{
-    Q_OBJECT
-public:
-    QList<Level> levels;
-
-signals:
-
-public slots:
-
-};
-
-
-
+/////////////////////////////////////////////
+//Performs recognition on hierarchical tree//
+//SSGs are used as tree elements           //
+/////////////////////////////////////////////
 class Recognition : public QObject
 {
     Q_OBJECT
-public:
-    Recognition(SSGParams* ssg_params,
-                SegmentTrackParams* seg_track_params,
-                SegmentationParams* seg_params,
-                GraphMatchParams* gm_params);
-    Node* solveSLink(int nrows, int ncols, double** data);
-    void generateRAGs(const Node* tree, int nTree, vector<vector<NodeSig> >& rags, vector<Mat>& images);
-    Mat saveRAG(const vector<NodeSig> ns, string name);
-    void drawTree(TreeNode* root_node, int size, int height, int width);
-    void testRecognition();
-    int performRecognition(vector<PlaceSSG>& places, PlaceSSG new_place, TreeNode* hierarchy, double tau_r);
-    double** calculateDistanceMatrix(vector<PlaceSSG>& places);
-    TreeNode* findNode(int label, TreeNode* root);
-    TreeNode* convert2Tree(Node* tree, int nrNodes, int nrPlaces, vector<PlaceSSG>& places);
-    void sortTerminalNodes(TreeNode* node, int* last_pos);
-    void drawBranch(Mat& img, TreeNode* node, int height, double scale_x, double scale_y);
-    void processTree(Node* tree, int size);
-
+private:
     SSGParams* ssg_params;
     SegmentTrackParams* seg_track_params;
     SegmentationParams* seg_params;
     GraphMatchParams* gm_params;
     GraphMatch *gm;
     Segmentation *seg;
+    RecognitionParams* rec_params;
     vector<string> img_files;
-    vector<vector<NodeSig> > ns_all;
     int img_width;
     int img_height;
+    float thumbnail_scale;
+    int plot_offset;
+
+    Node* solveSLink(int nrows, int ncols, double** data);
+    void generateRAGs(const Node* tree, int nTree, vector<vector<NodeSig> >& rags, vector<Mat>& images);
+    Mat saveRAG(const vector<NodeSig> ns, string name);
+    void drawTree(TreeNode* root_node, int size, int height, int width);
+    double** calculateDistanceMatrix(vector<PlaceSSG>& places);
+    TreeNode* findNode(int label, TreeNode* root);
+    TreeNode* convert2Tree(Node* tree, int nrNodes, int nrPlaces, vector<PlaceSSG>& places);
+    void sortTerminalNodes(TreeNode* node, int* last_pos);
+    void drawBranch(Mat& img, TreeNode* node, int height, double scale_x, double scale_y);
+    void processTree(Node* tree, int size);
+    void drawSSG(Mat& img, SSG* ssg, Point coord, int height);
+
+public:
+    Recognition(RecognitionParams* rec_params,
+                SSGParams* ssg_params,
+                SegmentTrackParams* seg_track_params,
+                SegmentationParams* seg_params,
+                GraphMatchParams* gm_params);
+    int performRecognition(vector<PlaceSSG>& places, PlaceSSG new_place, TreeNode* hierarchy);
+    void testRecognition();
     bool next;
 
     

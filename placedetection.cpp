@@ -9,6 +9,7 @@ SSGParams::SSGParams(int tau_n,
                      float tau_c,
                      int tau_f,
                      float tau_d,
+                     float tau_p,
                      float coeff_node_disappear1,
                      float coeff_node_disappear2,
                      float coeff_node_appear,
@@ -20,6 +21,7 @@ SSGParams::SSGParams(int tau_n,
     this->tau_c = tau_c;
     this->tau_f = tau_f;
     this->tau_d = tau_d;
+    this->tau_p = tau_p;
     this->coeff_node_disappear1 = coeff_node_disappear1;
     this->coeff_node_disappear2 = coeff_node_disappear2;
     this->coeff_node_appear = coeff_node_appear;

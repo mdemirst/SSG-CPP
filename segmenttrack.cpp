@@ -21,7 +21,7 @@ SegmentTrack::SegmentTrack(SegmentTrackParams* params, SegmentationParams* seg_p
     seg = new Segmentation(seg_params);
 }
 
-Mat SegmentTrack::getM()
+Mat& SegmentTrack::getM()
 {
     return M;
 }

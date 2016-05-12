@@ -20,6 +20,7 @@ MainWindow::MainWindow(QWidget *parent) :
                                INIT_TAU_C,
                                INIT_TAU_F,
                                INIT_TAU_D,
+                               INIT_TAU_P,
                                COEFF_NODE_DISAPPEAR_1,
                                COEFF_NODE_DISAPPEAR_2,
                                COEFF_NODE_APPEAR,
@@ -37,6 +38,8 @@ MainWindow::MainWindow(QWidget *parent) :
                                       COLOR_WEIGHT,
                                       AREA_WEIGHT);
 
+    rec_params = new RecognitionParams (INIT_TAU_R);
+
     ui->scroll_sigma->setValue(seg_params->sigma*100);
     ui->scroll_k->setValue(seg_params->k);
     ui->scroll_min_size->setValue(seg_params->min_size);
@@ -44,6 +47,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->scroll_tau_n->setValue(ssg_params->tau_n);
     ui->scroll_tau_c->setValue(ssg_params->tau_c*10);
     ui->scroll_tau_f->setValue(ssg_params->tau_f);
+    ui->scroll_tau_p->setValue(ssg_params->tau_p*100);
     ui->scroll_disapp_coeff1->setValue(ssg_params->coeff_node_disappear1*10);
     ui->scroll_disapp_coeff2->setValue(ssg_params->coeff_node_disappear2*10);
     ui->scroll_appear_coeff->setValue(ssg_params->coeff_node_appear*10);
@@ -56,6 +60,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->scroll_color_coeff->setValue(gm_params->color_weight*10);
     ui->scroll_pos_coeff->setValue(gm_params->pos_weight*10);
     ui->scroll_area_coeff->setValue(gm_params->area_weight*10);
+
+    ui->scroll_tau_r->setValue(rec_params->tau_r*1000);
 
 
     ui->cb_framebyframe->setChecked(false);
@@ -154,6 +160,12 @@ void MainWindow::on_scroll_tau_m_valueChanged(int value)
     seg_track_params->tau_m = value/1000.0;
 }
 
+void MainWindow::on_scroll_tau_p_valueChanged(int value)
+{
+    ui->tb_tau_p->setText(QString::number(value/100.0));
+    ssg_params->tau_p = value/100.0;
+}
+
 void MainWindow::on_scroll_color_coeff_valueChanged(int value)
 {
     ui->tb_color->setText(QString::number(value/10.0));
@@ -200,6 +212,12 @@ void MainWindow::on_scroll_appear_thres_valueChanged(int value)
 {
     ui->tb_coh_app_thres->setText(QString::number(value/100.0));
     ssg_params->coeff_coh_appear_thres = value/100.0;
+}
+
+void MainWindow::on_scroll_tau_r_valueChanged(int value)
+{
+    ui->tb_tau_r->setText(QString::number(value/1000.0));
+    rec_params->tau_r = value/1000.0;
 }
 
 void MainWindow::on_cb_framebyframe_clicked()
@@ -278,7 +296,8 @@ void MainWindow::on_btn_merged_process_images_clicked()
                                ssg_params,
                                seg_track_params,
                                seg_params,
-                               gm_params);
+                               gm_params,
+                               rec_params);
     QObject::connect(tsc_hybrid, SIGNAL(showImgOrg(QImage)),
                      this, SLOT(showImgOrg(QImage)));
     QObject::connect(tsc_hybrid, SIGNAL(showSSG(QImage)),
@@ -296,7 +315,8 @@ void MainWindow::on_btn_merged_process_images_clicked()
 
 void MainWindow::on_pushButton_clicked()
 {
-    recognition = new Recognition (ssg_params,
+    recognition = new Recognition (rec_params,
+                                   ssg_params,
                                    seg_track_params,
                                    seg_params,
                                    gm_params);
@@ -322,3 +342,34 @@ void MainWindow::on_btn_test_next_clicked()
 {
     recognition->next = true;
 }
+
+
+
+void MainWindow::on_btn_process_hierarchical_clicked()
+{
+    tsc_hybrid = new TSCHybrid(ui->custom_plot_merged_tsc, ui->custom_plot_merged_ssg, ui->place_map, ui->custom_plot_tsc_average,
+                               ssg_params,
+                               seg_track_params,
+                               seg_params,
+                               gm_params,
+                               rec_params);
+    QObject::connect(tsc_hybrid, SIGNAL(showImgOrg(QImage)),
+                     this, SLOT(showImgOrg(QImage)));
+    QObject::connect(tsc_hybrid, SIGNAL(showSSG(QImage)),
+                     this, SLOT(showSSG(QImage)));
+    QObject::connect(tsc_hybrid, SIGNAL(showMap(QImage)),
+                     this, SLOT(showMap(QImage)));
+    QObject::connect(tsc_hybrid->seg_track, SIGNAL(showImgOrg(QImage)),
+                     this, SLOT(showImgOrg(QImage)));
+    QObject::connect(tsc_hybrid->seg_track->gm, SIGNAL(showMatchImage(QImage)),
+                     this, SLOT(showMatchImage(QImage)));
+    QObject::connect(tsc_hybrid->recognition, SIGNAL(showTree(QImage)),
+                     this, SLOT(showTree(QImage)));
+    QObject::connect(tsc_hybrid->recognition, SIGNAL(printMessage(QString)),
+                     this, SLOT(printMessage(QString)));
+
+    ui->lbl_map->installEventFilter(tsc_hybrid);
+    tsc_hybrid->processImagesHierarchical(DATASET_FOLDER, START_IDX, END_IDX);
+}
+
+
