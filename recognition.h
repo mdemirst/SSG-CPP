@@ -9,6 +9,7 @@
 #include <string>
 #include <sstream>
 #include "TSC/utility.h"
+#include <QDate>
 
 
 extern "C" {
@@ -19,12 +20,7 @@ using namespace std;
 
 enum RecognitionStatus {RECOGNITION_ERROR, NOT_RECOGNIZED, RECOGNIZED};
 
-class RecognitionParams
-{
-public:
-    RecognitionParams(float tau_r){this->tau_r = tau_r;}
-    float tau_r;
-};
+
 
 /////////////////////////////////////////////
 //Performs recognition on hierarchical tree//
@@ -57,7 +53,7 @@ private:
     void sortTerminalNodes(TreeNode* node, int* last_pos);
     void drawBranch(Mat& img, TreeNode* node, int height, double scale_x, double scale_y);
     void processTree(Node* tree, int size);
-    void drawSSG(Mat& img, SSG* ssg, Point coord, int height);
+    void drawSSG(Mat& img, SSG ssg, Point coord);
 
 public:
     Recognition(RecognitionParams* rec_params,
@@ -65,6 +61,7 @@ public:
                 SegmentTrackParams* seg_track_params,
                 SegmentationParams* seg_params,
                 GraphMatchParams* gm_params);
+    ~Recognition();
     int performRecognition(vector<PlaceSSG>& places, PlaceSSG new_place, TreeNode* hierarchy);
     void testRecognition();
     bool next;

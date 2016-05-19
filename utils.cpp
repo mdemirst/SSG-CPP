@@ -165,6 +165,11 @@ std::vector<std::string> getFiles(std::string dir)
         }
     }
 
+    for(int i = 0; i < n; i++){
+        free(namelist[i]);
+    }
+    free(namelist);
+
     return files_list;
 }
 
@@ -207,6 +212,39 @@ bool getRegionStatus(vector<int> v)
     }
 
     return true;
+}
+
+string getOutputFolder(bool reset)
+{
+    static string str_folder = OUTPUT_FOLDER+QDate::currentDate().toString().toStdString()+"-"+QTime::currentTime().toString().toStdString()+"/";
+
+    if(reset)
+        str_folder = OUTPUT_FOLDER+QDate::currentDate().toString().toStdString()+"-"+QTime::currentTime().toString().toStdString()+"/";
+
+    QString path(QString::fromStdString(str_folder));
+    QDir dir(path);
+    if (!dir.exists()){
+      dir.mkpath(path);
+    }
+
+    return str_folder;
+}
+
+void savePlacesFrameInfo(vector<PlaceSSG>& places)
+{
+
+    string filename = getOutputFolder()+"/places-frames.txt";
+
+    ofstream file;
+    file.open (filename.c_str());
+    for(int i = 0; i < places.size(); i++)
+    {
+        for(int j = 0; j < places[i].getCount(); j++)
+        {
+            file << "P: " << i << "\t" << "SSG: " << places[i].getMember(j).getId() << "\t" << places[i].getMember(j).getStartFrame() << "-" << places[i].getMember(j).getEndFrame() << "\n";
+        }
+    }
+    file.close();
 }
 
 
@@ -346,3 +384,108 @@ bool getRegionStatus(vector<int> v)
 ////    void updatePlace(const PlaceSSG& place);
 ////    double getDistance(const PlaceSSG& place1, const PlaceSSG& place2);
 ////};
+
+void saveParameters(string filename,
+                    SSGParams* ssg_params,
+                    SegmentTrackParams* seg_track_params,
+                    SegmentationParams* seg_params,
+                    GraphMatchParams* gm_params,
+                    RecognitionParams* rec_params)
+{
+    ofstream file;
+    file.open (filename.c_str());
+
+    file << "TAU_N" << "\t" << ssg_params->tau_n << endl;
+    file << "TAU_C" << "\t" << ssg_params->tau_c << endl;
+    file << "TAU_F" << "\t" << ssg_params->tau_f << endl;
+    file << "TAU_D" << "\t" << ssg_params->tau_d << endl;
+    file << "TAU_P" << "\t" << ssg_params->tau_p << endl;
+    file << "COEFF_NODE_DISAPPEAR1" << "\t" << ssg_params->coeff_node_disappear1 << endl;
+    file << "COEFF_NODE_DISAPPEAR2" << "\t" << ssg_params->coeff_node_disappear2 << endl;
+    file << "COEFF_NODE_APPEAR" << "\t" << ssg_params->coeff_node_appear << endl;
+    file << "COEFF_COH_EXP_BASE" << "\t" << ssg_params->coeff_coh_exp_base << endl;
+    file << "COEFF_COH_APPEAR_THRES" << "\t" << ssg_params->coeff_coh_appear_thres << endl;
+
+    file << "TAU_W" << "\t" << seg_track_params->tau_w << endl;
+    file << "TAU_M" << "\t" << seg_track_params->tau_m << endl;
+
+    file << "SIGMA" << "\t" << seg_params->sigma << endl;
+    file << "K" << "\t" << seg_params->k << endl;
+    file << "MIN_SIZE" << "\t" << seg_params->min_size << endl;
+
+    file << "POS_WEIGHT" << "\t" << gm_params->pos_weight << endl;
+    file << "COLOR_WEIGHT" << "\t" << gm_params->color_weight << endl;
+    file << "AREA_WEIGHT" << "\t" << gm_params->area_weight << endl;
+
+    file << "TAU_R" << "\t" << rec_params->tau_r << endl;
+    file << "PLOT_H" << "\t" << rec_params->plot_h << endl;
+    file << "PLOT_W" << "\t" << rec_params->plot_w << endl;
+    file << "SSG_H" << "\t" << rec_params->ssg_h << endl;
+    file << "SSG_W" << "\t" << rec_params->ssg_w << endl;
+
+    file.close();
+
+}
+
+void readParameters(string filename,
+                    SSGParams* ssg_params,
+                    SegmentTrackParams* seg_track_params,
+                    SegmentationParams* seg_params,
+                    GraphMatchParams* gm_params,
+                    RecognitionParams* rec_params)
+{
+    ifstream file;
+    file.open (filename.c_str());
+
+    string str;
+
+    file >> str >> ssg_params->tau_n ;
+    file >> str >> ssg_params->tau_c ;
+    file >> str >> ssg_params->tau_f ;
+    file >> str >> ssg_params->tau_d ;
+    file >> str >> ssg_params->tau_p ;
+    file >> str >> ssg_params->coeff_node_disappear1 ;
+    file >> str >> ssg_params->coeff_node_disappear2 ;
+    file >> str >> ssg_params->coeff_node_appear     ;
+    file >> str >> ssg_params->coeff_coh_exp_base    ;
+    file >> str >> ssg_params->coeff_coh_appear_thres;
+
+    file >> str >> seg_track_params->tau_w ;
+    file >> str >> seg_track_params->tau_m ;
+
+    file >> str >> seg_params->sigma   ;
+    file >> str >> seg_params->k       ;
+    file >> str >> seg_params->min_size;
+
+    file >> str >> gm_params->pos_weight  ;
+    file >> str >> gm_params->color_weight;
+    file >> str >> gm_params->area_weight ;
+
+    file >> str >> rec_params->tau_r ;
+    file >> str >> rec_params->plot_h;
+    file >> str >> rec_params->plot_w;
+    file >> str >> rec_params->ssg_h ;
+    file >> str >> rec_params->ssg_w ;
+
+    file.close();
+
+
+}
+
+int getMostCoherentFrame(vector<float> coh_scores, int start_frame, int end_frame)
+{
+    int most_coh_id = start_frame;
+    float most_coh_score = coh_scores[start_frame-START_IDX];
+
+    end_frame = (end_frame - START_IDX) < coh_scores.size() ? end_frame : (coh_scores.size() + START_IDX);
+    for(int i = start_frame; i < end_frame; i++)
+    {
+        if(coh_scores[i-START_IDX] > most_coh_score)
+        {
+            most_coh_score = coh_scores[i-START_IDX];
+            most_coh_id = i;
+        }
+    }
+
+    return most_coh_id;
+}

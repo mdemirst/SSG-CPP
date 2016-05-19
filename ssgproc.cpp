@@ -137,14 +137,6 @@ Mat SSGProc::drawSSG(SSG& ssg, Mat &input, float tau_p)
     Mat bg_img = Mat::zeros(input.size(), CV_8UC3);
     bg_img = Scalar(255,255,255);
 
-    //Find longest appear
-    int longestApp = 0;
-    for(int i = 0; i < ssg.nodes.size(); i++)
-    {
-        if(ssg.nodes[i].second > longestApp)
-            longestApp = ssg.nodes[i].second;
-    }
-
     for(int i = 0; i < ssg.nodes.size(); i++)
     {
 #ifdef PROCESS_EDGES
@@ -153,46 +145,64 @@ Mat SSGProc::drawSSG(SSG& ssg, Mat &input, float tau_p)
         {
             //If both two connecting nodes appear in SSG
             //
-            if(ssg.nodes[i].second > longestApp*tau_p)
+            int idx = ssg.nodes[i].first.edges[i].first;
+            if(ssg.nodes.size() > idx && ssg.nodes[idx].second > longestApp*tau_p)
             {
-                int idx = ssg.nodes[i].first.edges[i].first;
-                if(ssg.nodes.size() > idx && ssg.nodes[idx].second > longestApp*tau_p)
-                {
-                    Point p1 = ssg.nodes[i].first.center;
-                    Point p2 = ssg.nodes[idx].first.center;
+                Point p1 = ssg.nodes[i].first.center;
+                Point p2 = ssg.nodes[idx].first.center;
 
-                    line(bg_img,p1,p2,Scalar(0,0,0),2);
-                }
-
+                line(bg_img,p1,p2,Scalar(0,0,0),2);
             }
         }
 #endif
 
-        //Draw nodes
-        if(ssg.nodes[i].second > longestApp*tau_p)
-        {
-            float img_area = bg_img.size().height*bg_img.size().width;
-            float rad = sqrt(ssg.nodes[i].first.area/M_PI)/10.0;
-            circle(bg_img, ssg.nodes[i].first.center, rad,
-                   Scalar(ssg.nodes[i].first.colorR, ssg.nodes[i].first.colorG, ssg.nodes[i].first.colorB),-1);
-            circle(bg_img, ssg.nodes[i].first.center, rad,
-                   Scalar(0,0,0),1);
-        }
+        float img_area = bg_img.size().height*bg_img.size().width;
+        float rad = sqrt(ssg.nodes[i].first.area/M_PI)/10.0;
+        circle(bg_img, ssg.nodes[i].first.center, rad,
+               Scalar(ssg.nodes[i].first.colorR, ssg.nodes[i].first.colorG, ssg.nodes[i].first.colorB),-1);
+        circle(bg_img, ssg.nodes[i].first.center, rad,
+               Scalar(0,0,0),1);
     }
 
 
     for(int i = 0; i < ssg.nodes.size(); i++)
     {
-        if(ssg.nodes[i].second > longestApp*tau_p)
-        {
-            float img_area = bg_img.size().height*bg_img.size().width;
-            float rad = sqrt(ssg.nodes[i].first.area/M_PI)/2.0;
-            circle(bg_img, ssg.nodes[i].first.center, rad,
-                   Scalar(ssg.nodes[i].first.colorR, ssg.nodes[i].first.colorG, ssg.nodes[i].first.colorB),-1);
-            circle(bg_img, ssg.nodes[i].first.center, rad,
-                   Scalar(0,0,0),1);
-        }
+        float img_area = bg_img.size().height*bg_img.size().width;
+        float rad = sqrt(ssg.nodes[i].first.area/M_PI)/2.0;
+        circle(bg_img, ssg.nodes[i].first.center, rad,
+               Scalar(ssg.nodes[i].first.colorR, ssg.nodes[i].first.colorG, ssg.nodes[i].first.colorB),-1);
+        circle(bg_img, ssg.nodes[i].first.center, rad,
+               Scalar(0,0,0),1);
     }
+
+    //Save SSG
+    string outName = getOutputFolder()+QString::number(ssg.getId()).toStdString()+".jpg";
+    imwrite(outName, bg_img);
+
 
     return bg_img;
 }
+
+
+void SSGProc::filterSummarySegments(SSG& ssg, float tau_p)
+{
+    //Find longest appear
+    int longestApp = 0;
+    for(int i = 0; i < ssg.nodes.size(); i++)
+    {
+        if(ssg.nodes[i].second > longestApp)
+            longestApp = ssg.nodes[i].second;
+    }
+
+
+    for(int i = 0; i < ssg.nodes.size();)
+    {
+        if(ssg.nodes[i].second < longestApp*tau_p)
+        {
+            ssg.nodes.erase(ssg.nodes.begin()+i);
+        }
+        else
+            i++;
+    }
+}
+

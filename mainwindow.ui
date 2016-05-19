@@ -30,7 +30,7 @@
        </size>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>4</number>
       </property>
       <widget class="QWidget" name="tab">
        <attribute name="title">
@@ -247,6 +247,17 @@ QGroupBox::title {
         <string>Settings</string>
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_4">
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_18">
+          <item>
+           <widget class="QPushButton" name="btn_save_settings">
+            <property name="text">
+             <string>Save Settings</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
         <item>
          <widget class="QGroupBox" name="groupBox_8">
           <property name="styleSheet">
@@ -1151,9 +1162,139 @@ QGroupBox::title {
         </item>
         <item>
          <widget class="QGroupBox" name="groupBox_6">
-          <property name="title">
-           <string>GroupBox</string>
+          <property name="styleSheet">
+           <string notr="true">QGroupBox {
+    border: 1px solid gray;
+    border-radius: 9px;
+    margin-top: 0.5em;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 3px 0 3px;
+}</string>
           </property>
+          <property name="title">
+           <string>Extra Settings</string>
+          </property>
+          <layout class="QHBoxLayout" name="horizontalLayout_17">
+           <item>
+            <layout class="QVBoxLayout" name="verticalLayout_40">
+             <item>
+              <widget class="QLineEdit" name="tb_tree_plot_h">
+               <property name="maximumSize">
+                <size>
+                 <width>100</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="tb_tree_plot_w">
+               <property name="maximumSize">
+                <size>
+                 <width>100</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="tb_tree_ssg_h">
+               <property name="maximumSize">
+                <size>
+                 <width>100</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="tb_tree_ssg_w">
+               <property name="maximumSize">
+                <size>
+                 <width>100</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="verticalSpacer_10">
+               <property name="orientation">
+                <enum>Qt::Vertical</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>20</width>
+                 <height>40</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QVBoxLayout" name="verticalLayout_39">
+             <item>
+              <widget class="QLabel" name="label_30">
+               <property name="text">
+                <string>Tree Plot Height</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="label_29">
+               <property name="text">
+                <string>Tree Plot Width</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="label_28">
+               <property name="text">
+                <string>Tree SSG Height</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="label_27">
+               <property name="text">
+                <string>Tree SSG Width</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="verticalSpacer_11">
+               <property name="orientation">
+                <enum>Qt::Vertical</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>20</width>
+                 <height>40</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_11">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
          </widget>
         </item>
        </layout>
@@ -1248,6 +1389,13 @@ QGroupBox::title {
              <string>Controls</string>
             </property>
             <layout class="QHBoxLayout" name="horizontalLayout_14">
+             <item>
+              <widget class="QPushButton" name="btn_hierarchical_stop">
+               <property name="text">
+                <string>Stop</string>
+               </property>
+              </widget>
+             </item>
              <item>
               <widget class="QPushButton" name="btn_process_hierarchical">
                <property name="text">
@@ -1447,7 +1595,7 @@ QGroupBox::title {
                  <property name="minimumSize">
                   <size>
                    <width>0</width>
-                   <height>100</height>
+                   <height>270</height>
                   </size>
                  </property>
                  <property name="widgetResizable">
@@ -1459,7 +1607,7 @@ QGroupBox::title {
                     <x>0</x>
                     <y>0</y>
                     <width>1376</width>
-                    <height>98</height>
+                    <height>268</height>
                    </rect>
                   </property>
                   <layout class="QHBoxLayout" name="horizontalLayout_3">
@@ -1555,7 +1703,13 @@ QGroupBox::title {
                <property name="minimumSize">
                 <size>
                  <width>0</width>
-                 <height>200</height>
+                 <height>10</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>16777215</width>
+                 <height>10</height>
                 </size>
                </property>
                <property name="widgetResizable">
@@ -1566,8 +1720,8 @@ QGroupBox::title {
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>1378</width>
-                  <height>198</height>
+                  <width>1362</width>
+                  <height>57</height>
                  </rect>
                 </property>
                 <layout class="QVBoxLayout" name="verticalLayout_30">
@@ -1586,7 +1740,7 @@ QGroupBox::title {
                    <property name="minimumSize">
                     <size>
                      <width>0</width>
-                     <height>100</height>
+                     <height>0</height>
                     </size>
                    </property>
                   </widget>

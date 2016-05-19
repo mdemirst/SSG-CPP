@@ -22,13 +22,19 @@ Recognition::Recognition(RecognitionParams* rec_params,
     img_height = img.size().height*IMG_RESCALE_RAT;
     img_width = img.size().width*IMG_RESCALE_RAT;
 
-    plot_offset = 100;
+    plot_offset = 150;
 
     //Initialize new graph match and segmentation object
     gm = new GraphMatch(img_width, img_height, gm_params);
     seg = new Segmentation(seg_params);
 
     next = false;
+}
+
+Recognition::~Recognition()
+{
+    delete seg;
+    delete gm;
 }
 
 
@@ -44,29 +50,52 @@ void Recognition::processTree(Node* tree, int size)
     }
 }
 
-void Recognition::drawSSG(Mat& img, SSG* ssg, Point coord, int height)
+void Recognition::drawSSG(Mat& img, SSG ssg, Point coord)
 {
+    if(coord.y + rec_params->ssg_h > img.size().height)
+    {
+        copyMakeBorder(img, img, 0, rec_params->ssg_h, 0, 0, BORDER_CONSTANT, Scalar(255,255,255));
+    }
+    qDebug() << "g"<< img_files.size() << ssg.getSampleFrame()-START_IDX;
+
+    Mat img_real = imread(DATASET_FOLDER + img_files[ssg.getSampleFrame()-START_IDX]);
+
+
     Mat img_ssg(img_height, img_width, CV_8UC3, Scalar(255,255,255));
 
-    for(int i = 0; i < ssg->nodes.size(); i++)
+    for(int i = 0; i < ssg.nodes.size(); i++)
     {
-        Point p = ssg->nodes[i].first.center;
-        double r = sqrt(ssg->nodes[i].first.area)/4.0;
+        Point p = ssg.nodes[i].first.center;
+        double r = sqrt(ssg.nodes[i].first.area)/4.0;
         r = max(r,1.0);
 
-        circle(img_ssg,p,r,Scalar(ssg->nodes[i].first.colorB, ssg->nodes[i].first.colorG, ssg->nodes[i].first.colorR), -1);
+        circle(img_ssg,p,r,Scalar(ssg.nodes[i].first.colorB, ssg.nodes[i].first.colorG, ssg.nodes[i].first.colorR), -1);
     }
 
     //Predefined size
-    resize(img_ssg, img_ssg, cv::Size(80,60));
+    resize(img_real, img_real, cv::Size(rec_params->ssg_w,rec_params->ssg_h));
+    resize(img_ssg, img_ssg, cv::Size(rec_params->ssg_w,rec_params->ssg_h));
 
+    rectangle(img_real, Rect(0,0,img_real.size().width-1, img_real.size().height-1),Scalar(0,0,0));
     rectangle(img_ssg, Rect(0,0,img_ssg.size().width-1, img_ssg.size().height-1),Scalar(0,0,0));
 
-    Rect roi = Rect(coord.x-img_ssg.size().width/2.0, coord.y, img_ssg.size().width, img_ssg.size().height);
+    Rect roi = Rect(coord.x-img_real.size().width, coord.y, img_real.size().width, img_real.size().height);
 
     Mat image_roi = img(roi);
 
-    img_ssg.copyTo(image_roi);
+    img_real.copyTo(image_roi);
+
+    Rect roi2 = Rect(coord.x, coord.y, img_ssg.size().width, img_ssg.size().height);
+
+    Mat image_roi2 = img(roi2);
+
+    img_ssg.copyTo(image_roi2);
+
+    stringstream ss;
+    ss.str("");
+    ss << ssg.getId();
+    Point str_coord(coord.x+rec_params->ssg_w, coord.y+rec_params->ssg_h/2.0);
+    putText(img, ss.str(), str_coord, FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0,0,255),2);
 
 }
 
@@ -90,18 +119,22 @@ void Recognition::drawBranch(Mat& img, TreeNode* node, int height, double scale_
         }
     }
     else
-    {
-        int x_offset = 0;
-        int y_offset = 0;
+    {        
+        Point coord(plot_offset+node->getXPos()*scale_x, height - plot_offset - 1 - node->getVal()*scale_y);
+
+
+        //Draw Place id
         stringstream ss;
+        ss << node->getLabel();
+        Point str_coord(coord.x+10, coord.y-10);
+        putText(img, ss.str(), str_coord, FONT_HERSHEY_SIMPLEX, 0.5, Scalar(255,0,0),2);
+
+        //Draw SSGs
         for(int i = 0; i < node->getDescriptor()->getCount(); i++)
         {
-            ss << node->getDescriptor()->getMember(i)->getId();
-            if(i+1 < node->getDescriptor()->getCount()) ss << ", ";
+            Point ssg_coord(coord.x, coord.y + i*rec_params->ssg_h);
+            drawSSG(img, node->getDescriptor()->getMember(i), ssg_coord);
         }
-        Point coord(plot_offset+node->getXPos()*scale_x + x_offset, height - plot_offset - 1 - node->getVal()*scale_y - y_offset);
-        drawSSG(img, node->getDescriptor()->getMember(0), coord, height);
-        putText(img, ss.str(), coord, FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0,0,255),2);
 
     }
 }
@@ -117,11 +150,9 @@ void Recognition::drawTree(TreeNode* root_node, int nrPlaces, int height, int wi
     int border_size = 50;
     //copyMakeBorder(img, img, border_size, border_size, border_size, border_size, BORDER_CONSTANT, Scalar(255, 255, 255));
 
-
     emit showTree(mat2QImage(img));
     //imshow("Tree with images", img);
-    imwrite("/home/isl-mahmut/Output/out.jpg",img);
-
+    imwrite(getOutputFolder() + "tree.jpg",img);
     waitKey(0);
 }
 
@@ -206,7 +237,7 @@ double** Recognition::calculateDistanceMatrix(vector<PlaceSSG>& places)
                 for(int j = 0; j < places[c].getCount(); j++)
                 {
                     Mat P, C;
-                    distance += gm->matchTwoImages(*places[r].getMember(i),*places[c].getMember(j),P,C);
+                    distance += gm->matchTwoImages(places[r].getMember(i),places[c].getMember(j),P,C);
                     count++;
                 }
             }
@@ -243,12 +274,12 @@ int Recognition::performRecognition(vector<PlaceSSG>& places, PlaceSSG new_place
     hierarchy = convert2Tree(tree, nrPlaces-1, nrPlaces, places);
 
     //Draw tree
-    drawTree(hierarchy, nrPlaces, 750, 1000);
+    drawTree(hierarchy, nrPlaces, rec_params->plot_h, rec_params->plot_w);
 
     //Get pointer to position of new detected place
     TreeNode* new_place_node = findNode(nrPlaces-1, hierarchy);
 
-    int number = new_place_node->getDescriptor()->getMember(0)->nodes.size();
+    int number = new_place_node->getDescriptor()->getMember(0).nodes.size();
 
     //Check if there is any sibling of new place
     //And check if they are similar
@@ -287,10 +318,9 @@ int Recognition::performRecognition(vector<PlaceSSG>& places, PlaceSSG new_place
 
     }
 
-
     //Remove dist_matrix
-    for (int i = 1; i < nrPlaces; i++) delete dist_matrix[i];
-    delete dist_matrix;
+    for (int i = 0; i < nrPlaces; i++) delete[] dist_matrix[i];
+    delete[] dist_matrix;
 
     return recognition_status;
 
@@ -311,7 +341,7 @@ void Recognition::testRecognition()
         Mat img_seg;
 
         vector<NodeSig> ns = seg->segmentImage(img, img_seg);
-        SSG *new_ssg = new SSG(i+1,ns);
+        SSG new_ssg(i+1,ns);
         PlaceSSG new_place(i, new_ssg);
 
 
@@ -362,7 +392,7 @@ Mat Recognition::saveRAG(const vector<NodeSig> ns, string name)
         circle(img,p,r,Scalar(ns[i].colorB, ns[i].colorG, ns[i].colorR), -1);
     }
 
-    string outName = "/home/isl-mahmut/Output/"+name+".jpg";
+    string outName = getOutputFolder()+name+".jpg";
     imwrite(outName, img);
 
     return img;

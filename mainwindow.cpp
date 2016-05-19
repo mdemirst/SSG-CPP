@@ -16,6 +16,8 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    tsc_hybrid = NULL;
+
     ssg_params = new SSGParams(INIT_TAU_N,
                                INIT_TAU_C,
                                INIT_TAU_F,
@@ -38,7 +40,17 @@ MainWindow::MainWindow(QWidget *parent) :
                                       COLOR_WEIGHT,
                                       AREA_WEIGHT);
 
-    rec_params = new RecognitionParams (INIT_TAU_R);
+    rec_params = new RecognitionParams (INIT_TAU_R,
+                                        INIT_TREE_PLOT_H,
+                                        INIT_TREE_PLOT_W,
+                                        INIT_TREE_SSG_H,
+                                        INIT_TREE_SSG_W);
+
+    string par_filename = string(OUTPUT_FOLDER) + string("/parameters.txt");
+
+    readParameters(par_filename,ssg_params,seg_track_params,seg_params,gm_params,rec_params);
+
+
 
     ui->scroll_sigma->setValue(seg_params->sigma*100);
     ui->scroll_k->setValue(seg_params->k);
@@ -63,6 +75,10 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->scroll_tau_r->setValue(rec_params->tau_r*1000);
 
+    ui->tb_tree_plot_h->setText(QString::number(rec_params->plot_h));
+    ui->tb_tree_plot_w->setText(QString::number(rec_params->plot_w));
+    ui->tb_tree_ssg_h->setText(QString::number(rec_params->ssg_h));
+    ui->tb_tree_ssg_w->setText(QString::number(rec_params->ssg_w));
 
     ui->cb_framebyframe->setChecked(false);
 
@@ -347,29 +363,80 @@ void MainWindow::on_btn_test_next_clicked()
 
 void MainWindow::on_btn_process_hierarchical_clicked()
 {
-    tsc_hybrid = new TSCHybrid(ui->custom_plot_merged_tsc, ui->custom_plot_merged_ssg, ui->place_map, ui->custom_plot_tsc_average,
-                               ssg_params,
-                               seg_track_params,
-                               seg_params,
-                               gm_params,
-                               rec_params);
-    QObject::connect(tsc_hybrid, SIGNAL(showImgOrg(QImage)),
-                     this, SLOT(showImgOrg(QImage)));
-    QObject::connect(tsc_hybrid, SIGNAL(showSSG(QImage)),
-                     this, SLOT(showSSG(QImage)));
-    QObject::connect(tsc_hybrid, SIGNAL(showMap(QImage)),
-                     this, SLOT(showMap(QImage)));
-    QObject::connect(tsc_hybrid->seg_track, SIGNAL(showImgOrg(QImage)),
-                     this, SLOT(showImgOrg(QImage)));
-    QObject::connect(tsc_hybrid->seg_track->gm, SIGNAL(showMatchImage(QImage)),
-                     this, SLOT(showMatchImage(QImage)));
-    QObject::connect(tsc_hybrid->recognition, SIGNAL(showTree(QImage)),
-                     this, SLOT(showTree(QImage)));
-    QObject::connect(tsc_hybrid->recognition, SIGNAL(printMessage(QString)),
-                     this, SLOT(printMessage(QString)));
+    if(tsc_hybrid == NULL)
+    {
+        tsc_hybrid = new TSCHybrid(ui->custom_plot_merged_tsc, ui->custom_plot_merged_ssg, ui->place_map, ui->custom_plot_tsc_average,
+                                   ssg_params,
+                                   seg_track_params,
+                                   seg_params,
+                                   gm_params,
+                                   rec_params);
 
-    ui->lbl_map->installEventFilter(tsc_hybrid);
+        QObject::connect(tsc_hybrid, SIGNAL(showImgOrg(QImage)),
+                         this, SLOT(showImgOrg(QImage)));
+        QObject::connect(tsc_hybrid, SIGNAL(showSSG(QImage)),
+                         this, SLOT(showSSG(QImage)));
+        QObject::connect(tsc_hybrid, SIGNAL(showMap(QImage)),
+                         this, SLOT(showMap(QImage)));
+        QObject::connect(tsc_hybrid->seg_track, SIGNAL(showImgOrg(QImage)),
+                         this, SLOT(showImgOrg(QImage)));
+        QObject::connect(tsc_hybrid->seg_track->gm, SIGNAL(showMatchImage(QImage)),
+                         this, SLOT(showMatchImage(QImage)));
+        QObject::connect(tsc_hybrid->recognition, SIGNAL(showTree(QImage)),
+                         this, SLOT(showTree(QImage)));
+        QObject::connect(tsc_hybrid->recognition, SIGNAL(printMessage(QString)),
+                         this, SLOT(printMessage(QString)));
+
+        ui->lbl_map->installEventFilter(tsc_hybrid);
+    }
+    else
+    {
+        if(tsc_hybrid->is_processing)
+        {
+            qDebug() << "Stop process first!";
+            return;
+        }
+    }
+
+    saveParameters(getOutputFolder(true)+"/parameters.txt",ssg_params,seg_track_params,seg_params,gm_params,rec_params);
+
     tsc_hybrid->processImagesHierarchical(DATASET_FOLDER, START_IDX, END_IDX);
 }
 
 
+
+void MainWindow::on_tb_tree_plot_h_editingFinished()
+{
+    rec_params->plot_h = ui->tb_tree_plot_h->text().toInt();
+}
+
+void MainWindow::on_tb_tree_plot_w_editingFinished()
+{
+    rec_params->plot_w = ui->tb_tree_plot_w->text().toInt();
+}
+
+void MainWindow::on_tb_tree_ssg_h_editingFinished()
+{
+    rec_params->ssg_h = ui->tb_tree_ssg_h->text().toInt();
+}
+
+void MainWindow::on_tb_tree_ssg_w_editingFinished()
+{
+    rec_params->ssg_w = ui->tb_tree_ssg_w->text().toInt();
+}
+
+
+void MainWindow::on_btn_save_settings_clicked()
+{
+    string filename = string(OUTPUT_FOLDER) + string("/parameters.txt");
+
+    saveParameters(filename,ssg_params,seg_track_params,seg_params,gm_params,rec_params);
+}
+
+void MainWindow::on_btn_hierarchical_stop_clicked()
+{
+    if(tsc_hybrid != NULL)
+    {
+        tsc_hybrid->stopProcessing();
+    }
+}

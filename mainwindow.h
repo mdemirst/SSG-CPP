@@ -6,6 +6,7 @@
 #include "segmenttrack.h"
 #include "tschybrid.h"
 #include "recognition.h"
+#include <memory>
 
 namespace Ui {
 class MainWindow;
@@ -96,6 +97,18 @@ private slots:
     void on_btn_process_hierarchical_clicked();
 
     void on_scroll_tau_p_valueChanged(int value);
+
+    void on_tb_tree_plot_h_editingFinished();
+
+    void on_tb_tree_plot_w_editingFinished();
+
+    void on_tb_tree_ssg_h_editingFinished();
+
+    void on_tb_tree_ssg_w_editingFinished();
+
+    void on_btn_save_settings_clicked();
+
+    void on_btn_hierarchical_stop_clicked();
 
 private:
     Ui::MainWindow *ui;

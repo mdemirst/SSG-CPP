@@ -12,6 +12,70 @@
 
 using namespace std;
 
+class SSGParams{
+public:
+    SSGParams(int tau_n,
+              float tau_c,
+              int tau_f,
+              float tau_d,
+              float tau_p,
+              float coeff_node_disappear1,
+              float coeff_node_disappear2,
+              float coeff_node_appear,
+              float coeff_coh_exp_base,
+              float coeff_coh_appear_thres);
+    int tau_n;
+    float tau_c;
+    int tau_f;
+    float tau_d;
+    float tau_p;
+    float coeff_node_disappear1;
+    float coeff_node_disappear2;
+    float coeff_node_appear;
+    float coeff_coh_exp_base;
+    float coeff_coh_appear_thres;
+};
+
+class RecognitionParams
+{
+public:
+    RecognitionParams(float tau_r,
+                      int plot_h,
+                      int plot_w,
+                      int ssg_h,
+                      int ssg_w)
+    {
+        this->tau_r = tau_r;
+        this->plot_h = plot_h;
+        this->plot_w = plot_w;
+        this->ssg_h = ssg_h;
+        this->ssg_w = ssg_w;
+    }
+    float tau_r;
+    int plot_h;
+    int plot_w;
+    int ssg_h;
+    int ssg_w;
+};
+
+class GraphMatchParams
+{
+public:
+    GraphMatchParams(float pos_weight,
+                     float color_weight,
+                     float area_weight);
+    float pos_weight;
+    float color_weight;
+    float area_weight;
+};
+
+class SegmentTrackParams{
+public:
+    SegmentTrackParams(int tau_w, float tau_m);
+    int tau_w;
+    float tau_m;
+};
+
 typedef struct
 {
     int pixelsSize;
@@ -78,15 +142,25 @@ class NodeSig
 class SSG
 {
     int id;
+    int start_frame;
+    int end_frame;
+    int sample_frame;
 public:
     SSG(int id){this->id = id;}
-    SSG(int id, vector<NodeSig>& nodes)
+    SSG(int id, vector<NodeSig> nodes)
     {
         this->id = id;
         for(int i = 0; i < nodes.size(); i++)
             this->nodes.push_back(make_pair(nodes[i],1));
     }
     int getId(){return id;}
+    void setId(int id){this->id = id;}
+    void setStartFrame(int frame){start_frame = frame;}
+    void setEndFrame(int frame){end_frame = frame;}
+    int getStartFrame(){return start_frame;}
+    int getEndFrame(){return end_frame;}
+    void setSampleFrame(int frame){this->sample_frame = frame;}
+    int getSampleFrame(){return sample_frame;}
     vector<pair<NodeSig, int> > nodes;
 };
 
@@ -127,24 +201,17 @@ public:
 class PlaceSSG
 {
     int id;
-    vector<SSG*> members;
+    vector<SSG> members;
 public:
-    PlaceSSG(int id, SSG* member)
+    PlaceSSG(int id, SSG member)
     {
         this->id = id;
         this->members.push_back(member);
     }
-    void addMember(SSG* member){this->members.push_back(member);}
-    SSG* getMember(int member_id)
+    void addMember(SSG member){this->members.push_back(member);}
+    SSG& getMember(int member_id)
     {
-
-        if(member_id < getCount())
-        {
-            int number = members[member_id]->nodes.size();
-            return members[member_id];
-        }
-        else
-            return NULL;
+        return members[member_id];
     }
     int getCount() {return members.size();}
     int getId() {return id;}

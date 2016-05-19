@@ -1,6 +1,8 @@
 #ifndef DEFS_H
 #define DEFS_H
 
+#define OUTPUT_FOLDER "/home/isl-mahmut/Output/"
+
 #define START_IDX 0
 
 #define DATASET_FOLDER "/home/isl-mahmut/Datasets/seq1_cloudy1/std_cam/"
@@ -39,8 +41,8 @@
 //#define DATASET_FOLDER "/home/isl-mahmut/Datasets/sa_seq1_cloudy1/std_cam/"
 //#define END_IDX 997
 
-#define DATASET_FOLDER "/home/isl-mahmut/Datasets/New-College/"
-#define END_IDX 7855
+//#define DATASET_FOLDER "/home/isl-mahmut/Datasets/New-College/"
+//#define END_IDX 7855
 
 //#define DATASET_FOLDER "/home/isl-mahmut/Datasets/CamVid-8-10/"
 //#define END_IDX 10
@@ -57,19 +59,19 @@
 #define PEN_WIDTH3 3
 #define IMG_RESCALE_RAT 0.5
 
-#define INIT_TAU_N 5//10
+#define INIT_TAU_N 3//5//10
 #define INIT_TAU_C 0.2//0.4
-#define INIT_TAU_W 15//30
+#define INIT_TAU_W 22//15//30
 #define INIT_TAU_M 0.05//0.020//0.015
-#define INIT_TAU_F 15//30
+#define INIT_TAU_F 10//15//30
 #define INIT_TAU_D 1.0
 #define INIT_TAU_P 0.8
 
-#define COEFF_NODE_DISAPPEAR_1 2
+#define COEFF_NODE_DISAPPEAR_1 0.7//2
 #define COEFF_NODE_DISAPPEAR_2 0.5
 #define COEFF_NODE_APPEAR 0.2
-#define COEFF_COH_EXP_BASE 5
-#define COEFF_COH_APPEAR_THRES 0.80
+#define COEFF_COH_EXP_BASE 3//5
+#define COEFF_COH_APPEAR_THRES 0.85//0.80
 
 //Predefined segmentation parameters
 #define SEG_SIGMA       0.8//0.90
@@ -83,6 +85,11 @@
 
 //Recognition parameters
 #define INIT_TAU_R 0.01
+
+#define INIT_TREE_PLOT_H 1000
+#define INIT_TREE_PLOT_W 3000
+#define INIT_TREE_SSG_H 90
+#define INIT_TREE_SSG_W 60
 
 #define MAP_FILTER_SIZE 3
 
@@ -108,12 +115,13 @@
 #define EXISTENCE_MAP_H 250
 
 
-#define COLD_MAP_H 450
-#define COLD_MAP_W 210
-#define COLD_MAP_T 30
-#define COLD_MAP_B -20
-#define COLD_MAP_L -20
-#define COLD_MAP_R 20
+//Defs for Cold-Sa
+//#define COLD_MAP_H 450
+//#define COLD_MAP_W 210
+//#define COLD_MAP_T 30
+//#define COLD_MAP_B -20
+//#define COLD_MAP_L -20
+//#define COLD_MAP_R 20
 
 
 //Defs for Cold-Lj
@@ -125,12 +133,12 @@
 //#define COLD_MAP_R 22
 
 //Defs for COLD-Fr-STD
-//#define COLD_MAP_H 750
-//#define COLD_MAP_W 232
-//#define COLD_MAP_T 6.5
-//#define COLD_MAP_B -17.5
-//#define COLD_MAP_L -1.5
-//#define COLD_MAP_R 5.8
+#define COLD_MAP_H 750
+#define COLD_MAP_W 232
+#define COLD_MAP_T 6.5
+#define COLD_MAP_B -17.5
+#define COLD_MAP_L -1.5
+#define COLD_MAP_R 5.8
 
 //#define PROCESS_EDGES
 

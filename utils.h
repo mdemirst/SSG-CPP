@@ -13,6 +13,8 @@
 #include <dirent.h>
 #include "utilTypes.h"
 #include "graphmatch.h"
+#include "defs.h"
+#include <QDir>
 
 
 using namespace cv;
@@ -30,6 +32,23 @@ std::vector<std::string> getFiles(std::string dir);
 cv::Point2f getCoordCold(std::string filename);
 int getMedian(vector<int> v);
 bool getRegionStatus(vector<int> v);
+string getOutputFolder(bool = false);
+void savePlacesFrameInfo(vector<PlaceSSG>& places);
+
+void saveParameters(string filename,
+                    SSGParams* ssg_params,
+                    SegmentTrackParams* seg_track_params,
+                    SegmentationParams* seg_params,
+                    GraphMatchParams* gm_params,
+                    RecognitionParams* rec_params);
+
+void readParameters(string filename,
+                    SSGParams* ssg_params,
+                    SegmentTrackParams* seg_track_params,
+                    SegmentationParams* seg_params,
+                    GraphMatchParams* gm_params,
+                    RecognitionParams* rec_params);
+int getMostCoherentFrame(vector<float> coh_scores, int start_frame, int end_frame);
 
 
 #endif // UTILS_H

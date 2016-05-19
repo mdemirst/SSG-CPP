@@ -130,7 +130,8 @@ TSCHybrid::TSCHybrid(QCustomPlot* tsc_plot,
 
     //Plot dataset map
     QCPItemPixmap *plot_bg_img = new QCPItemPixmap(this->place_map);
-    plot_bg_img->setPixmap(QPixmap("./cold-sa.svg"));
+    string overlay_img = string(OUTPUT_FOLDER)+"cold.png";
+    plot_bg_img->setPixmap(QPixmap(overlay_img.c_str()));
     plot_bg_img->topLeft->setType(QCPItemPosition::ptViewportRatio);
     plot_bg_img->topLeft->setCoords(0,0);
     this->place_map->addLayer("imageLayer");
@@ -147,13 +148,39 @@ TSCHybrid::TSCHybrid(QCustomPlot* tsc_plot,
                                    seg_params,
                                    gm_params);
 
+    is_processing = false;
+    stop_processing = false;
+
+
+}
+
+TSCHybrid::~TSCHybrid()
+{
+    delete recognition;
+    delete seg_track;
+}
+
+void TSCHybrid::clearPastData()
+{
+    SSGs.clear();
+    img_files.clear();
+    seg_track->getM().release();
+    seg_track->getM_ns().clear();
+
+    for(int i = 0; i < tsc_plot->graphCount(); i++)
+        tsc_plot->graph(i)->clearData();
+    for(int i = 0; i < ssg_plot->graphCount(); i++)
+        ssg_plot->graph(i)->clearData();
+    for(int i = 0; i < place_map->graphCount(); i++)
+        place_map->graph(i)->clearData();
+    for(int i = 0; i < tsc_avg_plot->graphCount(); i++)
+        tsc_avg_plot->graph(i)->clearData();
 
 }
 
 void TSCHybrid::processImages(const string folder, const int start_idx, const int end_idx)
 {
-//    plotEsensPlaces();
-//    return;
+    is_processing = true;
 
     //Read dataset image files
     img_files = getFiles(folder);
@@ -179,6 +206,12 @@ void TSCHybrid::processImages(const string folder, const int start_idx, const in
     //Process all images
     for(int frame_no = start_idx; frame_no < end_idx-1; frame_no++)
     {
+        if(stop_processing)
+        {
+            clearPastData();
+            break;
+        }
+
         img_org = imread(folder + img_files[frame_no]);
         resize(img_org, img, cv::Size(0,0), IMG_RESCALE_RAT, IMG_RESCALE_RAT);
         //emit showImgOrg(mat2QImage(img));
@@ -237,77 +270,104 @@ void TSCHybrid::processImages(const string folder, const int start_idx, const in
     }
 
 
-    ////////////////////
-    // Debug purposes //
-    ////////////////////
-
-    qDebug() << detected_places.size() << tsc_detected_places.size();
-
-    int a = 0, b = 0, c = 0, d = 0, e = 0, f = 0;
-    for(int i = 0; i < detected_places.size(); i++)
+    if(!stop_processing)
     {
-        if(detected_places[i] > 0 && tsc_detected_places[i] == 0)
+        ////////////////////
+        // Debug purposes //
+        ////////////////////
+
+        qDebug() << detected_places.size() << tsc_detected_places.size();
+
+        int a = 0, b = 0, c = 0, d = 0, e = 0, f = 0;
+        for(int i = 0; i < detected_places.size(); i++)
         {
-            a++;
+            if(detected_places[i] > 0 && tsc_detected_places[i] == 0)
+            {
+                a++;
+            }
+            else if(detected_places[i] < 0 && tsc_detected_places[i] == 0)
+            {
+                b++;
+            }
+            else if(detected_places[i] > 0 && tsc_detected_places[i] == 1)
+            {
+                c++;
+            }
+            else if(detected_places[i] < 0 && tsc_detected_places[i] == 1)
+            {
+                d++;
+            }
+            else if(detected_places[i] > 0 && tsc_detected_places[i] == -1)
+            {
+                e++;
+            }
+            else if(detected_places[i] < 0 && tsc_detected_places[i] == -1)
+            {
+                f++;
+            }
         }
-        else if(detected_places[i] < 0 && tsc_detected_places[i] == 0)
-        {
-            b++;
-        }
-        else if(detected_places[i] > 0 && tsc_detected_places[i] == 1)
-        {
-            c++;
-        }
-        else if(detected_places[i] < 0 && tsc_detected_places[i] == 1)
-        {
-            d++;
-        }
-        else if(detected_places[i] > 0 && tsc_detected_places[i] == -1)
-        {
-            e++;
-        }
-        else if(detected_places[i] < 0 && tsc_detected_places[i] == -1)
-        {
-            f++;
-        }
+
+        qDebug() << a << b << c << d << e << f;
+        qDebug() << "Transition recall: " << (float)d/(c+d) << "Place recall:" << (float)a/(a+b);
+
+        for(int i = 0; i < detected_places.size(); i++)
+            tsc_avg_plot->graph(PLOT_INCOHERENT_IDX+2)->addData(i, detected_places[i]);
+
+        for(int i = 0; i < tsc_detected_places.size(); i++)
+            tsc_avg_plot->graph(PLOT_INCOHERENT_IDX+3)->addData(i, tsc_detected_places[i]);
+
+        tsc_avg_plot->rescaleAxes();
+        tsc_avg_plot->replot();
     }
 
-    qDebug() << a << b << c << d << e << f;
-    qDebug() << "Transition recall: " << (float)d/(c+d) << "Place recall:" << (float)a/(a+b);
+    is_processing = false;
+    stop_processing = false;
 
-    for(int i = 0; i < detected_places.size(); i++)
-        tsc_avg_plot->graph(PLOT_INCOHERENT_IDX+2)->addData(i, detected_places[i]);
+}
 
-    for(int i = 0; i < tsc_detected_places.size(); i++)
-        tsc_avg_plot->graph(PLOT_INCOHERENT_IDX+3)->addData(i, tsc_detected_places[i]);
-
-    tsc_avg_plot->rescaleAxes();
-    tsc_avg_plot->replot();
-
+void TSCHybrid::stopProcessing()
+{
+    stop_processing = true;
 }
 
 void TSCHybrid::processImagesHierarchical(const string folder, const int start_idx, const int end_idx)
 {
+// For parameter tuning purpose
+//    findBestParameters();
+//    return;
+
+    is_processing = true;
 
     //Read dataset image files
     img_files = getFiles(folder);
 
     Mat img_org, img;
-    qint64 start_time, stop_time;
+    qint64 last_time;
 
     //SSG related variables
     vector<vector<NodeSig> > ns_vec;  //Stores last tau_w node signatures
     vector<float> coherency_scores_ssg;   //Stores all coherency scores
     vector<int> detected_places_unfiltered;
     vector<int> detected_places; //Stores all detected place ids
-    SSGs.push_back(new SSG(0));
+    SSG temp_SSG(0); temp_SSG.setStartFrame(0);
     TreeNode* hierarchy_tree;
     vector<PlaceSSG> places;
+
+    vector<cv::Point2f> coords;
+
+    int frame_count = 0;
+    last_time = QDateTime::currentMSecsSinceEpoch();
 
 
     //Process all images
     for(int frame_no = start_idx; frame_no < end_idx-1; frame_no++)
     {
+        if(stop_processing)
+        {
+            clearPastData();
+            break;
+        }
+
         img_org = imread(folder + img_files[frame_no]);
         resize(img_org, img, cv::Size(0,0), IMG_RESCALE_RAT, IMG_RESCALE_RAT);
         //emit showImgOrg(mat2QImage(img));
@@ -316,15 +376,10 @@ void TSCHybrid::processImagesHierarchical(const string folder, const int start_i
         //Process SSG//
         ///////////////
 
-        start_time = QDateTime::currentMSecsSinceEpoch();
-
         seg_track->processImage(img, ns_vec);
 
         //Calculate coherency based on existence map
         calcCohScore(seg_track, coherency_scores_ssg);
-
-        stop_time = QDateTime::currentMSecsSinceEpoch();
-        //cout << "SSG time elapsed: " << stop_time-start_time << endl;
 
         //Show connectivity map
         showMap(seg_track->getM());
@@ -334,32 +389,392 @@ void TSCHybrid::processImagesHierarchical(const string folder, const int start_i
         int detection_result = detectPlace(coherency_scores_ssg,detected_places_unfiltered,detected_places);
 
         cv::Point2f coord = getCoordCold(img_files[START_IDX+detected_places.size()]);
+        coords.push_back(coord);
 
         //Plot transition and place regions
-        plotScoresSSG(coherency_scores_ssg, detected_places, coord);
+        plotScoresSSG(coherency_scores_ssg, detected_places, coord, frame_no==start_idx);
 
         //If started for new place
         //Create new SSG
         if(detection_result == DETECTION_PLACE_STARTED)
         {
-            SSGs.push_back(new SSG(SSGs.size()));
-            SSGProc::updateSSG(*SSGs.back(), ns_vec.back(), seg_track->getM());
+            //Clear SSG
+            temp_SSG.nodes.clear();
+            temp_SSG.setId(temp_SSG.getId()+1);
+            temp_SSG.setStartFrame(frame_no);
+            SSGProc::updateSSG(temp_SSG, ns_vec.back(), seg_track->getM());
         }
         else if(detection_result == DETECTION_PLACE_ENDED)
         {
-            emit showSSG(mat2QImage(SSGProc::drawSSG(*SSGs.back(), img, params->tau_p)));
+            SSGProc::filterSummarySegments(temp_SSG, params->tau_p);
+            emit showSSG(mat2QImage(SSGProc::drawSSG(temp_SSG, img, params->tau_p)));
 
-            PlaceSSG new_place(SSGs.size()-1, SSGs.back());
+            temp_SSG.setEndFrame(frame_no);
+            temp_SSG.setSampleFrame(getMostCoherentFrame(coherency_scores_ssg,temp_SSG.getStartFrame(),temp_SSG.getEndFrame()));
+            PlaceSSG new_place(temp_SSG.getId(), temp_SSG);
 
             recognition->performRecognition(places, new_place, hierarchy_tree);
         }
         else if(detection_result == DETECTION_IN_PLACE)
         {
-            SSGProc::updateSSG(*SSGs.back(), ns_vec.back(), seg_track->getM());
+            SSGProc::updateSSG(temp_SSG, ns_vec.back(), seg_track->getM());
         }
+
+//        frame_count++;
+//        if(frame_count%100 == 0)
+//        {
+//            qDebug() << "Time elapsed in 100 frames: " << frame_count << QDateTime::currentMSecsSinceEpoch() - last_time;
+//            last_time = QDateTime::currentMSecsSinceEpoch();
+//        }
+
+        //Free variables
+        img.release();
+        img_org.release();
 
         //Wait a little for GUI processing
         waitKey(1);
+    }
+
+
+    //autoTryParameters(coords);
+
+    savePlacesFrameInfo(places);
+
+    is_processing = false;
+    stop_processing = false;
+}
+
+//For parameter tuning purposes
+//After the observation of output plots for different set of parameters
+//human user select some plots as successful. This function prints out the
+//paramters in a sorted order so that you can see which parameters
+//observed much than others. If some of the parameters is always observed than
+//you can say you found the optimal parameter.
+void TSCHybrid::findBestParameters()
+{
+    vector<string> files;
+//    files.push_back("939");
+//    files.push_back("963");
+//    files.push_back("987");
+//    files.push_back("1095");
+//    files.push_back("1119");
+//    files.push_back("1143");
+//    files.push_back("1407");
+//    files.push_back("1827");
+//    files.push_back("1831");
+//    files.push_back("1839");
+//    files.push_back("1851");
+//    files.push_back("1863");
+//    files.push_back("1867");
+//    files.push_back("1875");
+//    files.push_back("1882");
+//    files.push_back("1899");
+//    files.push_back("1911");
+//    files.push_back("1935");
+//    files.push_back("1947");
+//    files.push_back("1959");
+//    files.push_back("2139");
+//    files.push_back("2247");
+//    files.push_back("2439");
+//    files.push_back("2463");
+//    files.push_back("2475");
+//    files.push_back("2571");
+//Output for this set
+//coeff_node_disappear1: 0.5 0.5 0.5 0.5 0.5 0.5 0.7 0.7 0.7 0.7 0.7 0.7 0.9 0.9 0.9 0.9 0.9 0.9 0.9 0.9 0.9 0.9 0.9 0.9 0.9 0.9
+//coeff_node_disappear2: 0.4 0.4 0.4 0.4 0.4 0.4 0.4 0.4 0.4 0.4 0.6 0.6 0.6 0.6 0.6 0.6 0.6 0.6 0.6 0.6 0.6 0.6 0.6 0.6 0.6 0.6
+//coeff_node_appear: 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.3 0.3 0.3 0.3 0.3 0.3 0.3 0.3 0.3 0.3 0.3 0.3 0.3
+//coeff_coh_exp_base: 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 5 5 7
+//coeff_coh_appear_thres: 0.65 0.85 0.85 0.85 0.85 0.85 0.85 0.85 0.85 0.85 0.85 0.85 0.85 0.85 0.85 0.85 0.85 0.85 0.85 0.85 0.85 0.85 0.85 0.85 0.85 0.85
+//tau_f: 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 20 20 20 30 30 30 30
+//tau_n: 2 2 2 2 2 2 2 2 2 2 2 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4
+//tau_w: 10 10 10 10 10 10 10 15 15 15 15 15 15 15 15 15 15 15 15 15 15 15 15 15 15 15
+
+//    files.push_back("2");
+//    files.push_back("6");
+//    files.push_back("10");
+//    files.push_back("14");
+//    files.push_back("18");
+
+//    SSGParams* ssg_params;
+//    SegmentTrackParams* seg_track_params;
+//    SegmentationParams* seg_params;
+//    GraphMatchParams* gm_params;
+//    RecognitionParams* rec_params;
+
+    vector<float> coeff_node_disappear1;
+    vector<float> coeff_node_disappear2;
+    vector<float> coeff_node_appear;
+    vector<float> coeff_coh_exp_base;
+    vector<float> coeff_coh_appear_thres;
+    vector<float> tau_f;
+    vector<float> tau_n;
+    vector<float> tau_w;
+
+    for(int i = 0; i < files.size(); i++)
+    {
+
+        string filename = "/home/isl-mahmut/Output/Per May 19 2016-19:01:53/" + files[i] + ".txt";
+        readParameters(filename,
+                       params,
+                       seg_track_params,
+                       seg_params,
+                       gm_params,
+                       rec_params);
+
+
+        coeff_node_disappear1.push_back(params->coeff_node_disappear1);
+        coeff_node_disappear2.push_back(params->coeff_node_disappear2);
+        coeff_node_appear.push_back(params->coeff_node_appear);
+        coeff_coh_exp_base.push_back(params->coeff_coh_exp_base);
+        coeff_coh_appear_thres.push_back(params->coeff_coh_appear_thres);
+        tau_f.push_back(params->tau_f);
+        tau_n.push_back(params->tau_n);
+        tau_w.push_back(seg_track_params->tau_w);
+
+    }
+
+    sort(coeff_node_disappear1.begin(),coeff_node_disappear1.end());
+    sort(coeff_node_disappear2.begin(),coeff_node_disappear2.end());
+    sort(coeff_node_appear.begin(),coeff_node_appear.end());
+    sort(coeff_coh_exp_base.begin(),coeff_coh_exp_base.end());
+    sort(coeff_coh_appear_thres.begin(),coeff_coh_appear_thres.end());
+    sort(tau_f.begin(),tau_f.end());
+    sort(tau_n.begin(),tau_n.end());
+    sort(tau_w.begin(),tau_w.end());
+
+
+    cout << "coeff_node_disappear1: ";
+    for(int i = 0; i < coeff_node_disappear1.size(); i++)
+        cout << coeff_node_disappear1[i] << " ";
+    cout << endl;
+
+    cout << "coeff_node_disappear2: ";
+    for(int i = 0; i < coeff_node_disappear1.size(); i++)
+        cout << coeff_node_disappear2[i] << " ";
+    cout << endl;
+
+    cout << "coeff_node_appear: ";
+    for(int i = 0; i < coeff_node_disappear1.size(); i++)
+        cout << coeff_node_appear[i] << " ";
+    cout << endl;
+
+    cout << "coeff_coh_exp_base: ";
+    for(int i = 0; i < coeff_node_disappear1.size(); i++)
+        cout << coeff_coh_exp_base[i] << " ";
+    cout << endl;
+
+    cout << "coeff_coh_appear_thres: ";
+    for(int i = 0; i < coeff_node_disappear1.size(); i++)
+        cout << coeff_coh_appear_thres[i] << " ";
+    cout << endl;
+
+    cout << "tau_f: ";
+    for(int i = 0; i < coeff_node_disappear1.size(); i++)
+        cout << tau_f[i] << " ";
+    cout << endl;
+
+    cout << "tau_n: ";
+    for(int i = 0; i < coeff_node_disappear1.size(); i++)
+        cout << tau_n[i] << " ";
+    cout << endl;
+
+    cout << "tau_w: ";
+    for(int i = 0; i < coeff_node_disappear1.size(); i++)
+        cout << tau_w[i] << " ";
+    cout << endl;
+}
+
+//For parameter tuning purpose
+//First define the range of parameters and step size.
+//After the first run of the dataset, this function tries different
+//set of parameters and saves the output plot of detected places
+//Only some set of paramters can be changed after the experiment is completed
+void TSCHybrid::autoTryParameters(vector<cv::Point2f> coords)
+{
+    int try_count = 0;
+
+    float tau_w_s = 22;
+    float tau_w_e = 22;
+    float tau_w_del = 2;
+
+    float tau_f_s = 10;
+    float tau_f_e = 10;
+    float tau_f_del = 5;
+
+    float tau_n_s = 3;
+    float tau_n_e = 3;
+    float tau_n_del = 2;
+
+    float coeff_node_disappear1_s = 0.7;
+    float coeff_node_disappear1_e = 0.7;
+    float coeff_node_disappear1_del = 0.2;
+
+    float coeff_node_disappear2_s = 0.5;
+    float coeff_node_disappear2_e = 0.5;
+    float coeff_node_disappear2_del = 0.2;
+
+    float coeff_node_appear_s = 0.2;
+    float coeff_node_appear_e = 0.2;
+    float coeff_node_appear_del = 0.2;
+
+    float coeff_coh_exp_base_s = 3;
+    float coeff_coh_exp_base_e = 3;
+    float coeff_coh_exp_base_del = 1;
+
+    float coeff_coh_appear_thres_s = 0.85;
+    float coeff_coh_appear_thres_e = 0.85;
+    float coeff_coh_appear_thres_del = 0.05;
+
+    vector<float> coherency_scores_ssg_one_shot;   //Stores all coherency scores
+    vector<int> detected_places_unfiltered_one_shot;
+    vector<int> detected_places_one_shot; //Stores all detected place ids
+
+    for(float tau_w = tau_w_s; tau_w <= tau_w_e; tau_w += tau_w_del)
+    {
+        for(float tau_f = tau_f_s; tau_f <= tau_f_e; tau_f += tau_f_del)
+        {
+            for(float tau_n = tau_n_s; tau_n <= tau_n_e; tau_n += tau_n_del)
+            {
+                for(float coeff_node_disappear1 = coeff_node_disappear1_s; coeff_node_disappear1 <= coeff_node_disappear1_e; coeff_node_disappear1 += coeff_node_disappear1_del)
+                {
+                    for(float coeff_node_disappear2 = coeff_node_disappear2_s; coeff_node_disappear2 <= coeff_node_disappear2_e; coeff_node_disappear2 += coeff_node_disappear2_del)
+                    {
+                        for(float coeff_node_appear = coeff_node_appear_s; coeff_node_appear <= coeff_node_appear_e; coeff_node_appear += coeff_node_appear_del)
+                        {
+                            for(float coeff_coh_exp_base = coeff_coh_exp_base_s; coeff_coh_exp_base <= coeff_coh_exp_base_e; coeff_coh_exp_base += coeff_coh_exp_base_del)
+                            {
+                                for(float coeff_coh_appear_thres = coeff_coh_appear_thres_s; coeff_coh_appear_thres <= coeff_coh_appear_thres_e; coeff_coh_appear_thres += coeff_coh_appear_thres_del)
+                                {
+
+                                    params->coeff_node_disappear1 = coeff_node_disappear1;
+                                    params->coeff_node_disappear2 = coeff_node_disappear2;
+                                    params->coeff_node_appear = coeff_node_appear;
+                                    params->coeff_coh_exp_base = coeff_coh_exp_base;
+                                    params->coeff_coh_appear_thres = coeff_coh_appear_thres;
+                                    params->tau_f = tau_f;
+                                    params->tau_n = tau_n;
+                                    seg_track_params->tau_w = tau_w;
+
+                                    for(int i = 0; i < tsc_plot->graphCount(); i++)
+                                        tsc_plot->graph(i)->clearData();
+                                    for(int i = 0; i < ssg_plot->graphCount(); i++)
+                                        ssg_plot->graph(i)->clearData();
+                                    for(int i = 0; i < place_map->graphCount(); i++)
+                                        place_map->graph(i)->clearData();
+                                    for(int i = 0; i < tsc_avg_plot->graphCount(); i++)
+                                        tsc_avg_plot->graph(i)->clearData();
+
+
+
+                                    calcCohScoreOneShot(seg_track,coherency_scores_ssg_one_shot, detected_places_unfiltered_one_shot,detected_places_one_shot);
+                                    plotScoresSSGOneShot(coherency_scores_ssg_one_shot, detected_places_one_shot, coords, 1);
+
+                                    stringstream ss, ss2;
+                                    ss << getOutputFolder() << try_count << ".png";
+                                    this->ssg_plot->savePng(QString(ss.str().c_str()));
+
+
+                                    ss2 << getOutputFolder() << try_count << ".txt";
+
+                                    saveParameters(ss2.str(),
+                                                   params,
+                                                   seg_track_params,
+                                                   seg_params,
+                                                   gm_params,
+                                                   rec_params);
+
+                                    qDebug() << ss2.str().c_str();
+                                    try_count++;
+                                    coherency_scores_ssg_one_shot.clear();
+                                    detected_places_unfiltered_one_shot.clear();
+                                    detected_places_one_shot.clear();
+
+                                    waitKey(1);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+
+
+
+}
+
+//For parameter tuning purposes
+void TSCHybrid::calcCohScoreOneShot(SegmentTrack* seg_track, vector<float>& coh_scores,
+                                    vector<int>& detected_places_unfiltered,
+                                    vector<int>& detected_places)
+{
+    Mat M_ = seg_track->getM();
+    vector<pair<NodeSig, int> > M_ns = seg_track->getM_ns();
+    float tau_w = seg_track_params->tau_w;
+
+    for(int f = 1; f < M_.size().width; f++)
+    {
+        Mat M = M_(Rect(0,0,f,M_.size().height-1));
+
+        //Wait until at least tau_w frames
+        if(M.size().width < tau_w)
+            continue;
+        //Fill first tau_w frames with zeros
+        else if(M.size().width == tau_w)
+            coh_scores.resize(tau_w/2, 0);
+
+        int active_nodes = 0;
+        float coh_score = 0;
+
+        float incoherency = 0.0;
+        float coherency = 0.0;
+
+
+        //Detect each appeared or disappeared node at the last tau_w frame
+        for(int i = 0; i < M.size().height; i++)
+        {
+            //Keeps how long node appeared through window
+            int nr_appear = 0;
+
+            for(int j = M.size().width-tau_w; j < M.size().width-1; j++)
+            {
+                //Incoherency: Disappeared node
+                if(M.at<int>(i, j) == 0 && M.at<int>(i, j+1) > 0)
+                {
+                    if(M_ns[i].second > params->tau_f)
+                        incoherency += params->coeff_node_disappear1;
+                    else
+                        incoherency += params->coeff_node_disappear2;
+                }
+
+                //Incoherency: Appeared node
+                if(M.at<int>(i, j) == 0 && M.at<int>(i, j+1) > 0)
+                {
+                        incoherency += params->coeff_node_appear;
+                }
+
+                //Coherency: Stabile node
+                if(M.at<int>(i,j) > 0)
+                    nr_appear++;
+            }
+
+            //Active nodes are only the ones that appeared at least one time through window
+            if(nr_appear > 0)
+                active_nodes++;
+
+            //If node appeared at least certain percent then it's a stabile node.
+            if((float)nr_appear/tau_w > params->coeff_coh_appear_thres)
+                coherency += (float)nr_appear/tau_w;
+        }
+
+        // Coherency score calculation ( -1 < coh_range < 1)
+        // coherency_score = (1 - a^(-coherency)) - (incoherency)
+        coh_score = 1-pow(params->coeff_coh_exp_base,-1*coherency) - (incoherency/active_nodes);
+
+        coh_scores.push_back(coh_score);
+        detectPlace(coh_scores,detected_places_unfiltered,detected_places);
     }
 }
 
@@ -508,10 +923,86 @@ void TSCHybrid::plotEsensPlaces()
 }
 
 // Plots places and coherency scores
-void TSCHybrid::plotScoresSSG(vector<float> coherency_scores, vector<int> detected_places, cv::Point2f coord)
+void TSCHybrid::plotScoresSSGOneShot(vector<float> coherency_scores, vector<int> detected_places, vector<cv::Point2f> coords, bool reset)
+{
+    static int graph_idx = PLOT_PLACES_IDX;
+
+    if(reset)
+    {
+        graph_idx = PLOT_PLACES_IDX;
+    }
+
+    float margin = 1.0;
+
+    for(int i = 1; i < detected_places.size(); i++)
+    {
+        //Place->Transition or vice versa region change occur
+        if(graph_idx == PLOT_PLACES_IDX || ( detected_places[i] != detected_places[i-1]) )
+        {
+            //Add new graph to change color
+            this->ssg_plot->addGraph();
+            this->place_map->addGraph();
+            graph_idx++;
+
+            if(detected_places[i] > 0)
+            {
+                //Place
+                this->ssg_plot->graph(graph_idx)->setPen(QPen(Qt::red));
+                this->ssg_plot->graph(graph_idx)->setBrush(QBrush(QColor(255, 0, 0, 80)));
+
+                QPen dumPen;
+                dumPen.setWidth(1);
+                dumPen.setColor(QColor(255, 0, 0, 50));
+
+                this->place_map->graph(graph_idx)->setPen(dumPen);
+                this->place_map->graph(graph_idx)->setLineStyle(QCPGraph::lsNone);
+                this->place_map->graph(graph_idx)->setScatterStyle(QCPScatterStyle::ssDisc);
+            }
+            else
+            {
+                //Transition
+                this->ssg_plot->graph(graph_idx)->setPen(QPen(Qt::blue));
+                this->ssg_plot->graph(graph_idx)->setBrush(QBrush(QColor(0, 0, 255, 80)));
+
+                QPen dumPen;
+                dumPen.setWidth(3);
+                dumPen.setColor(QColor(0, 0, 255, 50));
+
+                this->place_map->graph(graph_idx)->setPen(dumPen);
+                this->place_map->graph(graph_idx)->setLineStyle(QCPGraph::lsNone);
+                this->place_map->graph(graph_idx)->setScatterStyle(QCPScatterStyle::ssDisc);
+            }
+        }
+
+        //Add the new point
+        ssg_plot->graph(graph_idx)->addData(i,1.0+margin);
+        place_map->graph(graph_idx)->addData(coords[i].x, coords[i].y);
+
+        //Add coh score
+        ssg_plot->graph(PLOT_SCORES_IDX)->addData(i,coherency_scores[i]+margin);
+
+        //Add thresold line
+        ssg_plot->graph(PLOT_THRES_IDX)->addData(i,params->tau_c+margin);
+    }
+
+    ssg_plot->rescaleAxes();
+    ssg_plot->replot();
+    //place_map->rescaleAxes();
+    place_map->replot();
+}
+
+
+// Plots places and coherency scores
+void TSCHybrid::plotScoresSSG(vector<float> coherency_scores, vector<int> detected_places, cv::Point2f coord, bool reset)
 {
     static int graph_idx = PLOT_PLACES_IDX;
     static int thres_cursor = 0;
+
+    if(reset)
+    {
+        graph_idx = PLOT_PLACES_IDX;
+        thres_cursor = 0;
+    }
     float margin = 1.0;
     if(detected_places.size() > 1)
     {
@@ -572,7 +1063,7 @@ void TSCHybrid::plotScoresSSG(vector<float> coherency_scores, vector<int> detect
     ssg_plot->rescaleAxes();
     ssg_plot->replot();
     //place_map->rescaleAxes();
-    //place_map->replot();
+    place_map->replot();
 }
 
 void TSCHybrid::plotScoresTSC(vector<float> scores, Place* current_place, BasePoint cur_base_point, vector<Place> detected_places, vector<int>& tsc_detected_places)

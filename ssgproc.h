@@ -10,7 +10,9 @@
 #include <opencv2/flann/flann.hpp>
 #include <iostream>
 #include <fstream>
-
+#include <QDebug>
+#include <QDate>
+#include "utils.h"
 #include "defs.h"
 #include "utilTypes.h"
 
@@ -25,6 +27,7 @@ public:
     static void updateSSG(SSG& ssg, vector<NodeSig>& ns, Mat& map);
     static Mat drawSSG(SSG& ssg, Mat& input, float tau_p);
     static void updateNodeSig(pair<NodeSig, int>& ns, NodeSig new_ns);
+    static void filterSummarySegments(SSG& ssg, float tau_p);
 
 public:
 

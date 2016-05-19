@@ -31,11 +31,17 @@ public:
               SegmentationParams* seg_params,
               GraphMatchParams* gm_params,
               RecognitionParams* rec_params);
+    ~TSCHybrid();
     void processImages(const string folder, const int start_idx, const int end_idx);
     void processImagesHierarchical(const string folder, const int start_idx, const int end_idx);
     SegmentTrack* seg_track;
     Recognition* recognition;
     bool eventFilter( QObject* watched, QEvent* event );
+    bool is_processing;
+    bool stop_processing;
+    void stopProcessing();
+    void autoTryParameters(vector<cv::Point2f> coords);
+
 
 
 private:
@@ -51,8 +57,12 @@ private:
     int cursor;
     vector<string> img_files;
     vector<SSG*> SSGs; //Stores SSGs
+    void calcCohScoreOneShot(SegmentTrack* seg_track, vector<float>& coh_scores,
+                             vector<int>& detected_places_unfiltered,
+                             vector<int>& detected_places);
     float calcCohScore(SegmentTrack* seg_track, vector<float>& coh_scores);
-    void plotScoresSSG(vector<float> coherency_scores, vector<int> detected_places, cv::Point2f coord);
+    void plotScoresSSGOneShot(vector<float> coherency_scores, vector<int> detected_places, vector<cv::Point2f> coords, bool reset);
+    void plotScoresSSG(vector<float> coherency_scores, vector<int> detected_places, cv::Point2f coord, bool = false);
     void plotScoresTSC(vector<float> scores, Place* current_place, BasePoint cur_base_point, vector<Place> detected_places, vector<int>& tsc_detected_places);
     void plotAvgScoresTSC(vector<float>& scores, std::vector<BasePoint> wholebasepoints, vector<float>& avg_scoress);
     void showMap(const Mat& M);
@@ -60,6 +70,8 @@ private:
                      vector<int>& detected_places_unfiltered,
                      vector<int>& detected_places);
     void plotEsensPlaces();
+    void clearPastData();
+    void findBestParameters();
 
 public slots:
     

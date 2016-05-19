@@ -10,29 +10,7 @@
 
 using namespace std;
 
-class SSGParams{
-public:
-    SSGParams(int tau_n,
-              float tau_c,
-              int tau_f,
-              float tau_d,
-              float tau_p,
-              float coeff_node_disappear1,
-              float coeff_node_disappear2,
-              float coeff_node_appear,
-              float coeff_coh_exp_base,
-              float coeff_coh_appear_thres);
-    int tau_n;
-    float tau_c;
-    int tau_f;
-    float tau_d;
-    float tau_p;
-    float coeff_node_disappear1;
-    float coeff_node_disappear2;
-    float coeff_node_appear;
-    float coeff_coh_exp_base;
-    float coeff_coh_appear_thres;
-};
+
 
 class PlaceDetection : public QObject
 {

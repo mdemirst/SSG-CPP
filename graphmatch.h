@@ -25,16 +25,7 @@ using namespace cv;
 
 #define IMG_RESIZE_RATIO 0.3
 
-class GraphMatchParams
-{
-public:
-    GraphMatchParams(float pos_weight,
-                     float color_weight,
-                     float area_weight);
-    float pos_weight;
-    float color_weight;
-    float area_weight;
-};
+
 
 class GraphMatch : public QObject
 {

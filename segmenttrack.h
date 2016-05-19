@@ -8,12 +8,7 @@
 #include "ssgproc.h"
 #include <QObject>
 
-class SegmentTrackParams{
-public:
-    SegmentTrackParams(int tau_w, float tau_m);
-    int tau_w;
-    float tau_m;
-};
+
 
 class SegmentTrack : public QObject
 {

@@ -34,6 +34,11 @@ vector<NodeSig> Segmentation::segmentImage(const Mat &img, Mat &img_seg)
     //Calculate statistics of segments
     vector<BlobStats> blobs = calcBlobStats(img, segments.second);
 
+    //free unused segment variables
+    delete segments.first;
+    delete segments.second;
+    delete img_;
+
     //Construct node signatures from statistics
     vector<NodeSig> node_signatures;
     node_signatures = constructSegmentsGraph(img, blobs);

@@ -59,6 +59,10 @@ float GraphMatch::drawMatches(vector<NodeSig> ns1, vector<NodeSig> ns2,
     //free variables
     hungarian_free(&p);
 
+    //free cost matrix
+    for (int i = 0; i < rows; i++) free(cost_matrix[i]);
+    free(cost_matrix);
+
     // Calculate match score and
     // show matching results given assignment and cost matrix
     Mat img_merged;
@@ -120,12 +124,12 @@ float GraphMatch::drawMatches(vector<NodeSig> ns1, vector<NodeSig> ns2,
         Point p1 = ns1[nonzero_locs[i].y].center;
         Point p2 = ns2[nonzero_locs[i].x].center+Point(img1.size().width,0);
         double r1 = sqrt(ns1[nonzero_locs[i].y].area)/4.0;
-        double r2 = sqrt(ns1[nonzero_locs[i].y].area)/4.0;
+        double r2 = sqrt(ns2[nonzero_locs[i].x].area)/4.0;
         r1 = max(r1,1.0)*1.5;
         r2 = max(r2,1.0)*1.5;
 
         circle(img_merged,p1,r1,Scalar(ns1[nonzero_locs[i].y].colorB, ns1[nonzero_locs[i].y].colorG, ns1[nonzero_locs[i].y].colorR), -1);
-        circle(img_merged,p2,r2,Scalar(ns2[nonzero_locs[i].y].colorB, ns2[nonzero_locs[i].y].colorG, ns2[nonzero_locs[i].y].colorR), -1);
+        circle(img_merged,p2,r2,Scalar(ns2[nonzero_locs[i].x].colorB, ns2[nonzero_locs[i].x].colorG, ns2[nonzero_locs[i].x].colorR), -1);
         circle(img_merged,p1,r1,Scalar(0,0,0), 1);
         circle(img_merged,p2,r2,Scalar(0,0,0), 1);
         //line(img_merged,p1,p2,MATCH_LINE_COLOR,MATCH_LINE_WIDTH);
@@ -197,6 +201,10 @@ float GraphMatch::matchTwoImages(vector<NodeSig> ns1, vector<NodeSig> ns2,
 
     //free variables
     hungarian_free(&p);
+
+    //free cost matrix
+    for (int i = 0; i < rows; i++) free(cost_matrix[i]);
+    free(cost_matrix);
 
     // Calculate match score
     float matching_cost = 0;
