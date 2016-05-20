@@ -14,6 +14,7 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
+    auto_tune = false;
     ui->setupUi(this);
 
     tsc_hybrid = NULL;
@@ -150,6 +151,9 @@ void MainWindow::on_scroll_tau_n_valueChanged(int value)
 {
     ui->tb_tau_n->setText(QString::number(value));
     ssg_params->tau_n = value;
+
+    if(auto_tune)
+        tsc_hybrid->recalculateCoherencyAndPlot();
 }
 
 void MainWindow::on_scroll_tau_c_valueChanged(int value)
@@ -162,18 +166,32 @@ void MainWindow::on_scroll_tau_w_valueChanged(int value)
 {
     ui->tb_tau_w->setText(QString::number(value));
     seg_track_params->tau_w = value;
+
+    if(auto_tune)
+        tsc_hybrid->recalculateCoherencyAndPlot();
 }
 
 void MainWindow::on_scroll_tau_f_valueChanged(int value)
 {
     ui->tb_tau_f->setText(QString::number(value));
     ssg_params->tau_f = value;
+
+    if(auto_tune)
+        tsc_hybrid->recalculateCoherencyAndPlot();
 }
 
 void MainWindow::on_scroll_tau_m_valueChanged(int value)
 {
     ui->tb_tau_m->setText(QString::number(value/1000.0));
     seg_track_params->tau_m = value/1000.0;
+}
+
+void MainWindow::on_scroll_tau_p_sliderReleased()
+{
+    on_scroll_tau_p_valueChanged(ui->scroll_tau_p->value());
+
+    if(auto_tune)
+        tsc_hybrid->reRecognize();
 }
 
 void MainWindow::on_scroll_tau_p_valueChanged(int value)
@@ -204,30 +222,53 @@ void MainWindow::on_scroll_disapp_coeff1_valueChanged(int value)
 {
     ui->tb_disapp1->setText(QString::number(value/10.0));
     ssg_params->coeff_node_disappear1 = value/10.0;
+
+    if(auto_tune)
+        tsc_hybrid->recalculateCoherencyAndPlot();
 }
 
 void MainWindow::on_scroll_disapp_coeff2_valueChanged(int value)
 {
     ui->tb_disapp2->setText(QString::number(value/10.0));
     ssg_params->coeff_node_disappear1 = value/10.0;
+
+    if(auto_tune)
+        tsc_hybrid->recalculateCoherencyAndPlot();
 }
 
 void MainWindow::on_scroll_appear_coeff_valueChanged(int value)
 {
     ui->tb_appear->setText(QString::number(value/10.0));
     ssg_params->coeff_node_appear = value/10.0;
+
+    if(auto_tune)
+        tsc_hybrid->recalculateCoherencyAndPlot();
 }
 
 void MainWindow::on_scroll_coh_base_valueChanged(int value)
 {
     ui->tb_coh_exp_base->setText(QString::number(value));
     ssg_params->coeff_coh_exp_base = value;
+
+    if(auto_tune)
+        tsc_hybrid->recalculateCoherencyAndPlot();
 }
 
 void MainWindow::on_scroll_appear_thres_valueChanged(int value)
 {
     ui->tb_coh_app_thres->setText(QString::number(value/100.0));
     ssg_params->coeff_coh_appear_thres = value/100.0;
+
+    if(auto_tune)
+        tsc_hybrid->recalculateCoherencyAndPlot();
+}
+
+void MainWindow::on_scroll_tau_r_sliderReleased()
+{
+    on_scroll_tau_r_valueChanged(ui->scroll_tau_r->value());
+
+    if(auto_tune)
+        tsc_hybrid->reRecognize();
 }
 
 void MainWindow::on_scroll_tau_r_valueChanged(int value)
@@ -440,3 +481,15 @@ void MainWindow::on_btn_hierarchical_stop_clicked()
         tsc_hybrid->stopProcessing();
     }
 }
+
+void MainWindow::on_cb_auto_tune_clicked()
+{
+    if(ui->cb_auto_tune->isChecked() == true)
+        this->auto_tune = true;
+    else
+        this->auto_tune = false;
+}
+
+
+
+

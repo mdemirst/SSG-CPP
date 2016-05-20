@@ -40,7 +40,9 @@ public:
     bool is_processing;
     bool stop_processing;
     void stopProcessing();
-    void autoTryParameters(vector<cv::Point2f> coords);
+    void autoTryParameters();
+    void recalculateCoherencyAndPlot();
+    void reRecognize();
 
 
 
@@ -56,7 +58,9 @@ private:
     RecognitionParams* rec_params;
     int cursor;
     vector<string> img_files;
-    vector<SSG*> SSGs; //Stores SSGs
+    vector<SSG> SSGs; //Stores SSGs
+    vector<cv::Point2f> coords;
+    vector<PlaceSSG> places_unprocessed;
     void calcCohScoreOneShot(SegmentTrack* seg_track, vector<float>& coh_scores,
                              vector<int>& detected_places_unfiltered,
                              vector<int>& detected_places);

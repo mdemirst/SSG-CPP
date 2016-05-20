@@ -30,6 +30,9 @@ public:
     GraphMatchParams* gm_params;
     RecognitionParams* rec_params;
     Recognition* recognition;
+
+private:
+    bool auto_tune;
     
 private slots:
     void showImgOrg(QImage img);
@@ -109,6 +112,12 @@ private slots:
     void on_btn_save_settings_clicked();
 
     void on_btn_hierarchical_stop_clicked();
+
+    void on_cb_auto_tune_clicked();
+
+    void on_scroll_tau_p_sliderReleased();
+
+    void on_scroll_tau_r_sliderReleased();
 
 private:
     Ui::MainWindow *ui;

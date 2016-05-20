@@ -166,6 +166,7 @@ void TSCHybrid::clearPastData()
     img_files.clear();
     seg_track->getM().release();
     seg_track->getM_ns().clear();
+    coords.clear();
 
     for(int i = 0; i < tsc_plot->graphCount(); i++)
         tsc_plot->graph(i)->clearData();
@@ -353,8 +354,6 @@ void TSCHybrid::processImagesHierarchical(const string folder, const int start_i
     TreeNode* hierarchy_tree;
     vector<PlaceSSG> places;
 
-    vector<cv::Point2f> coords;
-
     int frame_count = 0;
     last_time = QDateTime::currentMSecsSinceEpoch();
 
@@ -406,14 +405,19 @@ void TSCHybrid::processImagesHierarchical(const string folder, const int start_i
         }
         else if(detection_result == DETECTION_PLACE_ENDED)
         {
-            SSGProc::filterSummarySegments(temp_SSG, params->tau_p);
-            emit showSSG(mat2QImage(SSGProc::drawSSG(temp_SSG, img, params->tau_p)));
+            //Commented out for experimental purpose
+            //SSGProc::filterSummarySegments(temp_SSG, params->tau_p);
+            //emit showSSG(mat2QImage(SSGProc::drawSSG(temp_SSG, img, params->tau_p)));
 
             temp_SSG.setEndFrame(frame_no);
             temp_SSG.setSampleFrame(getMostCoherentFrame(coherency_scores_ssg,temp_SSG.getStartFrame(),temp_SSG.getEndFrame()));
-            PlaceSSG new_place(temp_SSG.getId(), temp_SSG);
+            //PlaceSSG new_place(temp_SSG.getId(), temp_SSG);
 
-            recognition->performRecognition(places, new_place, hierarchy_tree);
+            //Expermental purpose
+            SSGs.push_back(temp_SSG);
+
+            //Commented out for experimental purpose
+            //recognition->performRecognition(places, new_place, hierarchy_tree);
         }
         else if(detection_result == DETECTION_IN_PLACE)
         {
@@ -436,12 +440,28 @@ void TSCHybrid::processImagesHierarchical(const string folder, const int start_i
     }
 
 
-    //autoTryParameters(coords);
+    //autoTryParameters();
 
     savePlacesFrameInfo(places);
 
     is_processing = false;
     stop_processing = false;
+}
+
+void TSCHybrid::reRecognize()
+{
+    TreeNode* hierarchy_tree;
+    vector<PlaceSSG> places;
+
+    vector<SSG> SSGs = this->SSGs;
+
+    for(int i = 0; i < SSGs.size(); i++)
+    {
+        SSGProc::filterSummarySegments(SSGs[i], params->tau_p);
+        PlaceSSG new_place(SSGs[i].getId(), SSGs[i]);
+        recognition->performRecognition(places, new_place, hierarchy_tree);
+    }
+
 }
 
 //For parameter tuning purposes
@@ -584,12 +604,34 @@ void TSCHybrid::findBestParameters()
     cout << endl;
 }
 
+//This function is used to recalculate the coherency score based on already crated M matrix
+//And plot places -- Used for reploting places after the parameters are changed for tuning purposes
+void TSCHybrid::recalculateCoherencyAndPlot()
+{
+    for(int i = 0; i < tsc_plot->graphCount(); i++)
+        tsc_plot->graph(i)->clearData();
+    for(int i = 0; i < ssg_plot->graphCount(); i++)
+        ssg_plot->graph(i)->clearData();
+    for(int i = 0; i < place_map->graphCount(); i++)
+        place_map->graph(i)->clearData();
+    for(int i = 0; i < tsc_avg_plot->graphCount(); i++)
+        tsc_avg_plot->graph(i)->clearData();
+
+
+    vector<float> coherency_scores_ssg_one_shot;   //Stores all coherency scores
+    vector<int> detected_places_unfiltered_one_shot;
+    vector<int> detected_places_one_shot; //Stores all detected place ids
+
+    calcCohScoreOneShot(seg_track,coherency_scores_ssg_one_shot, detected_places_unfiltered_one_shot,detected_places_one_shot);
+    plotScoresSSGOneShot(coherency_scores_ssg_one_shot, detected_places_one_shot, coords, 1);
+}
+
 //For parameter tuning purpose
 //First define the range of parameters and step size.
 //After the first run of the dataset, this function tries different
 //set of parameters and saves the output plot of detected places
 //Only some set of paramters can be changed after the experiment is completed
-void TSCHybrid::autoTryParameters(vector<cv::Point2f> coords)
+void TSCHybrid::autoTryParameters()
 {
     int try_count = 0;
 

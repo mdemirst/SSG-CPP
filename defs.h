@@ -59,22 +59,22 @@
 #define PEN_WIDTH3 3
 #define IMG_RESCALE_RAT 0.5
 
-#define INIT_TAU_N 3//5//10
-#define INIT_TAU_C 0.2//0.4
-#define INIT_TAU_W 22//15//30
-#define INIT_TAU_M 0.05//0.020//0.015
-#define INIT_TAU_F 10//15//30
+#define INIT_TAU_N 10
+#define INIT_TAU_C 0.5
+#define INIT_TAU_W 30
+#define INIT_TAU_M 0.05
+#define INIT_TAU_F 15
 #define INIT_TAU_D 1.0
-#define INIT_TAU_P 0.8
+#define INIT_TAU_P 0.6
 
-#define COEFF_NODE_DISAPPEAR_1 0.7//2
-#define COEFF_NODE_DISAPPEAR_2 0.5
-#define COEFF_NODE_APPEAR 0.2
-#define COEFF_COH_EXP_BASE 3//5
-#define COEFF_COH_APPEAR_THRES 0.85//0.80
+#define COEFF_NODE_DISAPPEAR_1 0.0
+#define COEFF_NODE_DISAPPEAR_2 0.0
+#define COEFF_NODE_APPEAR 0.0
+#define COEFF_COH_EXP_BASE 10
+#define COEFF_COH_APPEAR_THRES 0.90
 
 //Predefined segmentation parameters
-#define SEG_SIGMA       0.8//0.90
+#define SEG_SIGMA       0.8
 #define SEG_K           300
 #define SEG_MIN_SIZE    1500
 #define SEG_SCALE       1.0
@@ -84,7 +84,7 @@
 #define AREA_WEIGHT 0.7
 
 //Recognition parameters
-#define INIT_TAU_R 0.01
+#define INIT_TAU_R 0.075
 
 #define INIT_TREE_PLOT_H 1000
 #define INIT_TREE_PLOT_W 3000
