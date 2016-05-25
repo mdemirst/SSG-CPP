@@ -43,19 +43,22 @@ public:
                       int plot_h,
                       int plot_w,
                       int ssg_h,
-                      int ssg_w)
+                      int ssg_w,
+                      float tau_v)
     {
         this->tau_r = tau_r;
         this->plot_h = plot_h;
         this->plot_w = plot_w;
         this->ssg_h = ssg_h;
         this->ssg_w = ssg_w;
+        this->tau_v = tau_v;
     }
     float tau_r;
     int plot_h;
     int plot_w;
     int ssg_h;
     int ssg_w;
+    float tau_v;
 };
 
 class GraphMatchParams
@@ -162,6 +165,7 @@ public:
     void setSampleFrame(int frame){this->sample_frame = frame;}
     int getSampleFrame(){return sample_frame;}
     vector<pair<NodeSig, int> > nodes;
+    vector<vector<NodeSig> > basepoints;
 };
 
 class RAG_m

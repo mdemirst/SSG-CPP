@@ -56,7 +56,6 @@ void Recognition::drawSSG(Mat& img, SSG ssg, Point coord)
     {
         copyMakeBorder(img, img, 0, rec_params->ssg_h, 0, 0, BORDER_CONSTANT, Scalar(255,255,255));
     }
-    qDebug() << "g"<< img_files.size() << ssg.getSampleFrame()-START_IDX;
 
     Mat img_real = imread(DATASET_FOLDER + img_files[ssg.getSampleFrame()-START_IDX]);
 
@@ -215,6 +214,35 @@ TreeNode* Recognition::findNode(int label, TreeNode* root)
     return NULL;
 }
 
+double Recognition::calculateDistance(SSG& old_place, SSG& detected_place)
+{
+    vector<NodeSig> ns;
+    double vote = 0;
+    int count = 0;
+
+    //First option
+    for(int i = 0; i < old_place.nodes.size(); i++)
+        ns.push_back(old_place.nodes[i].first);
+
+    Mat P, C;
+    for(int i = 0; i < detected_place.basepoints.size(); i++)
+    {
+        Mat P, C;
+        //voting system
+        if(gm->matchTwoImages(detected_place.basepoints[i],ns,P,C) < rec_params->tau_v)
+            vote += 1;
+        count++;
+    }
+    vote /= count;
+    qDebug() << "Vote between" << old_place.getId() << detected_place.getId() << "is" << vote;
+
+    //Second option
+    //Mat P, C;
+    //distance += gm->matchTwoImages(old_place,detected_place,P,C);
+
+
+    return 1-vote;
+}
 
 double** Recognition::calculateDistanceMatrix(vector<PlaceSSG>& places)
 {
@@ -228,7 +256,8 @@ double** Recognition::calculateDistanceMatrix(vector<PlaceSSG>& places)
 
     for(int r = 0; r < nrPlaces; r++)
     {
-        for(int c = 0; c < nrPlaces; c++)
+        dist_matrix[r][r] = 0;
+        for(int c = r+1; c < nrPlaces; c++)
         {
             double distance = 0;
             int count = 0;
@@ -237,12 +266,14 @@ double** Recognition::calculateDistanceMatrix(vector<PlaceSSG>& places)
                 for(int j = 0; j < places[c].getCount(); j++)
                 {
                     Mat P, C;
-                    distance += gm->matchTwoImages(places[r].getMember(i),places[c].getMember(j),P,C);
+                    //distance += gm->matchTwoImages(places[r].getMember(i),places[c].getMember(j),P,C);
+                    distance += calculateDistance(places[r].getMember(i),places[c].getMember(j));
                     count++;
                 }
             }
 
             dist_matrix[r][c] = distance/count;
+            dist_matrix[c][r] = distance/count;
         }
     }
 
@@ -307,7 +338,7 @@ int Recognition::performRecognition(vector<PlaceSSG>& places, PlaceSSG new_place
 
                     places.erase(places.end());
 
-                    qDebug() << "New place is recognized!" << "Recognized id's:" << sibling_label+1 << new_place_label+1;
+                    qDebug() << "New place is recognized!" << "Recognized id's:" << sibling_label << new_place_label;
 
                     emit printMessage("Rec: " + QString::number(sibling_label+1) + " " +  QString::number(new_place_label+1));
                     recognition_status = RECOGNIZED;
@@ -315,7 +346,6 @@ int Recognition::performRecognition(vector<PlaceSSG>& places, PlaceSSG new_place
                 }
             }
         }
-
     }
 
     //Remove dist_matrix

@@ -421,6 +421,7 @@ void TSCHybrid::processImagesHierarchical(const string folder, const int start_i
         }
         else if(detection_result == DETECTION_IN_PLACE)
         {
+            temp_SSG.basepoints.push_back(ns_vec.back());
             SSGProc::updateSSG(temp_SSG, ns_vec.back(), seg_track->getM());
         }
 
@@ -441,7 +442,7 @@ void TSCHybrid::processImagesHierarchical(const string folder, const int start_i
 
 
     //autoTryParameters();
-
+    //qDebug() << places.size();
     savePlacesFrameInfo(places);
 
     is_processing = false;

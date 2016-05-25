@@ -48,6 +48,7 @@ private:
     Mat saveRAG(const vector<NodeSig> ns, string name);
     void drawTree(TreeNode* root_node, int size, int height, int width);
     double** calculateDistanceMatrix(vector<PlaceSSG>& places);
+    double calculateDistance(SSG& old_place, SSG& detected_place);
     TreeNode* findNode(int label, TreeNode* root);
     TreeNode* convert2Tree(Node* tree, int nrNodes, int nrPlaces, vector<PlaceSSG>& places);
     void sortTerminalNodes(TreeNode* node, int* last_pos);

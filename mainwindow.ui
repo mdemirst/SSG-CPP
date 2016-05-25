@@ -197,7 +197,7 @@ QGroupBox::title {
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>1586</width>
+                  <width>98</width>
                   <height>198</height>
                  </rect>
                 </property>
@@ -248,7 +248,7 @@ QGroupBox::title {
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_41">
         <item>
-         <widget class="QLabel" name="lbl_mapX">
+         <widget class="QLabel" name="lbl_map">
           <property name="minimumSize">
            <size>
             <width>0</width>
@@ -261,7 +261,7 @@ QGroupBox::title {
          </widget>
         </item>
         <item>
-         <widget class="QCustomPlot" name="custom_plot_merged_ssgX" native="true">
+         <widget class="QCustomPlot" name="custom_plot_merged_ssg" native="true">
           <property name="minimumSize">
            <size>
             <width>0</width>
@@ -952,6 +952,9 @@ QGroupBox::title {
                    <property name="singleStep">
                     <number>1</number>
                    </property>
+                   <property name="sliderPosition">
+                    <number>50</number>
+                   </property>
                    <property name="orientation">
                     <enum>Qt::Horizontal</enum>
                    </property>
@@ -971,6 +974,9 @@ QGroupBox::title {
                    <property name="singleStep">
                     <number>1</number>
                    </property>
+                   <property name="sliderPosition">
+                    <number>50</number>
+                   </property>
                    <property name="orientation">
                     <enum>Qt::Horizontal</enum>
                    </property>
@@ -989,6 +995,9 @@ QGroupBox::title {
                    </property>
                    <property name="singleStep">
                     <number>1</number>
+                   </property>
+                   <property name="sliderPosition">
+                    <number>50</number>
                    </property>
                    <property name="orientation">
                     <enum>Qt::Horizontal</enum>
@@ -1219,12 +1228,8 @@ QGroupBox::title {
          </layout>
         </item>
        </layout>
-       <zorder>horizontalLayoutWidget</zorder>
-       <zorder>horizontalLayoutWidget</zorder>
-       <zorder>verticalLayoutWidget</zorder>
-       <zorder>verticalLayoutWidget</zorder>
-       <zorder>custom_plot_merged_ssgX</zorder>
-       <zorder>lbl_mapX</zorder>
+       <zorder>custom_plot_merged_ssg</zorder>
+       <zorder>lbl_map</zorder>
       </widget>
       <widget class="QWidget" name="tab_4">
        <attribute name="title">
@@ -1381,8 +1386,8 @@ QGroupBox::title {
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>1378</width>
-                  <height>298</height>
+                  <width>451</width>
+                  <height>66</height>
                  </rect>
                 </property>
                 <layout class="QHBoxLayout" name="horizontalLayout_11">
@@ -1533,13 +1538,13 @@ QGroupBox::title {
                    <rect>
                     <x>0</x>
                     <y>0</y>
-                    <width>1376</width>
+                    <width>98</width>
                     <height>268</height>
                    </rect>
                   </property>
                   <layout class="QHBoxLayout" name="horizontalLayout_3">
                    <item>
-                    <widget class="QLabel" name="lbl_map">
+                    <widget class="QLabel" name="lbl_map2">
                      <property name="focusPolicy">
                       <enum>Qt::StrongFocus</enum>
                      </property>
@@ -1583,8 +1588,8 @@ QGroupBox::title {
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>1378</width>
-                  <height>198</height>
+                  <width>237</width>
+                  <height>147</height>
                  </rect>
                 </property>
                 <layout class="QVBoxLayout" name="verticalLayout">
@@ -1599,7 +1604,7 @@ QGroupBox::title {
                   </widget>
                  </item>
                  <item>
-                  <widget class="QCustomPlot" name="custom_plot_merged_ssg" native="true">
+                  <widget class="QCustomPlot" name="custom_plot_merged_ssg2" native="true">
                    <property name="minimumSize">
                     <size>
                      <width>0</width>
@@ -1647,7 +1652,7 @@ QGroupBox::title {
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>1362</width>
+                  <width>234</width>
                   <height>57</height>
                  </rect>
                 </property>
@@ -1711,7 +1716,7 @@ QGroupBox::title {
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>1362</width>
+                  <width>168</width>
                   <height>147</height>
                  </rect>
                 </property>
@@ -1939,8 +1944,8 @@ QGroupBox::title {
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>1586</width>
-                  <height>441</height>
+                  <width>185</width>
+                  <height>35</height>
                  </rect>
                 </property>
                 <layout class="QVBoxLayout" name="verticalLayout_23">
@@ -2011,6 +2016,16 @@ QGroupBox::title {
                </property>
               </widget>
              </item>
+             <item>
+              <widget class="QLineEdit" name="tb_tau_v">
+               <property name="maximumSize">
+                <size>
+                 <width>100</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+              </widget>
+             </item>
             </layout>
            </item>
            <item>
@@ -2047,6 +2062,13 @@ QGroupBox::title {
                </property>
               </widget>
              </item>
+             <item>
+              <widget class="QScrollBar" name="scroll_tau_v">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+              </widget>
+             </item>
             </layout>
            </item>
            <item>
@@ -2062,6 +2084,13 @@ QGroupBox::title {
               <widget class="QLabel" name="label_25">
                <property name="text">
                 <string>tau_r</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="label_31">
+               <property name="text">
+                <string>tau_v</string>
                </property>
               </widget>
              </item>
@@ -2114,7 +2143,7 @@ QGroupBox::title {
              <x>0</x>
              <y>0</y>
              <width>1608</width>
-             <height>790</height>
+             <height>757</height>
             </rect>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_35">

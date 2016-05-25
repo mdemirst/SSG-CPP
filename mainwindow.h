@@ -119,6 +119,10 @@ private slots:
 
     void on_scroll_tau_r_sliderReleased();
 
+    void on_scroll_tau_v_valueChanged(int value);
+
+    void on_scroll_tau_v_sliderReleased();
+
 private:
     Ui::MainWindow *ui;
 };

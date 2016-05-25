@@ -220,6 +220,9 @@ float GraphMatch::matchTwoImages(vector<NodeSig> ns1, vector<NodeSig> ns2,
         matching_cost = matching_cost + cost.at<float>(nonzero_locs[i].y, nonzero_locs[i].x);
     }
 
+    //Add node number difference as a penalty
+    matching_cost = matching_cost + (matching_cost/nonzero_locs.size())*fabs(rows-cols);
+
     return matching_cost;
 
 }

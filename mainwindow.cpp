@@ -45,7 +45,8 @@ MainWindow::MainWindow(QWidget *parent) :
                                         INIT_TREE_PLOT_H,
                                         INIT_TREE_PLOT_W,
                                         INIT_TREE_SSG_H,
-                                        INIT_TREE_SSG_W);
+                                        INIT_TREE_SSG_W,
+                                        INIT_TAU_V);
 
     string par_filename = string(OUTPUT_FOLDER) + string("/parameters.txt");
 
@@ -67,6 +68,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->scroll_coh_base->setValue(ssg_params->coeff_coh_exp_base);
     ui->scroll_appear_thres->setValue(ssg_params->coeff_coh_appear_thres*100);
 
+
     ui->scroll_tau_w->setValue(seg_track_params->tau_w);
     ui->scroll_tau_m->setValue(seg_track_params->tau_m*1000);
 
@@ -74,7 +76,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->scroll_pos_coeff->setValue(gm_params->pos_weight*10);
     ui->scroll_area_coeff->setValue(gm_params->area_weight*10);
 
-    ui->scroll_tau_r->setValue(rec_params->tau_r*1000);
+    ui->scroll_tau_r->setValue(rec_params->tau_r*100);
+    ui->scroll_tau_v->setValue(rec_params->tau_v*100);
 
     ui->tb_tree_plot_h->setText(QString::number(rec_params->plot_h));
     ui->tb_tree_plot_w->setText(QString::number(rec_params->plot_w));
@@ -82,6 +85,9 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->tb_tree_ssg_w->setText(QString::number(rec_params->ssg_w));
 
     ui->cb_framebyframe->setChecked(false);
+
+    string filename = string(OUTPUT_FOLDER) + string("/parameters.txt");
+    saveParameters(filename,ssg_params,seg_track_params,seg_params,gm_params,rec_params);
 
 //    QObject::connect(gm, SIGNAL(showMatchImage(QImage)),
 //                     this, SLOT(showMatchImage(QImage)));
@@ -194,6 +200,14 @@ void MainWindow::on_scroll_tau_p_sliderReleased()
         tsc_hybrid->reRecognize();
 }
 
+void MainWindow::on_scroll_tau_v_sliderReleased()
+{
+    on_scroll_tau_v_valueChanged(ui->scroll_tau_v->value());
+
+    if(auto_tune)
+        tsc_hybrid->reRecognize();
+}
+
 void MainWindow::on_scroll_tau_p_valueChanged(int value)
 {
     ui->tb_tau_p->setText(QString::number(value/100.0));
@@ -230,7 +244,7 @@ void MainWindow::on_scroll_disapp_coeff1_valueChanged(int value)
 void MainWindow::on_scroll_disapp_coeff2_valueChanged(int value)
 {
     ui->tb_disapp2->setText(QString::number(value/10.0));
-    ssg_params->coeff_node_disappear1 = value/10.0;
+    ssg_params->coeff_node_disappear2 = value/10.0;
 
     if(auto_tune)
         tsc_hybrid->recalculateCoherencyAndPlot();
@@ -273,8 +287,14 @@ void MainWindow::on_scroll_tau_r_sliderReleased()
 
 void MainWindow::on_scroll_tau_r_valueChanged(int value)
 {
-    ui->tb_tau_r->setText(QString::number(value/1000.0));
-    rec_params->tau_r = value/1000.0;
+    ui->tb_tau_r->setText(QString::number(value/100.0));
+    rec_params->tau_r = value/100.0;
+}
+
+void MainWindow::on_scroll_tau_v_valueChanged(int value)
+{
+    ui->tb_tau_v->setText(QString::number(value/100.0));
+    rec_params->tau_v = value/100.0;
 }
 
 void MainWindow::on_cb_framebyframe_clicked()
@@ -489,6 +509,7 @@ void MainWindow::on_cb_auto_tune_clicked()
     else
         this->auto_tune = false;
 }
+
 
 
 

@@ -85,6 +85,7 @@
 
 //Recognition parameters
 #define INIT_TAU_R 0.075
+#define INIT_TAU_V 0.075
 
 #define INIT_TREE_PLOT_H 1000
 #define INIT_TREE_PLOT_W 3000

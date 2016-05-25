@@ -239,6 +239,7 @@ void savePlacesFrameInfo(vector<PlaceSSG>& places)
     file.open (filename.c_str());
     for(int i = 0; i < places.size(); i++)
     {
+        //qDebug() << places[i].getCount();
         for(int j = 0; j < places[i].getCount(); j++)
         {
             file << "P: " << i << "\t" << "SSG: " << places[i].getMember(j).getId() << "\t" << places[i].getMember(j).getStartFrame() << "-" << places[i].getMember(j).getEndFrame() << "\n";
@@ -422,6 +423,7 @@ void saveParameters(string filename,
     file << "PLOT_W" << "\t" << rec_params->plot_w << endl;
     file << "SSG_H" << "\t" << rec_params->ssg_h << endl;
     file << "SSG_W" << "\t" << rec_params->ssg_w << endl;
+    file << "TAU_V" << "\t" << rec_params->tau_v << endl;
 
     file.close();
 
@@ -466,6 +468,8 @@ void readParameters(string filename,
     file >> str >> rec_params->plot_w;
     file >> str >> rec_params->ssg_h ;
     file >> str >> rec_params->ssg_w ;
+    file >> str >> rec_params->tau_v ;
+
 
     file.close();
 
