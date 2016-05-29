@@ -61,7 +61,9 @@ public:
                 SSGParams* ssg_params,
                 SegmentTrackParams* seg_track_params,
                 SegmentationParams* seg_params,
-                GraphMatchParams* gm_params);
+                GraphMatchParams* gm_params,
+                GraphMatch* gm,
+                Segmentation* seg);
     ~Recognition();
     int performRecognition(vector<PlaceSSG>& places, PlaceSSG new_place, TreeNode* hierarchy);
     void testRecognition();

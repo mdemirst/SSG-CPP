@@ -39,7 +39,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     gm_params = new GraphMatchParams (POS_WEIGHT,
                                       COLOR_WEIGHT,
-                                      AREA_WEIGHT);
+                                      AREA_WEIGHT,
+                                      BOW_WEIGHT);
 
     rec_params = new RecognitionParams (INIT_TAU_R,
                                         INIT_TREE_PLOT_H,
@@ -75,9 +76,10 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->scroll_color_coeff->setValue(gm_params->color_weight*10);
     ui->scroll_pos_coeff->setValue(gm_params->pos_weight*10);
     ui->scroll_area_coeff->setValue(gm_params->area_weight*10);
+    ui->scroll_bow_coeff->setValue(gm_params->bow_weight*10);
 
     ui->scroll_tau_r->setValue(rec_params->tau_r*100);
-    ui->scroll_tau_v->setValue(rec_params->tau_v*100);
+    ui->scroll_tau_v->setValue(rec_params->tau_v*10);
 
     ui->tb_tree_plot_h->setText(QString::number(rec_params->plot_h));
     ui->tb_tree_plot_w->setText(QString::number(rec_params->plot_w));
@@ -232,6 +234,12 @@ void MainWindow::on_scroll_area_coeff_valueChanged(int value)
     gm_params->area_weight = value/10.0;
 }
 
+void MainWindow::on_scroll_bow_coeff_valueChanged(int value)
+{
+    ui->tb_bow->setText(QString::number(value/10.0));
+    gm_params->bow_weight = value/10.0;
+}
+
 void MainWindow::on_scroll_disapp_coeff1_valueChanged(int value)
 {
     ui->tb_disapp1->setText(QString::number(value/10.0));
@@ -293,8 +301,8 @@ void MainWindow::on_scroll_tau_r_valueChanged(int value)
 
 void MainWindow::on_scroll_tau_v_valueChanged(int value)
 {
-    ui->tb_tau_v->setText(QString::number(value/100.0));
-    rec_params->tau_v = value/100.0;
+    ui->tb_tau_v->setText(QString::number(value/10.0));
+    rec_params->tau_v = value/10.0;
 }
 
 void MainWindow::on_cb_framebyframe_clicked()
@@ -392,17 +400,17 @@ void MainWindow::on_btn_merged_process_images_clicked()
 
 void MainWindow::on_pushButton_clicked()
 {
-    recognition = new Recognition (rec_params,
-                                   ssg_params,
-                                   seg_track_params,
-                                   seg_params,
-                                   gm_params);
-    QObject::connect(recognition, SIGNAL(showTree(QImage)),
-                     this, SLOT(showTree(QImage)));
-    QObject::connect(recognition, SIGNAL(printMessage(QString)),
-                     this, SLOT(printMessage(QString)));
+//    recognition = new Recognition (rec_params,
+//                                   ssg_params,
+//                                   seg_track_params,
+//                                   seg_params,
+//                                   gm_params);
+//    QObject::connect(recognition, SIGNAL(showTree(QImage)),
+//                     this, SLOT(showTree(QImage)));
+//    QObject::connect(recognition, SIGNAL(printMessage(QString)),
+//                     this, SLOT(printMessage(QString)));
 
-    recognition->testRecognition();
+//    recognition->testRecognition();
 }
 
 void MainWindow::showTree(QImage img)
@@ -510,7 +518,21 @@ void MainWindow::on_cb_auto_tune_clicked()
         this->auto_tune = false;
 }
 
+void MainWindow::on_btn_bow_train_clicked()
+{
+    tsc_hybrid = new TSCHybrid(ui->custom_plot_merged_tsc, ui->custom_plot_merged_ssg, ui->place_map, ui->custom_plot_tsc_average,
+                               ssg_params,
+                               seg_track_params,
+                               seg_params,
+                               gm_params,
+                               rec_params);
+
+    tsc_hybrid->performBOWTrain(DATASET_FOLDER, START_IDX, END_IDX, 5);
+}
 
 
 
-
+void MainWindow::on_btn_next_frame_clicked()
+{
+    tsc_hybrid->next_frame = true;
+}

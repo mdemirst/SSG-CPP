@@ -44,6 +44,17 @@ void SSGProc::updateNodeSig(pair<NodeSig, int>& ns, NodeSig new_ns)
     ns.first.center.x /= (float)ns.second + 1;
     ns.first.center.y /= (float)ns.second + 1;
 
+#ifdef BOW_APPROACH_USED
+    //BOW hist
+    if(ns.second == 0)
+        ns.first.bow_hist = new_ns.bow_hist;
+    else
+        ns.first.bow_hist = ns.first.bow_hist * ns.second +
+                        new_ns.bow_hist;
+
+    ns.first.bow_hist /= (float)ns.second + 1;
+#endif
+
 
     //Edges
 

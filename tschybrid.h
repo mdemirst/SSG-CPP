@@ -7,6 +7,7 @@
 #include "qcustomplot.h"
 #include "TSC/utility.h"
 #include "recognition.h"
+#include "opencv2/nonfree/features2d.hpp"
 
 enum{
     DETECTION_NOT_STARTED,
@@ -39,10 +40,12 @@ public:
     bool eventFilter( QObject* watched, QEvent* event );
     bool is_processing;
     bool stop_processing;
+    bool next_frame;
     void stopProcessing();
     void autoTryParameters();
     void recalculateCoherencyAndPlot();
     void reRecognize();
+    void performBOWTrain(const string folder, const int start_idx, const int end_idx, int step);
 
 
 
@@ -61,6 +64,7 @@ private:
     vector<SSG> SSGs; //Stores SSGs
     vector<cv::Point2f> coords;
     vector<PlaceSSG> places_unprocessed;
+    Mat bow_dict;
     void calcCohScoreOneShot(SegmentTrack* seg_track, vector<float>& coh_scores,
                              vector<int>& detected_places_unfiltered,
                              vector<int>& detected_places);

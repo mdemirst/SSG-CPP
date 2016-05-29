@@ -417,6 +417,7 @@ void saveParameters(string filename,
     file << "POS_WEIGHT" << "\t" << gm_params->pos_weight << endl;
     file << "COLOR_WEIGHT" << "\t" << gm_params->color_weight << endl;
     file << "AREA_WEIGHT" << "\t" << gm_params->area_weight << endl;
+    file << "BOW_WEIGHT" << "\t" << gm_params->bow_weight << endl;
 
     file << "TAU_R" << "\t" << rec_params->tau_r << endl;
     file << "PLOT_H" << "\t" << rec_params->plot_h << endl;
@@ -462,6 +463,7 @@ void readParameters(string filename,
     file >> str >> gm_params->pos_weight  ;
     file >> str >> gm_params->color_weight;
     file >> str >> gm_params->area_weight ;
+    file >> str >> gm_params->bow_weight ;
 
     file >> str >> rec_params->tau_r ;
     file >> str >> rec_params->plot_h;

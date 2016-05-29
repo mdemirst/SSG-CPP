@@ -42,7 +42,6 @@ public:
     GraphMatchParams* params;
     int img_width, img_height;
     
-private:
 
 signals:
     void showMatchImage(QImage img);

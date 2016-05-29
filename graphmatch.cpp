@@ -5,11 +5,13 @@
 
 GraphMatchParams::GraphMatchParams(float pos_weight,
                                    float color_weight,
-                                   float area_weight)
+                                   float area_weight,
+                                   float bow_weight)
 {
     this->pos_weight = pos_weight;
     this->color_weight = color_weight;
     this->area_weight = area_weight;
+    this->bow_weight = bow_weight;
 }
 
 GraphMatch::GraphMatch(int img_width, int img_height, GraphMatchParams* params)
@@ -92,7 +94,7 @@ float GraphMatch::drawMatches(vector<NodeSig> ns1, vector<NodeSig> ns2,
             Point p1 = n1.center;
             Point p2 = n2.center;
 
-            line(img_merged,p1,p2,MATCH_LINE_COLOR,MATCH_LINE_WIDTH);
+            //line(img_merged,p1,p2,MATCH_LINE_COLOR,MATCH_LINE_WIDTH);
         }
     }
     for(int i = 0; i < ns2.size(); i++)
@@ -105,7 +107,7 @@ float GraphMatch::drawMatches(vector<NodeSig> ns1, vector<NodeSig> ns2,
             Point p1 = n1.center+Point(img1.size().width,0);
             Point p2 = n2.center+Point(img1.size().width,0);
 
-            line(img_merged,p1,p2,MATCH_LINE_COLOR,MATCH_LINE_WIDTH);
+            //line(img_merged,p1,p2,MATCH_LINE_COLOR,MATCH_LINE_WIDTH);
         }
     }
 
@@ -132,7 +134,23 @@ float GraphMatch::drawMatches(vector<NodeSig> ns1, vector<NodeSig> ns2,
         circle(img_merged,p2,r2,Scalar(ns2[nonzero_locs[i].x].colorB, ns2[nonzero_locs[i].x].colorG, ns2[nonzero_locs[i].x].colorR), -1);
         circle(img_merged,p1,r1,Scalar(0,0,0), 1);
         circle(img_merged,p2,r2,Scalar(0,0,0), 1);
-        //line(img_merged,p1,p2,MATCH_LINE_COLOR,MATCH_LINE_WIDTH);
+        line(img_merged,p1,p2,MATCH_LINE_COLOR,MATCH_LINE_WIDTH);
+
+        float dist = cost.at<float>(nonzero_locs[i].y, nonzero_locs[i].x);
+
+        matching_cost = matching_cost + dist;
+
+    }
+
+
+    for(int i = 0; i < nonzero_locs.size(); i++)
+    {
+        Point p1 = ns1[nonzero_locs[i].y].center;
+        Point p2 = ns2[nonzero_locs[i].x].center+Point(img1.size().width,0);
+        double r1 = sqrt(ns1[nonzero_locs[i].y].area)/4.0;
+        double r2 = sqrt(ns2[nonzero_locs[i].x].area)/4.0;
+        r1 = max(r1,1.0)*1.5;
+        r2 = max(r2,1.0)*1.5;
 
         float dist = cost.at<float>(nonzero_locs[i].y, nonzero_locs[i].x);
 
@@ -143,8 +161,9 @@ float GraphMatch::drawMatches(vector<NodeSig> ns1, vector<NodeSig> ns2,
         ss << dist;
         string cost_str = ss.str();
         Point center_pt((p1.x + p2.x) / 2.0, (p1.y + p2.y) / 2.0);
-        //putText(img_merged, cost_str, center_pt, cv::FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0, 0, 0), 1);
+        putText(img_merged, cost_str, center_pt, cv::FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0, 0, 255), 1);
     }
+
 
     //Show matching results image on the window
     emit showMatchImage(mat2QImage(img_merged));
@@ -214,13 +233,35 @@ float GraphMatch::matchTwoImages(vector<NodeSig> ns1, vector<NodeSig> ns2,
     vector<Point> nonzero_locs;
     findNonZero(assignment,nonzero_locs);
 
+#ifdef BOW_APPROACH_USED
+    //Matching cost - Used only when BOW approach is enabled
+    //Find optimal match cost
+//    float vote = 0;
+//    for(int i = 0; i < nonzero_locs.size(); i++)
+//    {
+//        float vote_thres = 0.9;
+//        if(cost.at<float>(nonzero_locs[i].y, nonzero_locs[i].x) < vote_thres)
+//            vote++;
+//    }
+//    vote /= min(rows,cols);
+//    float missing_node_penalty = 0.05;
+//    vote = vote - missing_node_penalty*fabs(rows-cols);
+//    matching_cost = vote;
+#else
+    //Matching cost - Used when BOW approach is not used
     //Find optimal match cost
     for(int i = 0; i < nonzero_locs.size(); i++)
     {
         matching_cost = matching_cost + cost.at<float>(nonzero_locs[i].y, nonzero_locs[i].x);
-    }
 
-    //Add node number difference as a penalty
+        //Debugging
+        //qDebug() << cost.at<float>(nonzero_locs[i].y, nonzero_locs[i].x) << compareHist(ns1[nonzero_locs[i].y].bow_hist, ns2[nonzero_locs[i].x].bow_hist, CV_COMP_BHATTACHARYYA);
+
+    }
+#endif
+
+
+    //Add missing nodes as a penalty
     matching_cost = matching_cost + (matching_cost/nonzero_locs.size())*fabs(rows-cols);
 
     return matching_cost;
@@ -229,6 +270,7 @@ float GraphMatch::matchTwoImages(vector<NodeSig> ns1, vector<NodeSig> ns2,
 
 double GraphMatch::calcN2NDistance(NodeSig s1, NodeSig s2)
 {
+    static float smallest  = 1;
     //Note: all individual sums must be normalized to 1
     double dist = 0;
 
@@ -236,7 +278,6 @@ double GraphMatch::calcN2NDistance(NodeSig s1, NodeSig s2)
     double max_dist = sqrt(img_width*img_width+img_height*img_width);   //for normalization purposes.
                                                                         //must be diagonal distance
                                                                         //of image = max distance
-
     dist = dist + params->pos_weight*pow(sqrt(pow(s1.center.x-s2.center.x,2)+pow(s1.center.y-s2.center.y,2))/max_dist, 2);
 
 
@@ -244,19 +285,23 @@ double GraphMatch::calcN2NDistance(NodeSig s1, NodeSig s2)
     double color_dist = (fabs(s1.colorR-s2.colorR)+
                          fabs(s1.colorG-s2.colorG)+
                          fabs(s1.colorB-s2.colorB))/255.0/3.0;
-
-
     dist = dist + params->color_weight*pow(color_dist,2);
 
 
     //difference between areas
     double area_dist = fabs(s1.area-s2.area) / (double)(img_width*img_height);
-
     dist = dist + params->area_weight*pow(area_dist,2);
+
+#ifdef BOW_APPROACH_USED
+    //Used only when BOW approach is enabled!
+    //difference between bow descriptors
+    //dist = dist + params->bow_weight*compareHist(s1.bow_hist, s2.bow_hist, CV_COMP_BHATTACHARYYA);
+#endif
 
     return dist;
 
-
+//    Imported from Matlab implementation -- Edges makes a little contribution in calculation of
+//    of graph similarity. Because graph edges are not stable in our experiments.
 //    //find edge differences
 //    if(use_edge_permutation)
 //        % EDGE DIFF CALC. First method

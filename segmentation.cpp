@@ -11,9 +11,10 @@ SegmentationParams::SegmentationParams(float sigma,
 }
 
 
-Segmentation::Segmentation(SegmentationParams* params)
+Segmentation::Segmentation(SegmentationParams* params, Mat dict)
 {
     this->params = params;
+    this->dict = dict;
 }
 
 vector<NodeSig> Segmentation::segmentImage(const Mat &img, Mat &img_seg)
@@ -162,6 +163,7 @@ vector<NodeSig> Segmentation::constructSegmentsGraph(Mat img, vector<BlobStats> 
         newNode.colorB = blobs[i].avgB;
         newNode.center = Point(blobs[i].centerX, blobs[i].centerY);
         newNode.area   = blobs[i].pixelsSize;
+        newNode.bow_hist = blobs[i].bow_hist;
 
         //Find edge attributes for each node
         //Find edges by applying
@@ -275,6 +277,60 @@ vector<BlobStats> Segmentation::calcBlobStats(Mat img, universe* segments)
         }
     }
 
+#ifdef BOW_APPROACH_USED
+    Ptr<DescriptorExtractor> desc_extractor;
+    #if BOW_DESC_TYPE == SIFT
+        desc_extractor = DescriptorExtractor::create("SIFT");
+    #elif BOW_DESC_TYPE == SURF
+        desc_extractor = DescriptorExtractor::create("SURF");
+    #elif BOW_DESC_TYPE == MSER
+        desc_extractor = DescriptorExtractor::create("MSER");
+    #endif
+
+    Ptr<DescriptorMatcher> desc_matcher = DescriptorMatcher::create(BOW_MATCHER_TYPE);
+
+    BOW_DESC_TYPE feature_detector;
+
+    BOWImgDescriptorExtractor bow_desc_extractor(desc_extractor, desc_matcher);
+    bow_desc_extractor.setVocabulary(this->dict);
+
+
+    for(int i = 0; i < blobs.size(); i++)
+    {
+        Mat blob_img = drawBlobs(img, blobs, i);
+
+
+        Mat mask_img;
+        vector<vector<Point> > contours;
+        vector<Vec4i> hierarchy;
+
+        cvtColor(blob_img, blob_img, COLOR_BGR2GRAY);
+        threshold(blob_img, mask_img, 1, 255, CV_THRESH_BINARY);
+        findContours(mask_img.clone(), contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
+
+        Rect rect = boundingRect(contours[0]);
+
+        blob_img = img(rect);
+        blobs[i].img = blob_img;
+
+        //Calculate BOW descriptor
+        vector<KeyPoint> keypoints;
+        Mat hist;
+        feature_detector.detect(blob_img, keypoints);
+        bow_desc_extractor.compute(blob_img, keypoints, hist);
+
+
+
+        if(keypoints.size() == 0)
+            hist = Mat::zeros(1,BOW_DICT_SIZE,CV_32F);
+
+        //qDebug() << blob_img.size().width << blob_img.size().height << keypoints.size() << hist.size().width << hist.size().height;
+        blobs[i].bow_hist = hist;
+
+        //cv::imshow("ds",blob_img);
+        //cv::waitKey(0);
+    }
+#endif
     //drawBlobs(img, blobsClus); //Draws clustered blobs
 
     return blobs;

@@ -6,6 +6,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/features2d/features2d.hpp>
 #include <opencv2/flann/flann.hpp>
+#include "opencv2/nonfree/features2d.hpp"
 #include <iostream>
 #include <fstream>
 #include <QObject>
@@ -35,7 +36,7 @@ class Segmentation : public QObject
 {
     Q_OBJECT
 public:
-    Segmentation(SegmentationParams* params);
+    Segmentation(SegmentationParams* params, Mat dict);
     SegmentationParams* params;
     vector<NodeSig> segmentImage(const Mat &img_org, Mat &img_seg);
     vector<Mat> segmentImage(const Mat &img);
@@ -50,6 +51,7 @@ private:
     vector<NodeSig> constructSegmentsGraph(Mat img, vector<BlobStats> blobs);
     vector<BlobStats> calcBlobStats(Mat img, universe* segments);
     Mat drawBlobs(Mat img, vector<BlobStats> blobs, int id = -1);
+    Mat dict;
     
 public slots:
 };

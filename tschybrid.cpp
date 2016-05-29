@@ -146,10 +146,13 @@ TSCHybrid::TSCHybrid(QCustomPlot* tsc_plot,
                                    ssg_params,
                                    seg_track_params,
                                    seg_params,
-                                   gm_params);
+                                   gm_params,
+                                   seg_track->gm,
+                                   seg_track->seg);
 
     is_processing = false;
     stop_processing = false;
+    next_frame = true;
 
 
 }
@@ -212,6 +215,8 @@ void TSCHybrid::processImages(const string folder, const int start_idx, const in
             clearPastData();
             break;
         }
+
+
 
         img_org = imread(folder + img_files[frame_no]);
         resize(img_org, img, cv::Size(0,0), IMG_RESCALE_RAT, IMG_RESCALE_RAT);
@@ -367,6 +372,11 @@ void TSCHybrid::processImagesHierarchical(const string folder, const int start_i
             break;
         }
 
+        while(next_frame == false)
+        {
+            waitKey(1);
+        }
+
         img_org = imread(folder + img_files[frame_no]);
         resize(img_org, img, cv::Size(0,0), IMG_RESCALE_RAT, IMG_RESCALE_RAT);
         //emit showImgOrg(mat2QImage(img));
@@ -438,6 +448,8 @@ void TSCHybrid::processImagesHierarchical(const string folder, const int start_i
 
         //Wait a little for GUI processing
         waitKey(1);
+
+        //next_frame = false;
     }
 
 
@@ -447,6 +459,62 @@ void TSCHybrid::processImagesHierarchical(const string folder, const int start_i
 
     is_processing = false;
     stop_processing = false;
+}
+
+void TSCHybrid::performBOWTrain(const string folder, const int start_idx, const int end_idx, int step)
+{
+    int dict_size = BOW_DICT_SIZE;
+    TermCriteria term_cri(CV_TERMCRIT_ITER|CV_TERMCRIT_EPS, BOW_TC_COUNT, BOW_TC_EPSILON);
+    int retries = BOW_NR_RETRIES;
+    int flags = KMEANS_PP_CENTERS;
+
+    Ptr<DescriptorExtractor> desc_extractor;
+    #if BOW_DESC_TYPE == SIFT
+        desc_extractor = DescriptorExtractor::create("SIFT");
+    #elif BOW_DESC_TYPE == SURF
+        desc_extractor = DescriptorExtractor::create("SURF");
+    #elif BOW_DESC_TYPE == MSER
+        desc_extractor = DescriptorExtractor::create("MSER");
+    #endif
+
+    BOW_DESC_TYPE feature_detector;
+
+    BOWKMeansTrainer bow_trainer(dict_size);
+
+    qDebug() << "Training started";
+
+    img_files = getFiles(folder);
+
+
+    for(int i = start_idx; i < end_idx; i = i + step)
+    {
+        vector<KeyPoint> keypoints;
+        Mat descriptors;
+        Mat img = imread(folder+img_files[i]);
+        resize(img, img, cv::Size(0,0), IMG_RESCALE_RAT, IMG_RESCALE_RAT);
+        //imshow("fd",img);
+        //waitKey(0);
+        feature_detector.detect(img, keypoints);
+        desc_extractor->compute(img, keypoints, descriptors);
+
+        bow_trainer.add(descriptors);
+        qDebug() << "Descriptor" << i << "added.";
+    }
+
+
+    qint64 last_time = QDateTime::currentMSecsSinceEpoch();
+    qDebug() << "Clustering started";
+    Mat dictionary = bow_trainer.cluster();
+    qDebug() << "Clustering finished in" << (QDateTime::currentMSecsSinceEpoch() - last_time)/1000 << "sec";
+
+
+    FileStorage fs(OUTPUT_FOLDER+string(BOW_DICT_NAME), FileStorage::WRITE);
+
+    fs << "Dict" << dictionary;
+
+    qDebug() << "Written to file";
+
+    fs.release();
 }
 
 void TSCHybrid::reRecognize()

@@ -6,6 +6,24 @@ SegmentTrackParams::SegmentTrackParams(int tau_w, float tau_m)
     this->tau_m = tau_m;
 }
 
+Mat SegmentTrack::readBOWDict()
+{
+    FileStorage fs;
+    fs.open(OUTPUT_FOLDER+string(BOW_DICT_NAME), FileStorage::READ);
+
+    if (!fs.isOpened())
+    {
+        qDebug() << "Failed to open dict file";
+    }
+
+    Mat dict;
+    fs["Dict"] >> dict;
+
+    qDebug() << "Dict size is" << dict.size().height;
+
+    return dict;
+}
+
 SegmentTrack::SegmentTrack(SegmentTrackParams* params, SegmentationParams* seg_params, GraphMatchParams* gm_params)
 {
     this->params = params;
@@ -18,7 +36,9 @@ SegmentTrack::SegmentTrack(SegmentTrackParams* params, SegmentationParams* seg_p
 
     //Initialize new graph match and segmentation object
     gm = new GraphMatch(img_width, img_height, gm_params);
-    seg = new Segmentation(seg_params);
+
+    Mat dict = readBOWDict();
+    seg = new Segmentation(seg_params, dict);
 }
 
 Mat& SegmentTrack::getM()
@@ -248,7 +268,7 @@ float SegmentTrack::fillNodeMap(const vector<vector<NodeSig> >& ns_vec)
     //This step is requied for matching any nonmatched nodes
     for(int i = 2; i <= N; i++)
     {
-        gm->matchTwoImages(ns_vec[N-i], ns_vec.back(), P[N-i], C[N-i]);
+        float match_score = gm->matchTwoImages(ns_vec[N-i], ns_vec.back(), P[N-i], C[N-i]);
     }
 
 

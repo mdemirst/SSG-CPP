@@ -6,7 +6,7 @@
 #define START_IDX 0
 
 #define DATASET_FOLDER "/home/isl-mahmut/Datasets/seq1_cloudy1/std_cam/"
-#define END_IDX 1458
+#define END_IDX 1400
 
 //#define DATASET_FOLDER "/home/isl-mahmut/Datasets/seq1_cloudy2/std_cam/"
 //#define END_IDX 1832
@@ -82,6 +82,16 @@
 #define POS_WEIGHT 0.8
 #define COLOR_WEIGHT 0.5
 #define AREA_WEIGHT 0.7
+#define BOW_WEIGHT 0.5
+
+//#define BOW_APPROACH_USED
+#define BOW_DICT_SIZE 1000
+#define BOW_NR_RETRIES 100
+#define BOW_TC_COUNT 50
+#define BOW_TC_EPSILON 0.001
+#define BOW_DESC_TYPE SIFT
+#define BOW_MATCHER_TYPE "FlannBased"
+#define BOW_DICT_NAME "dict.xml"
 
 //Recognition parameters
 #define INIT_TAU_R 0.075

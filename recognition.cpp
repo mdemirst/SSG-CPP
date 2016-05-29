@@ -8,7 +8,9 @@ Recognition::Recognition(RecognitionParams* rec_params,
                          SSGParams* ssg_params,
                          SegmentTrackParams* seg_track_params,
                          SegmentationParams* seg_params,
-                         GraphMatchParams* gm_params)
+                         GraphMatchParams* gm_params,
+                         GraphMatch* gm,
+                         Segmentation* seg)
 {
     this->rec_params = rec_params;
     this->ssg_params = ssg_params;
@@ -25,8 +27,8 @@ Recognition::Recognition(RecognitionParams* rec_params,
     plot_offset = 150;
 
     //Initialize new graph match and segmentation object
-    gm = new GraphMatch(img_width, img_height, gm_params);
-    seg = new Segmentation(seg_params);
+    this->gm = gm;
+    this->seg = seg;
 
     next = false;
 }
@@ -146,8 +148,6 @@ void Recognition::drawTree(TreeNode* root_node, int nrPlaces, int height, int wi
     double scale_y = (double) (height - 2*plot_offset) / root_node->getVal();
 
     drawBranch(img, root_node, height, scale_x, scale_y);
-    int border_size = 50;
-    //copyMakeBorder(img, img, border_size, border_size, border_size, border_size, BORDER_CONSTANT, Scalar(255, 255, 255));
 
     emit showTree(mat2QImage(img));
     //imshow("Tree with images", img);
@@ -224,7 +224,6 @@ double Recognition::calculateDistance(SSG& old_place, SSG& detected_place)
     for(int i = 0; i < old_place.nodes.size(); i++)
         ns.push_back(old_place.nodes[i].first);
 
-    Mat P, C;
     for(int i = 0; i < detected_place.basepoints.size(); i++)
     {
         Mat P, C;
@@ -234,12 +233,9 @@ double Recognition::calculateDistance(SSG& old_place, SSG& detected_place)
         count++;
     }
     vote /= count;
+
+
     qDebug() << "Vote between" << old_place.getId() << detected_place.getId() << "is" << vote;
-
-    //Second option
-    //Mat P, C;
-    //distance += gm->matchTwoImages(old_place,detected_place,P,C);
-
 
     return 1-vote;
 }
@@ -266,11 +262,16 @@ double** Recognition::calculateDistanceMatrix(vector<PlaceSSG>& places)
                 for(int j = 0; j < places[c].getCount(); j++)
                 {
                     Mat P, C;
-                    //distance += gm->matchTwoImages(places[r].getMember(i),places[c].getMember(j),P,C);
-                    distance += calculateDistance(places[r].getMember(i),places[c].getMember(j));
+                    //Graph distance calculation -- method #1
+                    distance += gm->matchTwoImages(places[r].getMember(i),places[c].getMember(j),P,C);
+
+                    //Graph distance calculation -- method #2
+                    //distance += calculateDistance(places[r].getMember(i),places[c].getMember(j));
                     count++;
                 }
             }
+
+            qDebug() << "Rec. score between" << r << c << "is " << distance;
 
             dist_matrix[r][c] = distance/count;
             dist_matrix[c][r] = distance/count;
@@ -296,6 +297,7 @@ int Recognition::performRecognition(vector<PlaceSSG>& places, PlaceSSG new_place
     int nrPlaces = places.size();
     thumbnail_scale = 1.0 / (nrPlaces+1);
 
+    qDebug() << "New recognition calculation...";
     double** dist_matrix = calculateDistanceMatrix(places);
 
 
@@ -310,7 +312,6 @@ int Recognition::performRecognition(vector<PlaceSSG>& places, PlaceSSG new_place
     //Get pointer to position of new detected place
     TreeNode* new_place_node = findNode(nrPlaces-1, hierarchy);
 
-    int number = new_place_node->getDescriptor()->getMember(0).nodes.size();
 
     //Check if there is any sibling of new place
     //And check if they are similar
@@ -360,7 +361,7 @@ int Recognition::performRecognition(vector<PlaceSSG>& places, PlaceSSG new_place
 void Recognition::testRecognition()
 {
     vector<Mat> images;
-    TreeNode* hierarchy_tree;
+    TreeNode* hierarchy_tree = NULL;
     vector<PlaceSSG> places;
     //Read all images extract node signatures and store into vector
     for(int i = 0; i < img_files.size(); i++)
@@ -374,8 +375,6 @@ void Recognition::testRecognition()
         SSG new_ssg(i+1,ns);
         PlaceSSG new_place(i, new_ssg);
 
-
-        double tau_r = 0.01;
         performRecognition(places, new_place, hierarchy_tree);
 
         while(next == false) cvWaitKey(1);
@@ -433,7 +432,6 @@ void Recognition::generateRAGs(const Node* tree, int nTree, vector<vector<NodeSi
 {
     //Rags for detected places are already placed into rags vector
     //We need to create rags related to higher nodes
-    int nPlaces = rags.size();
 
     //Create new RAGs
     for(int i = 0; i < nTree; i++)

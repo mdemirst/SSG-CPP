@@ -66,10 +66,12 @@ class GraphMatchParams
 public:
     GraphMatchParams(float pos_weight,
                      float color_weight,
-                     float area_weight);
+                     float area_weight,
+                     float bow_weight);
     float pos_weight;
     float color_weight;
     float area_weight;
+    float bow_weight;
 };
 
 class SegmentTrackParams{
@@ -91,6 +93,8 @@ typedef struct
     float centerX;
     float centerY;
     std::vector<cv::Point> pixels;
+    cv::Mat img;
+    cv::Mat bow_hist;
 }BlobStats;
 
 class NodeSig
@@ -112,6 +116,7 @@ class NodeSig
         center = cv::Point(0,0);
         id = 0;
     }
+    cv::Mat bow_hist;
 
     static void write2File(NodeSig node, std::string filename)
     {
