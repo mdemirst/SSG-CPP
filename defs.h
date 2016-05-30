@@ -153,6 +153,16 @@
 
 //#define PROCESS_EDGES
 
+#define FOCAL_LENGHT_PIXELS 550
+#define NR_HARMONICS 10
+#define TSC_SAT_LOWER 10
+#define TSC_SAT_UPPER 255
+#define TSC_VAL_LOWER 10
+#define TSC_VAL_UPPER 255
+#define TSC_VAL_MEAN 0.2
+#define TSC_VAL_VAR 0.01
+
+
 
 
 #endif // DEFS_H

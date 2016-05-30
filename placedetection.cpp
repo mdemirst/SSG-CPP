@@ -29,131 +29,60 @@ SSGParams::SSGParams(int tau_n,
     this->coeff_coh_appear_thres = coeff_coh_appear_thres;
 }
 
-PlaceDetection::PlaceDetection(QCustomPlot* coherency_plot, QCustomPlot* map,
-                               SSGParams* params,
-                               SegmentTrackParams* seg_track_params,
-                               SegmentationParams* seg_params,
-                               GraphMatchParams* gm_params)
-{
-//    this->params = params;
 
-//    //Read dataset image files
-//    img_files = getFiles(DATASET_FOLDER);
-
-//    seg_track = new SegmentTrack(seg_track_params, seg_params, gm_params);
-
-//    //After tracking
-//    cursor = 0;
-
-//    // Coherency plot related settings
-//    this->coherency_plot = coherency_plot;
-
-//    for(int i = 0; i <= PLOT_PLACES_IDX; i++)
-//        this->coherency_plot->addGraph();
-
-//    pen.setWidth(PEN_WIDTH2);
-//    pen.setColor(Qt::red);
-//    this->coherency_plot->graph(PLOT_THRES_IDX)->setPen(pen);
-
-//    pen.setWidth(PEN_WIDTH2);
-//    pen.setColor(Qt::black);
-//    this->coherency_plot->graph(PLOT_SCORES_IDX)->setPen(pen);
-
-//    pen.setWidth(PEN_WIDTH3);
-//    pen.setColor(Qt::green);
-//    this->coherency_plot->graph(PLOT_TRACK_IDX)->setPen(pen);
-//    this->coherency_plot->graph(PLOT_TRACK_IDX)->setLineStyle(QCPGraph::lsNone);
-//    this->coherency_plot->graph(PLOT_TRACK_IDX)->setScatterStyle(QCPScatterStyle::ssDisc);
-
-//    this->coherency_plot->setMaximumWidth(COH_PLOT_W);
-//    this->coherency_plot->setMinimumWidth(COH_PLOT_W);
-
-//    this->coherency_plot->setMinimumHeight(COH_PLOT_H);
-//    this->coherency_plot->setMaximumHeight(COH_PLOT_H);
-
-//    this->coherency_plot->yAxis->setTickLabels(false);
-//    this->coherency_plot->plotLayout()->setAutoMargins(QCP::msNone);
-
-//    QMargins plot_margin(COH_PLOT_MARGIN,0,COH_PLOT_MARGIN,0);
-//    this->coherency_plot->plotLayout()->setMargins(plot_margin);
-
-//    frameByFrameProcess = false;
-//    isProcessing = false;
-//    stopProcessing = false;
-}
+//void overlayImage(const cv::Mat &background, const cv::Mat &foreground,
+//  cv::Mat &output, cv::Point2i location)
+//{
+//  background.copyTo(output);
 
 
+//  // start at the row indicated by location, or at row 0 if location.y is negative.
+//  for(int y = std::max(location.y , 0); y < background.rows; ++y)
+//  {
+//    int fY = y - location.y; // because of the translation
+
+//    // we are done of we have processed all rows of the foreground image.
+//    if(fY >= foreground.rows)
+//      break;
+
+//    // start at the column indicated by location,
+
+//    // or at column 0 if location.x is negative.
+//    for(int x = std::max(location.x, 0); x < background.cols; ++x)
+//    {
+//      int fX = x - location.x; // because of the translation.
+
+//      // we are done with this row if the column is outside of the foreground image.
+//      if(fX >= foreground.cols)
+//        break;
+
+//      // determine the opacity of the foregrond pixel, using its fourth (alpha) channel.
+//      double opacity =
+//        ((double)foreground.data[fY * foreground.step + fX * foreground.channels() + 3])
+
+//        / 255.;
 
 
+//      // and now combine the background and foreground pixel, using the opacity,
 
-
-void PlaceDetection::clearPastData()
-{
-//    coherency_scores.clear(); //Stores all coherency score.clear();
-//    detected_places.clear();
-//    detected_places_unfiltered.clear();
-//    SSGs.clear(); //Stores SSGs
-//    seg_track->M.release();
-//    seg_track->M_ns.clear();
-//    for(int i = 0; i < coherency_plot->graphCount(); i++)
-//        coherency_plot->graph(i)->clearData();
-//    for(int i = 0; i < place_map->graphCount(); i++)
-//        place_map->graph(i)->clearData();
-}
-
-void overlayImage(const cv::Mat &background, const cv::Mat &foreground,
-  cv::Mat &output, cv::Point2i location)
-{
-  background.copyTo(output);
-
-
-  // start at the row indicated by location, or at row 0 if location.y is negative.
-  for(int y = std::max(location.y , 0); y < background.rows; ++y)
-  {
-    int fY = y - location.y; // because of the translation
-
-    // we are done of we have processed all rows of the foreground image.
-    if(fY >= foreground.rows)
-      break;
-
-    // start at the column indicated by location,
-
-    // or at column 0 if location.x is negative.
-    for(int x = std::max(location.x, 0); x < background.cols; ++x)
-    {
-      int fX = x - location.x; // because of the translation.
-
-      // we are done with this row if the column is outside of the foreground image.
-      if(fX >= foreground.cols)
-        break;
-
-      // determine the opacity of the foregrond pixel, using its fourth (alpha) channel.
-      double opacity =
-        ((double)foreground.data[fY * foreground.step + fX * foreground.channels() + 3])
-
-        / 255.;
-
-
-      // and now combine the background and foreground pixel, using the opacity,
-
-      // but only if opacity > 0.
-      for(int c = 0; opacity > 0 && c < output.channels(); ++c)
-      {
-        unsigned char foregroundPx =
-          foreground.data[fY * foreground.step + fX * foreground.channels() + c];
-        unsigned char backgroundPx =
-          background.data[y * background.step + x * background.channels() + c];
-        output.data[y*output.step + output.channels()*x + c] =
-          backgroundPx * (1.-opacity) + foregroundPx * opacity;
-      }
-    }
-  }
-}
+//      // but only if opacity > 0.
+//      for(int c = 0; opacity > 0 && c < output.channels(); ++c)
+//      {
+//        unsigned char foregroundPx =
+//          foreground.data[fY * foreground.step + fX * foreground.channels() + c];
+//        unsigned char backgroundPx =
+//          background.data[y * background.step + x * background.channels() + c];
+//        output.data[y*output.step + output.channels()*x + c] =
+//          backgroundPx * (1.-opacity) + foregroundPx * opacity;
+//      }
+//    }
+//  }
+//}
 
 //Constructs the average appearance of the scene by averaging specified
 //segments.
-void PlaceDetection::constructSceneGist(Mat& M, vector<pair<NodeSig, int> > M_ns)
-{
+//void PlaceDetection::constructSceneGist(Mat& M, vector<pair<NodeSig, int> > M_ns)
+//{
 //    vector<int> segment_ids;
 
 //    int thres = 10;
@@ -300,9 +229,9 @@ void PlaceDetection::constructSceneGist(Mat& M, vector<pair<NodeSig, int> > M_ns
 
 //    imshow("Gist", img_gist);
 //    cvWaitKey(0);
-}
+//}
 
-bool PlaceDetection::eventFilter( QObject* watched, QEvent* event ) {
+//bool PlaceDetection::eventFilter( QObject* watched, QEvent* event ) {
 //    int max_frames = END_IDX-START_IDX;
 
 //    if ( event->type() == QEvent::MouseButtonPress )
@@ -351,6 +280,6 @@ bool PlaceDetection::eventFilter( QObject* watched, QEvent* event ) {
 //    emit showImg2(mat2QImage(img));
 
 
-    return true;
-}
+//    return true;
+//}
 

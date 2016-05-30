@@ -37,8 +37,12 @@ SegmentTrack::SegmentTrack(SegmentTrackParams* params, SegmentationParams* seg_p
     //Initialize new graph match and segmentation object
     gm = new GraphMatch(img_width, img_height, gm_params);
 
+#ifdef BOW_APPROACH_USED
     Mat dict = readBOWDict();
     seg = new Segmentation(seg_params, dict);
+#else
+    seg = new Segmentation(seg_params);
+#endif
 }
 
 Mat& SegmentTrack::getM()

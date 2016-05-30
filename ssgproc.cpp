@@ -1,4 +1,6 @@
 #include "ssgproc.h"
+#include "TSC/imageprocess/imageprocess.h"
+#include "TSC/bubble/bubbleprocess.h"
 
 
 SSGProc::SSGProc()
@@ -60,6 +62,76 @@ void SSGProc::updateNodeSig(pair<NodeSig, int>& ns, NodeSig new_ns)
 
     //Increment
     ns.second += 1;
+}
+
+void SSGProc::updateSSGInvariants(SSG& ssg, Mat& current_image)
+{
+    Mat gray_image;
+
+    cvtColor(current_image, gray_image, CV_BGR2GRAY);
+
+    Mat hue_channel = ImageProcess::generateChannelImage(current_image, 0, TSC_SAT_LOWER, TSC_SAT_UPPER, TSC_SAT_LOWER, TSC_VAL_UPPER);
+    Mat hue_channel_filtered;
+    cv::medianBlur(hue_channel, hue_channel_filtered, 3);
+    vector<bubblePoint> hue_bubble = bubbleProcess::convertGrayImage2Bub(hue_channel_filtered, FOCAL_LENGHT_PIXELS, 180);
+    vector<bubblePoint> hue_bubble_red = bubbleProcess::reduceBubble(hue_bubble);
+
+    Mat val_channel= ImageProcess::generateChannelImage(current_image, 2, TSC_SAT_LOWER, TSC_SAT_UPPER, TSC_SAT_LOWER, TSC_VAL_UPPER);
+    vector<bubblePoint> val_bubble = bubbleProcess::convertGrayImage2Bub(val_channel, FOCAL_LENGHT_PIXELS, 255);
+    vector<bubblePoint> val_bubble_red = bubbleProcess::reduceBubble(val_bubble);
+
+    bubbleStatistics stats_val =  bubbleProcess::calculateBubbleStatistics(val_bubble_red, 255);
+
+    qDebug() << stats_val.mean << stats_val.variance;
+    //If frame is not informative, return..
+    if(stats_val.mean <= TSC_VAL_MEAN || stats_val.variance <= TSC_VAL_VAR)
+    {
+        qDebug() << "Uninformative" << stats_val.mean << stats_val.variance;
+        return;
+    }
+
+
+    vector<Mat> filter_outputs = ImageProcess::applyFilters(gray_image);
+
+    Mat invariants_total, invariants_total_log;
+
+
+    for(uint i = 0; i < filter_outputs.size(); i++)
+    {
+        vector<bubblePoint> img_bubble = bubbleProcess::convertGrayImage2Bub(filter_outputs[i], FOCAL_LENGHT_PIXELS, 255);
+
+        vector<bubblePoint> img_bubble_red = bubbleProcess::reduceBubble(img_bubble);
+
+        DFCoefficients df_coeff =  bubbleProcess::calculateDFCoefficients(img_bubble_red, NR_HARMONICS, NR_HARMONICS);
+
+        Mat invariants = bubbleProcess::calculateInvariantsMat(df_coeff, NR_HARMONICS, NR_HARMONICS);
+
+        if(i == 0)
+            invariants_total = invariants.clone();
+        else
+            hconcat(invariants_total, invariants, invariants_total);
+    }
+
+    cv::log(invariants_total,invariants_total_log);
+    invariants_total_log = invariants_total_log / 25;
+    cv::transpose(invariants_total_log,invariants_total_log);
+
+    for(int i = 0; i < invariants_total_log.rows; i++)
+    {
+        if(invariants_total_log.at<float>(i,0) < 0)
+            invariants_total_log.at<float>(i,0) = 0.5;
+    }
+
+    if(ssg.member_invariants.empty())
+    {
+        ssg.member_invariants = invariants_total_log;
+    }
+    else
+    {
+        hconcat(ssg.member_invariants, invariants_total_log, ssg.member_invariants);
+    }
+
+    cv::reduce(invariants_total_log, ssg.mean_invariant, 1, CV_REDUCE_AVG);
 }
 
 //Updates SSG
@@ -143,7 +215,7 @@ void SSGProc::updateSSG(SSG& ssg, vector<NodeSig>& ns, Mat& map)
 }
 
 //Draws given SSG structure on image
-Mat SSGProc::drawSSG(SSG& ssg, Mat &input, float tau_p)
+Mat SSGProc::drawSSG(SSG& ssg, Mat &input)
 {
     Mat bg_img = Mat::zeros(input.size(), CV_8UC3);
     bg_img = Scalar(255,255,255);
@@ -167,7 +239,6 @@ Mat SSGProc::drawSSG(SSG& ssg, Mat &input, float tau_p)
         }
 #endif
 
-        float img_area = bg_img.size().height*bg_img.size().width;
         float rad = sqrt(ssg.nodes[i].first.area/M_PI)/10.0;
         circle(bg_img, ssg.nodes[i].first.center, rad,
                Scalar(ssg.nodes[i].first.colorR, ssg.nodes[i].first.colorG, ssg.nodes[i].first.colorB),-1);
@@ -178,7 +249,6 @@ Mat SSGProc::drawSSG(SSG& ssg, Mat &input, float tau_p)
 
     for(int i = 0; i < ssg.nodes.size(); i++)
     {
-        float img_area = bg_img.size().height*bg_img.size().width;
         float rad = sqrt(ssg.nodes[i].first.area/M_PI)/2.0;
         circle(bg_img, ssg.nodes[i].first.center, rad,
                Scalar(ssg.nodes[i].first.colorR, ssg.nodes[i].first.colorG, ssg.nodes[i].first.colorB),-1);

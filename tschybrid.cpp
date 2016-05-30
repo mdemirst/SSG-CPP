@@ -11,6 +11,12 @@ TSCHybrid::TSCHybrid(QCustomPlot* tsc_plot,
                      GraphMatchParams* gm_params,
                      RecognitionParams* rec_params)
 {
+    vector<string> img_files = getFiles(DATASET_FOLDER);
+    Mat img = imread(DATASET_FOLDER + img_files[START_IDX]);
+    int img_height = img.size().height;
+    int img_width = img.size().width;
+
+
     this->tsc_plot = tsc_plot;
     this->ssg_plot = ssg_plot;
     this->tsc_avg_plot = tsc_avg_plot;
@@ -150,6 +156,18 @@ TSCHybrid::TSCHybrid(QCustomPlot* tsc_plot,
                                    seg_track->gm,
                                    seg_track->seg);
 
+    //Bubble process init
+    bubbleProcess::calculateImagePanAngles(FOCAL_LENGHT_PIXELS, img_width, img_height);
+    bubbleProcess::calculateImageTiltAngles(FOCAL_LENGHT_PIXELS, img_width, img_height);
+
+    //Filters init
+    string filters_dir = OUTPUT_FOLDER+string("visual_filters");
+    ImageProcess::readFilter(QString(filters_dir.c_str()).append("/filtre0.txt"),29,false,false,false);
+    ImageProcess::readFilter(QString(filters_dir.c_str()).append("/filtre6.txt"),29,false,false,false);
+    ImageProcess::readFilter(QString(filters_dir.c_str()).append("/filtre12.txt"),29,false,false,false);
+    ImageProcess::readFilter(QString(filters_dir.c_str()).append("/filtre18.txt"),29,false,false,false);
+    ImageProcess::readFilter(QString(filters_dir.c_str()).append("/filtre36.txt"),29,false,false,false);
+
     is_processing = false;
     stop_processing = false;
     next_frame = true;
@@ -241,7 +259,7 @@ void TSCHybrid::processImages(const string folder, const int start_idx, const in
 
         //Decide last frame is whether transition or place
         //Results are written into detected places
-        int detection_result = detectPlace(coherency_scores_ssg,detected_places_unfiltered,detected_places);
+        detectPlace(coherency_scores_ssg,detected_places_unfiltered,detected_places);
 
         cv::Point2f coord = getCoordCold(img_files[START_IDX+detected_places.size()]);
 
@@ -261,7 +279,7 @@ void TSCHybrid::processImages(const string folder, const int start_idx, const in
         scores_tsc.push_back(score);
 
         stop_time = QDateTime::currentMSecsSinceEpoch();
-        //cout << "TSC time elapsed: " << stop_time-start_time << endl;
+        cout << "TSC time elapsed: " << stop_time-start_time << endl;
 
 
         //Plot TSC scores
@@ -356,7 +374,7 @@ void TSCHybrid::processImagesHierarchical(const string folder, const int start_i
     vector<int> detected_places_unfiltered;
     vector<int> detected_places; //Stores all detected place ids
     SSG temp_SSG(0); temp_SSG.setStartFrame(0);
-    TreeNode* hierarchy_tree;
+    TreeNode* hierarchy_tree = NULL;
     vector<PlaceSSG> places;
 
     int frame_count = 0;
@@ -409,9 +427,12 @@ void TSCHybrid::processImagesHierarchical(const string folder, const int start_i
         {
             //Clear SSG
             temp_SSG.nodes.clear();
+            temp_SSG.mean_invariant.release();
+            temp_SSG.member_invariants.release();
             temp_SSG.setId(temp_SSG.getId()+1);
             temp_SSG.setStartFrame(frame_no);
             SSGProc::updateSSG(temp_SSG, ns_vec.back(), seg_track->getM());
+            SSGProc::updateSSGInvariants(temp_SSG, img_org);
         }
         else if(detection_result == DETECTION_PLACE_ENDED)
         {
@@ -423,8 +444,10 @@ void TSCHybrid::processImagesHierarchical(const string folder, const int start_i
             temp_SSG.setSampleFrame(getMostCoherentFrame(coherency_scores_ssg,temp_SSG.getStartFrame(),temp_SSG.getEndFrame()));
             //PlaceSSG new_place(temp_SSG.getId(), temp_SSG);
 
+            qDebug() << temp_SSG.member_invariants.size().width;
             //Expermental purpose
-            SSGs.push_back(temp_SSG);
+            if(temp_SSG.member_invariants.empty() == false)
+                SSGs.push_back(temp_SSG);
 
             //Commented out for experimental purpose
             //recognition->performRecognition(places, new_place, hierarchy_tree);
@@ -433,6 +456,7 @@ void TSCHybrid::processImagesHierarchical(const string folder, const int start_i
         {
             temp_SSG.basepoints.push_back(ns_vec.back());
             SSGProc::updateSSG(temp_SSG, ns_vec.back(), seg_track->getM());
+            SSGProc::updateSSGInvariants(temp_SSG, img_org);
         }
 
 //        frame_count++;
@@ -465,8 +489,6 @@ void TSCHybrid::performBOWTrain(const string folder, const int start_idx, const 
 {
     int dict_size = BOW_DICT_SIZE;
     TermCriteria term_cri(CV_TERMCRIT_ITER|CV_TERMCRIT_EPS, BOW_TC_COUNT, BOW_TC_EPSILON);
-    int retries = BOW_NR_RETRIES;
-    int flags = KMEANS_PP_CENTERS;
 
     Ptr<DescriptorExtractor> desc_extractor;
     #if BOW_DESC_TYPE == SIFT
@@ -519,7 +541,7 @@ void TSCHybrid::performBOWTrain(const string folder, const int start_idx, const 
 
 void TSCHybrid::reRecognize()
 {
-    TreeNode* hierarchy_tree;
+    TreeNode* hierarchy_tree = NULL;
     vector<PlaceSSG> places;
 
     vector<SSG> SSGs = this->SSGs;

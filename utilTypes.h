@@ -11,6 +11,7 @@
 #include <opencv2/flann/flann.hpp>
 
 using namespace std;
+using namespace cv;
 
 class SSGParams{
 public:
@@ -169,8 +170,11 @@ public:
     int getEndFrame(){return end_frame;}
     void setSampleFrame(int frame){this->sample_frame = frame;}
     int getSampleFrame(){return sample_frame;}
+public:
     vector<pair<NodeSig, int> > nodes;
     vector<vector<NodeSig> > basepoints;
+    Mat member_invariants;
+    Mat mean_invariant;
 };
 
 class RAG_m

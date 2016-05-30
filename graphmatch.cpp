@@ -91,8 +91,8 @@ float GraphMatch::drawMatches(vector<NodeSig> ns1, vector<NodeSig> ns2,
             NodeSig n1 = ns1[i];
             NodeSig n2 = ns1[ns1[i].edges[j].first-1];
 
-            Point p1 = n1.center;
-            Point p2 = n2.center;
+            //Point p1 = n1.center;
+            //Point p2 = n2.center;
 
             //line(img_merged,p1,p2,MATCH_LINE_COLOR,MATCH_LINE_WIDTH);
         }
@@ -104,8 +104,8 @@ float GraphMatch::drawMatches(vector<NodeSig> ns1, vector<NodeSig> ns2,
             NodeSig n1 = ns2[i];
             NodeSig n2 = ns2[ns2[i].edges[j].first-1];
 
-            Point p1 = n1.center+Point(img1.size().width,0);
-            Point p2 = n2.center+Point(img1.size().width,0);
+            //Point p1 = n1.center+Point(img1.size().width,0);
+            //Point p2 = n2.center+Point(img1.size().width,0);
 
             //line(img_merged,p1,p2,MATCH_LINE_COLOR,MATCH_LINE_WIDTH);
         }
@@ -114,8 +114,8 @@ float GraphMatch::drawMatches(vector<NodeSig> ns1, vector<NodeSig> ns2,
     //Draw optimal match --lines
     for(int i = 0; i < nonzero_locs.size(); i++)
     {
-        Point p1 = ns1[nonzero_locs[i].y].center;
-        Point p2 = ns2[nonzero_locs[i].x].center+Point(img1.size().width,0);
+        //Point p1 = ns1[nonzero_locs[i].y].center;
+        //Point p2 = ns2[nonzero_locs[i].x].center+Point(img1.size().width,0);
 
         //line(img_merged,p1,p2,MATCH_LINE_COLOR,MATCH_LINE_WIDTH);
     }
@@ -270,7 +270,6 @@ float GraphMatch::matchTwoImages(vector<NodeSig> ns1, vector<NodeSig> ns2,
 
 double GraphMatch::calcN2NDistance(NodeSig s1, NodeSig s2)
 {
-    static float smallest  = 1;
     //Note: all individual sums must be normalized to 1
     double dist = 0;
 

@@ -307,7 +307,6 @@ void MainWindow::on_scroll_tau_v_valueChanged(int value)
 
 void MainWindow::on_cb_framebyframe_clicked()
 {
-    pd->frameByFrameProcess = ui->cb_framebyframe->isChecked();
 }
 
 void MainWindow::on_btn_tsc_process_clicked()
@@ -342,15 +341,12 @@ void MainWindow::on_btn_process_all_clicked()
 
 void MainWindow::on_btn_next_clicked()
 {
-    pd->process_next_frame = true;
 }
 
 void MainWindow::on_btn_tracking_start_clicked()
 {
     if(seg_track == NULL)
         ui->te_tracking->insertPlainText(QString("Run place detection first!\n"));
-    else if(pd->isProcessing == true)
-        ui->te_tracking->insertPlainText(QString("Wait place detection to finish!\n"));
     else
     {
         seg_track->mapScaleFactor = 5;
@@ -372,7 +368,6 @@ void MainWindow::on_lbl_find_coherent_clicked()
 
 void MainWindow::on_btn_stop_process_clicked()
 {
-    pd->stopProcessing = true;
 }
 
 void MainWindow::on_btn_merged_process_images_clicked()

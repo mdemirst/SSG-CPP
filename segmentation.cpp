@@ -10,6 +10,10 @@ SegmentationParams::SegmentationParams(float sigma,
     this->min_size = min_size;
 }
 
+Segmentation::Segmentation(SegmentationParams* params)
+{
+    this->params = params;
+}
 
 Segmentation::Segmentation(SegmentationParams* params, Mat dict)
 {

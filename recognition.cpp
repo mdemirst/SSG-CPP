@@ -240,6 +240,42 @@ double Recognition::calculateDistance(SSG& old_place, SSG& detected_place)
     return 1-vote;
 }
 
+static inline float computeSquare (float x) { return x*x; }
+
+double Recognition::calculateDistanceTSC(SSG& old_place, SSG& detected_place)
+{
+    double total_distance = 0;
+    int count = 0;
+    for(int i = 0; i < detected_place.member_invariants.size().width; i++)
+    {
+//        double distance = norm(old_place.mean_invariant,detected_place.member_invariants.col(i),NORM_L2);
+//        // This is the result string
+//        std::vector<float> result;
+
+//        // Now we take the difference between the member and detected place invariant
+//        std::transform(old_place.mean_invariant.begin(),old_place.mean_invariant.end(), detected_place.member_invariants.col(i).begin(),
+//                       std::back_inserter(result),
+//                       std::minus<float>());
+
+//        // Now we get the square of the result to eliminate minuses
+//        std::transform(result.begin(), result.end(), result.begin(), computeSquare);
+
+//        // We are summing the elements of the result
+//        distance = std::accumulate(result.begin(),result.end(),0.0);
+
+//        distance = sqrt(distance);
+
+        total_distance += norm(old_place.mean_invariant,detected_place.member_invariants.col(i),NORM_L2);
+
+        count++;
+    }
+    total_distance /= count;
+
+    return total_distance;
+}
+
+
+
 double** Recognition::calculateDistanceMatrix(vector<PlaceSSG>& places)
 {
     int nrPlaces = places.size();
@@ -263,10 +299,13 @@ double** Recognition::calculateDistanceMatrix(vector<PlaceSSG>& places)
                 {
                     Mat P, C;
                     //Graph distance calculation -- method #1
-                    distance += gm->matchTwoImages(places[r].getMember(i),places[c].getMember(j),P,C);
+                    //distance += gm->matchTwoImages(places[r].getMember(i),places[c].getMember(j),P,C);
 
                     //Graph distance calculation -- method #2
                     //distance += calculateDistance(places[r].getMember(i),places[c].getMember(j));
+
+                    //Bubble descriptor distance -- method #3
+                    distance += calculateDistanceTSC(places[r].getMember(i),places[c].getMember(j));
                     count++;
                 }
             }

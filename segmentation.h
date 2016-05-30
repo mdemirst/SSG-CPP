@@ -36,6 +36,7 @@ class Segmentation : public QObject
 {
     Q_OBJECT
 public:
+    Segmentation(SegmentationParams* params);
     Segmentation(SegmentationParams* params, Mat dict);
     SegmentationParams* params;
     vector<NodeSig> segmentImage(const Mat &img_org, Mat &img_seg);
