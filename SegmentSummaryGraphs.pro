@@ -43,7 +43,8 @@ SOURCES += main.cpp\
     tschybrid.cpp \
     cluster.c \
     recognition.cpp \
-    utilTypes.cpp
+    utilTypes.cpp \
+    databasehandler.cpp
 
 HEADERS  += mainwindow.h \
       segmentation.h \
@@ -76,7 +77,8 @@ HEADERS  += mainwindow.h \
     tschybrid.h \
     cluster.h \
     recognition.h \
-    SimpleMatrix.h
+    SimpleMatrix.h \
+    databasehandler.h
 
 FORMS    += mainwindow.ui
 

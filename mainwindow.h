@@ -23,11 +23,9 @@ public:
     GraphMatch* gm;
     Segmentation* seg;
     TSCHybrid* tsc_hybrid;
-    SSGParams* ssg_params;
-    SegmentTrackParams* seg_track_params;
-    SegmentationParams* seg_params;
-    GraphMatchParams* gm_params;
-    RecognitionParams* rec_params;
+    Parameters* params;
+    vector<Parameters*> params_all;
+    vector<Dataset> datasets;
     Recognition* recognition;
 
 private:
@@ -127,6 +125,10 @@ private slots:
     void on_scroll_bow_coeff_valueChanged(int value);
 
     void on_btn_next_frame_clicked();
+
+    void on_btn_init_from_db_clicked();
+
+    void on_btn_create_db_clicked();
 
 private:
     Ui::MainWindow *ui;

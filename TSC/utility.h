@@ -28,6 +28,7 @@ public:
     Place();
     Place(int id);
     uint id;
+    int color;
     cv::Mat memberIds;
     std::vector<BasePoint> members;
     Mat memberInvariants;

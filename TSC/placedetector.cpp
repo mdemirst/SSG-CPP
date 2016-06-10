@@ -97,6 +97,8 @@ float PlaceDetector::processImage()
             DFCoefficients dfcoeff = bubbleProcess::calculateDFCoefficients(reducedHueBubble,noHarmonics,noHarmonics);
             Mat hueInvariants = bubbleProcess::calculateInvariantsMat(dfcoeff,noHarmonics, noHarmonics);
 
+            totalInvariants = hueInvariants.clone();
+
             cv::Mat logTotal;
 
             Mat grayImage;
@@ -104,6 +106,7 @@ float PlaceDetector::processImage()
             cv::cvtColor(currentImage,grayImage,CV_BGR2GRAY);
 
             std::vector<Mat> sonuc = ImageProcess::applyFilters(grayImage);
+
 
             for(uint j = 0; j < sonuc.size(); j++)
             {
@@ -115,10 +118,11 @@ float PlaceDetector::processImage()
 
                 Mat invariants=  bubbleProcess::calculateInvariantsMat(dfcoeff,noHarmonics,noHarmonics);
 
-                if(j==0)
-                    totalInvariants = invariants.clone();
-                else
-                    cv::hconcat(totalInvariants, invariants, totalInvariants);
+//                if(j==0)
+//                    totalInvariants = invariants.clone();
+//                else
+//                    cv::hconcat(totalInvariants, invariants, totalInvariants);
+                cv::hconcat(totalInvariants, invariants, totalInvariants);
             }
 
             cv::log(totalInvariants,logTotal);

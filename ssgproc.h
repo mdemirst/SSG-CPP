@@ -24,11 +24,12 @@ class SSGProc : public QObject
     Q_OBJECT
 public:
     SSGProc();
-    static void updateSSG(SSG& ssg, vector<NodeSig>& ns, Mat& map);
+    static void updateSSG(SSG& ssg, vector<NodeSig>& ns, Mat& map_col);
     static Mat drawSSG(SSG& ssg, Mat& input);
     static void updateNodeSig(pair<NodeSig, int>& ns, NodeSig new_ns);
     static void filterSummarySegments(SSG& ssg, float tau_p);
-    static void updateSSGInvariants(SSG& ssg, Mat& current_image);
+    static void updateSSGInvariants(SSG& ssg, Mat& current_image, Parameters* params);
+    static void updateSSGInvariantsFromDB(SSG& ssg, Mat& current_image, Parameters* params, FrameDesc& frame_desc);
 
 public:
 

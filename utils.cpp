@@ -387,90 +387,151 @@ void savePlacesFrameInfo(vector<PlaceSSG>& places)
 ////};
 
 void saveParameters(string filename,
-                    SSGParams* ssg_params,
-                    SegmentTrackParams* seg_track_params,
-                    SegmentationParams* seg_params,
-                    GraphMatchParams* gm_params,
-                    RecognitionParams* rec_params)
+                    Parameters* params)
 {
     ofstream file;
     file.open (filename.c_str());
 
-    file << "TAU_N" << "\t" << ssg_params->tau_n << endl;
-    file << "TAU_C" << "\t" << ssg_params->tau_c << endl;
-    file << "TAU_F" << "\t" << ssg_params->tau_f << endl;
-    file << "TAU_D" << "\t" << ssg_params->tau_d << endl;
-    file << "TAU_P" << "\t" << ssg_params->tau_p << endl;
-    file << "COEFF_NODE_DISAPPEAR1" << "\t" << ssg_params->coeff_node_disappear1 << endl;
-    file << "COEFF_NODE_DISAPPEAR2" << "\t" << ssg_params->coeff_node_disappear2 << endl;
-    file << "COEFF_NODE_APPEAR" << "\t" << ssg_params->coeff_node_appear << endl;
-    file << "COEFF_COH_EXP_BASE" << "\t" << ssg_params->coeff_coh_exp_base << endl;
-    file << "COEFF_COH_APPEAR_THRES" << "\t" << ssg_params->coeff_coh_appear_thres << endl;
+    file << "IMG_ORG_W" << "\t" << params->ssg_params.img_org_width << endl;
+    file << "IMG_ORG_H" << "\t" << params->ssg_params.img_org_height << endl;
+    file << "IMG_W" << "\t" << params->ssg_params.img_width << endl;
+    file << "IMG_H" << "\t" << params->ssg_params.img_height << endl;
+    file << "TAU_N" << "\t" << params->ssg_params.tau_n << endl;
+    file << "TAU_C" << "\t" << params->ssg_params.tau_c << endl;
+    file << "TAU_F" << "\t" << params->ssg_params.tau_f << endl;
+    file << "TAU_D" << "\t" << params->ssg_params.tau_d << endl;
+    file << "TAU_P" << "\t" << params->ssg_params.tau_p << endl;
+    file << "COEFF_NODE_DISAPPEAR1" << "\t" << params->ssg_params.coeff_node_disappear1 << endl;
+    file << "COEFF_NODE_DISAPPEAR2" << "\t" << params->ssg_params.coeff_node_disappear2 << endl;
+    file << "COEFF_NODE_APPEAR" << "\t" << params->ssg_params.coeff_node_appear << endl;
+    file << "COEFF_COH_EXP_BASE" << "\t" << params->ssg_params.coeff_coh_exp_base << endl;
+    file << "COEFF_COH_APPEAR_THRES" << "\t" << params->ssg_params.coeff_coh_appear_thres << endl;
 
-    file << "TAU_W" << "\t" << seg_track_params->tau_w << endl;
-    file << "TAU_M" << "\t" << seg_track_params->tau_m << endl;
+    file << "TAU_W" << "\t" << params->seg_track_params.tau_w << endl;
+    file << "TAU_M" << "\t" << params->seg_track_params.tau_m << endl;
 
-    file << "SIGMA" << "\t" << seg_params->sigma << endl;
-    file << "K" << "\t" << seg_params->k << endl;
-    file << "MIN_SIZE" << "\t" << seg_params->min_size << endl;
+    file << "SIGMA" << "\t" << params->seg_params.sigma << endl;
+    file << "K" << "\t" << params->seg_params.k << endl;
+    file << "MIN_SIZE" << "\t" << params->seg_params.min_size << endl;
 
-    file << "POS_WEIGHT" << "\t" << gm_params->pos_weight << endl;
-    file << "COLOR_WEIGHT" << "\t" << gm_params->color_weight << endl;
-    file << "AREA_WEIGHT" << "\t" << gm_params->area_weight << endl;
-    file << "BOW_WEIGHT" << "\t" << gm_params->bow_weight << endl;
+    file << "POS_WEIGHT" << "\t" << params->gm_params.pos_weight << endl;
+    file << "COLOR_WEIGHT" << "\t" << params->gm_params.color_weight << endl;
+    file << "AREA_WEIGHT" << "\t" << params->gm_params.area_weight << endl;
+    file << "BOW_WEIGHT" << "\t" << params->gm_params.bow_weight << endl;
 
-    file << "TAU_R" << "\t" << rec_params->tau_r << endl;
-    file << "PLOT_H" << "\t" << rec_params->plot_h << endl;
-    file << "PLOT_W" << "\t" << rec_params->plot_w << endl;
-    file << "SSG_H" << "\t" << rec_params->ssg_h << endl;
-    file << "SSG_W" << "\t" << rec_params->ssg_w << endl;
-    file << "TAU_V" << "\t" << rec_params->tau_v << endl;
+    file << "TAU_R" << "\t" << params->rec_params.tau_r << endl;
+    file << "PLOT_H" << "\t" << params->rec_params.plot_h << endl;
+    file << "PLOT_W" << "\t" << params->rec_params.plot_w << endl;
+    file << "SSG_H" << "\t" << params->rec_params.ssg_h << endl;
+    file << "SSG_W" << "\t" << params->rec_params.ssg_w << endl;
+    file << "TAU_V" << "\t" << params->rec_params.tau_v << endl;
+
+    file << "TAU_MU" << "\t" << params->tsc_params.tau_mu << endl;
+    file << "TAU_SIGMA" << "\t" << params->tsc_params.tau_sigma << endl;
+
+//    file << "DATASET_COUNT" << "\t" << datasets.size() << endl;
+
+//    for(int i = 0; i < datasets.size(); i++)
+//    {
+//        file << "DATASET_" << i+1 << "_LOC "<< "\t" << datasets[i].location << endl;
+//        file << "DATASET_" << i+1 << "_START "<< "\t" << datasets[i].start_idx << endl;
+//        file << "DATASET_" << i+1 << "_END "<< "\t" << datasets[i].end_idx << endl;
+//    }
 
     file.close();
 
 }
 
-void readParameters(string filename,
-                    SSGParams* ssg_params,
-                    SegmentTrackParams* seg_track_params,
-                    SegmentationParams* seg_params,
-                    GraphMatchParams* gm_params,
-                    RecognitionParams* rec_params)
+void readDatasets(string filename,
+                  vector<Dataset>& datasets)
 {
     ifstream file;
     file.open (filename.c_str());
 
     string str;
+    vector<Dataset> datasets_all;
+    int dataset_count;
+    file >> str >> dataset_count;
+    for(int i = 0; i < dataset_count; i++)
+    {
+        string location;
+        int start_idx, end_idx;
+        file >> str >> location;
+        file >> str >> start_idx;
+        file >> str >> end_idx;
+        Dataset new_dataset(location, start_idx, end_idx, i+1);
+        datasets_all.push_back(new_dataset);
+    }
+    int active_dataset_count = 0;
+    file >> str >> active_dataset_count;
+    file >> str;
+    for(int i = 0; i < active_dataset_count; i++)
+    {
+        int dataset_id;
+        file >> dataset_id;
+        datasets.push_back(datasets_all[dataset_id-1]);
+    }
 
-    file >> str >> ssg_params->tau_n ;
-    file >> str >> ssg_params->tau_c ;
-    file >> str >> ssg_params->tau_f ;
-    file >> str >> ssg_params->tau_d ;
-    file >> str >> ssg_params->tau_p ;
-    file >> str >> ssg_params->coeff_node_disappear1 ;
-    file >> str >> ssg_params->coeff_node_disappear2 ;
-    file >> str >> ssg_params->coeff_node_appear     ;
-    file >> str >> ssg_params->coeff_coh_exp_base    ;
-    file >> str >> ssg_params->coeff_coh_appear_thres;
 
-    file >> str >> seg_track_params->tau_w ;
-    file >> str >> seg_track_params->tau_m ;
+    file.close();
+}
 
-    file >> str >> seg_params->sigma   ;
-    file >> str >> seg_params->k       ;
-    file >> str >> seg_params->min_size;
+void readParameters(string filename,
+                    Parameters* params)
+{
+    ifstream file;
+    file.open (filename.c_str());
 
-    file >> str >> gm_params->pos_weight  ;
-    file >> str >> gm_params->color_weight;
-    file >> str >> gm_params->area_weight ;
-    file >> str >> gm_params->bow_weight ;
+    string str;
+    file >> str >> params->ssg_params.img_org_width ;
+    file >> str >> params->ssg_params.img_org_height ;
+    file >> str >> params->ssg_params.img_width ;
+    file >> str >> params->ssg_params.img_height ;
+    file >> str >> params->ssg_params.tau_n ;
+    file >> str >> params->ssg_params.tau_c ;
+    file >> str >> params->ssg_params.tau_f ;
+    file >> str >> params->ssg_params.tau_d ;
+    file >> str >> params->ssg_params.tau_p ;
+    file >> str >> params->ssg_params.coeff_node_disappear1 ;
+    file >> str >> params->ssg_params.coeff_node_disappear2 ;
+    file >> str >> params->ssg_params.coeff_node_appear     ;
+    file >> str >> params->ssg_params.coeff_coh_exp_base    ;
+    file >> str >> params->ssg_params.coeff_coh_appear_thres;
 
-    file >> str >> rec_params->tau_r ;
-    file >> str >> rec_params->plot_h;
-    file >> str >> rec_params->plot_w;
-    file >> str >> rec_params->ssg_h ;
-    file >> str >> rec_params->ssg_w ;
-    file >> str >> rec_params->tau_v ;
+    file >> str >> params->seg_track_params.tau_w ;
+    file >> str >> params->seg_track_params.tau_m ;
+
+    file >> str >> params->seg_params.sigma   ;
+    file >> str >> params->seg_params.k       ;
+    file >> str >> params->seg_params.min_size;
+
+    file >> str >> params->gm_params.pos_weight  ;
+    file >> str >> params->gm_params.color_weight;
+    file >> str >> params->gm_params.area_weight ;
+    file >> str >> params->gm_params.bow_weight ;
+
+    file >> str >> params->rec_params.tau_r ;
+    file >> str >> params->rec_params.plot_h;
+    file >> str >> params->rec_params.plot_w;
+    file >> str >> params->rec_params.ssg_h ;
+    file >> str >> params->rec_params.ssg_w ;
+    file >> str >> params->rec_params.tau_v ;
+
+    file >> str >> params->tsc_params.tau_mu ;
+    file >> str >> params->tsc_params.tau_sigma ;
+
+//    int dataset_count;
+//    file >> str >> dataset_count;
+//    for(int i = 0; i < dataset_count; i++)
+//    {
+//        string location;
+//        int start_idx, end_idx;
+//        file >> str >> location;
+//        file >> str >> start_idx;
+//        file >> str >> end_idx;
+//        Dataset new_dataset(location, start_idx, end_idx);
+//        datasets.push_back(new_dataset);
+//    }
 
 
     file.close();
@@ -478,17 +539,17 @@ void readParameters(string filename,
 
 }
 
-int getMostCoherentFrame(vector<float> coh_scores, int start_frame, int end_frame)
+int getMostCoherentFrame(vector<float> coh_scores, int start_frame, int end_frame, int start_idx)
 {
     int most_coh_id = start_frame;
-    float most_coh_score = coh_scores[start_frame-START_IDX];
+    float most_coh_score = coh_scores[start_frame-start_idx];
 
-    end_frame = (end_frame - START_IDX) < coh_scores.size() ? end_frame : (coh_scores.size() + START_IDX);
+    end_frame = (end_frame - start_idx) < coh_scores.size() ? end_frame : (coh_scores.size() + start_idx);
     for(int i = start_frame; i < end_frame; i++)
     {
-        if(coh_scores[i-START_IDX] > most_coh_score)
+        if(coh_scores[i-start_idx] > most_coh_score)
         {
-            most_coh_score = coh_scores[i-START_IDX];
+            most_coh_score = coh_scores[i-start_idx];
             most_coh_id = i;
         }
     }

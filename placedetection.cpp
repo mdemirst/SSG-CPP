@@ -5,29 +5,6 @@
 
 #include "rag.h"
 
-SSGParams::SSGParams(int tau_n,
-                     float tau_c,
-                     int tau_f,
-                     float tau_d,
-                     float tau_p,
-                     float coeff_node_disappear1,
-                     float coeff_node_disappear2,
-                     float coeff_node_appear,
-                     float coeff_coh_exp_base,
-                     float coeff_coh_appear_thres)
-{
-
-    this->tau_n = tau_n;
-    this->tau_c = tau_c;
-    this->tau_f = tau_f;
-    this->tau_d = tau_d;
-    this->tau_p = tau_p;
-    this->coeff_node_disappear1 = coeff_node_disappear1;
-    this->coeff_node_disappear2 = coeff_node_disappear2;
-    this->coeff_node_appear = coeff_node_appear;
-    this->coeff_coh_exp_base = coeff_coh_exp_base;
-    this->coeff_coh_appear_thres = coeff_coh_appear_thres;
-}
 
 
 //void overlayImage(const cv::Mat &background, const cv::Mat &foreground,

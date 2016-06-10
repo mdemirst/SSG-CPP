@@ -13,13 +13,14 @@
 #include <QDebug>
 #include <QDateTime>
 #include <QObject>
+#include "utilTypes.h"
 
 
 class TSC : public QObject
 {
     Q_OBJECT
 public:
-    TSC();
+    TSC(Dataset* dataset);
     float processImage(const Mat& cur_img, bool isLastImage);
     bool createDirectories(QString previousMemoryPath);
     bool saveParameters(QString filepath);

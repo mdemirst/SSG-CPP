@@ -64,7 +64,7 @@ void SSGProc::updateNodeSig(pair<NodeSig, int>& ns, NodeSig new_ns)
     ns.second += 1;
 }
 
-void SSGProc::updateSSGInvariants(SSG& ssg, Mat& current_image)
+void SSGProc::updateSSGInvariants(SSG& ssg, Mat& current_image, Parameters* params)
 {
     Mat gray_image;
 
@@ -76,17 +76,18 @@ void SSGProc::updateSSGInvariants(SSG& ssg, Mat& current_image)
     vector<bubblePoint> hue_bubble = bubbleProcess::convertGrayImage2Bub(hue_channel_filtered, FOCAL_LENGHT_PIXELS, 180);
     vector<bubblePoint> hue_bubble_red = bubbleProcess::reduceBubble(hue_bubble);
 
+
     Mat val_channel= ImageProcess::generateChannelImage(current_image, 2, TSC_SAT_LOWER, TSC_SAT_UPPER, TSC_SAT_LOWER, TSC_VAL_UPPER);
     vector<bubblePoint> val_bubble = bubbleProcess::convertGrayImage2Bub(val_channel, FOCAL_LENGHT_PIXELS, 255);
     vector<bubblePoint> val_bubble_red = bubbleProcess::reduceBubble(val_bubble);
 
     bubbleStatistics stats_val =  bubbleProcess::calculateBubbleStatistics(val_bubble_red, 255);
 
-    qDebug() << stats_val.mean << stats_val.variance;
+    //qDebug() << stats_val.mean << stats_val.variance;
     //If frame is not informative, return..
-    if(stats_val.mean <= TSC_VAL_MEAN || stats_val.variance <= TSC_VAL_VAR)
+    if(stats_val.mean <=  params->tsc_params.tau_mu || stats_val.variance <= params->tsc_params.tau_sigma)
     {
-        qDebug() << "Uninformative" << stats_val.mean << stats_val.variance;
+        //qDebug() << "Uninformative" << stats_val.mean << stats_val.variance;
         return;
     }
 
@@ -94,6 +95,10 @@ void SSGProc::updateSSGInvariants(SSG& ssg, Mat& current_image)
     vector<Mat> filter_outputs = ImageProcess::applyFilters(gray_image);
 
     Mat invariants_total, invariants_total_log;
+
+    DFCoefficients df_coeff = bubbleProcess::calculateDFCoefficients(hue_bubble_red, NR_HARMONICS, NR_HARMONICS);
+    Mat hue_invariants = bubbleProcess::calculateInvariantsMat(df_coeff, NR_HARMONICS, NR_HARMONICS);
+    invariants_total = hue_invariants.clone();
 
 
     for(uint i = 0; i < filter_outputs.size(); i++)
@@ -106,11 +111,16 @@ void SSGProc::updateSSGInvariants(SSG& ssg, Mat& current_image)
 
         Mat invariants = bubbleProcess::calculateInvariantsMat(df_coeff, NR_HARMONICS, NR_HARMONICS);
 
-        if(i == 0)
-            invariants_total = invariants.clone();
-        else
-            hconcat(invariants_total, invariants, invariants_total);
+//        if(i == 0)
+//            invariants_total = invariants.clone();
+//        else
+//        {
+//            hconcat(invariants_total, invariants, invariants_total);
+//        }
+        cv::hconcat(invariants_total, invariants, invariants_total);
     }
+    //qDebug() << invariants_total.size().width << invariants_total.size().height;
+
 
     cv::log(invariants_total,invariants_total_log);
     invariants_total_log = invariants_total_log / 25;
@@ -131,17 +141,49 @@ void SSGProc::updateSSGInvariants(SSG& ssg, Mat& current_image)
         hconcat(ssg.member_invariants, invariants_total_log, ssg.member_invariants);
     }
 
-    cv::reduce(invariants_total_log, ssg.mean_invariant, 1, CV_REDUCE_AVG);
+    cv::reduce(ssg.member_invariants, ssg.mean_invariant, 1, CV_REDUCE_AVG);
+
+}
+
+void SSGProc::updateSSGInvariantsFromDB(SSG& ssg, Mat& current_image, Parameters* params, FrameDesc& frame_desc)
+{
+    Mat gray_image;
+
+    cvtColor(current_image, gray_image, CV_BGR2GRAY);
+
+
+    bubbleStatistics stats_val =  frame_desc.bs;
+
+    //qDebug() << stats_val.mean << stats_val.variance;
+    //If frame is not informative, return..
+    if(stats_val.mean <=  params->tsc_params.tau_mu || stats_val.variance <= params->tsc_params.tau_sigma)
+    {
+        //qDebug() << "Uninformative" << stats_val.mean << stats_val.variance;
+        return;
+    }
+
+
+    Mat invariants_total_log = frame_desc.bd;
+
+    if(ssg.member_invariants.empty())
+    {
+        ssg.member_invariants = invariants_total_log;
+    }
+    else
+    {
+        hconcat(ssg.member_invariants, invariants_total_log, ssg.member_invariants);
+    }
+
+    cv::reduce(ssg.member_invariants, ssg.mean_invariant, 1, CV_REDUCE_AVG);
+
 }
 
 //Updates SSG
-void SSGProc::updateSSG(SSG& ssg, vector<NodeSig>& ns, Mat& map)
+void SSGProc::updateSSG(SSG& ssg, vector<NodeSig>& ns, Mat& map_col)
 {
-    int last_frame = map.size().width-1;//0 based frame no
-
     //If SSG contains less number of elements
     //then initialize
-    for(int i = ssg.nodes.size(); i < map.size().height; i++)
+    for(int i = ssg.nodes.size(); i < map_col.size().height; i++)
     {
         NodeSig ns;
         pair<NodeSig, int> new_node(ns, 0);
@@ -150,13 +192,13 @@ void SSGProc::updateSSG(SSG& ssg, vector<NodeSig>& ns, Mat& map)
 
     //For each node that appears at the last frame(inspected using map),
     //add weighted version of it to SSG
-    for(int i = 0; i < map.size().height; i++)
+    for(int i = 0; i < map_col.size().height; i++)
     {
         //If ith node appears at the last frame
         //then, add weighted
-        if(map.at<int>(i, last_frame) > 0)
+        if(map_col.at<int>(i, 0) > 0)
         {
-            updateNodeSig(ssg.nodes[i], ns[map.at<int>(i, last_frame)]);
+            updateNodeSig(ssg.nodes[i], ns[map_col.at<int>(i, 0)]);
         }
     }
 

@@ -3,10 +3,10 @@
 
 #define OUTPUT_FOLDER "/home/isl-mahmut/Output/"
 
-#define START_IDX 0
+//#define START_IDX 0
 
-#define DATASET_FOLDER "/home/isl-mahmut/Datasets/seq1_cloudy1/std_cam/"
-#define END_IDX 1400
+//#define DATASET_FOLDER "/home/isl-mahmut/Datasets/seq1_cloudy1/std_cam/"
+//#define END_IDX 1400
 
 //#define DATASET_FOLDER "/home/isl-mahmut/Datasets/seq1_cloudy2/std_cam/"
 //#define END_IDX 1832
@@ -59,30 +59,30 @@
 #define PEN_WIDTH3 3
 #define IMG_RESCALE_RAT 0.5
 
-#define INIT_TAU_N 10
-#define INIT_TAU_C 0.5
-#define INIT_TAU_W 30
-#define INIT_TAU_M 0.05
-#define INIT_TAU_F 15
-#define INIT_TAU_D 1.0
-#define INIT_TAU_P 0.6
+//#define INIT_TAU_N 10
+//#define INIT_TAU_C 0.5
+//#define INIT_TAU_W 30
+//#define INIT_TAU_M 0.05
+//#define INIT_TAU_F 15
+//#define INIT_TAU_D 1.0
+//#define INIT_TAU_P 0.6
 
-#define COEFF_NODE_DISAPPEAR_1 0.0
-#define COEFF_NODE_DISAPPEAR_2 0.0
-#define COEFF_NODE_APPEAR 0.0
-#define COEFF_COH_EXP_BASE 10
-#define COEFF_COH_APPEAR_THRES 0.90
+//#define COEFF_NODE_DISAPPEAR_1 0.0
+//#define COEFF_NODE_DISAPPEAR_2 0.0
+//#define COEFF_NODE_APPEAR 0.0
+//#define COEFF_COH_EXP_BASE 10
+//#define COEFF_COH_APPEAR_THRES 0.90
 
 //Predefined segmentation parameters
-#define SEG_SIGMA       0.8
-#define SEG_K           300
-#define SEG_MIN_SIZE    1500
-#define SEG_SCALE       1.0
+//#define SEG_SIGMA       0.8
+//#define SEG_K           300
+//#define SEG_MIN_SIZE    1500
+//#define SEG_SCALE       1.0
 
-#define POS_WEIGHT 0.8
-#define COLOR_WEIGHT 0.5
-#define AREA_WEIGHT 0.7
-#define BOW_WEIGHT 0.5
+//#define POS_WEIGHT 0.8
+//#define COLOR_WEIGHT 0.5
+//#define AREA_WEIGHT 0.7
+//#define BOW_WEIGHT 0.5
 
 //#define BOW_APPROACH_USED
 #define BOW_DICT_SIZE 1000
@@ -94,13 +94,13 @@
 #define BOW_DICT_NAME "dict.xml"
 
 //Recognition parameters
-#define INIT_TAU_R 0.075
-#define INIT_TAU_V 0.075
+//#define INIT_TAU_R 0.075
+//#define INIT_TAU_V 0.075
 
-#define INIT_TREE_PLOT_H 1000
-#define INIT_TREE_PLOT_W 3000
-#define INIT_TREE_SSG_H 90
-#define INIT_TREE_SSG_W 60
+//#define INIT_TREE_PLOT_H 1000
+//#define INIT_TREE_PLOT_W 3000
+//#define INIT_TREE_SSG_H 90
+//#define INIT_TREE_SSG_W 60
 
 #define MAP_FILTER_SIZE 3
 
@@ -159,8 +159,8 @@
 #define TSC_SAT_UPPER 255
 #define TSC_VAL_LOWER 10
 #define TSC_VAL_UPPER 255
-#define TSC_VAL_MEAN 0.2
-#define TSC_VAL_VAR 0.01
+//#define TSC_VAL_MEAN 0.2
+//#define TSC_VAL_VAR 0.01
 
 
 

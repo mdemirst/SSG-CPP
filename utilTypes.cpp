@@ -1,4 +1,5 @@
 #include "utilTypes.h"
+#include "utils.h"
 
 //////////////////////////////
 //TreeNode Class Definitions//
@@ -28,3 +29,13 @@ vector<TreeNode*>& TreeNode::getChildren()
 {
     return children;
 }
+
+Dataset::Dataset(string location, int start_idx, int end_idx, int dataset_id)
+{
+    this->location = location;
+    this->start_idx = start_idx;
+    this->end_idx = end_idx;
+    this->dataset_id = dataset_id;
+    files = getFiles(location);
+}
+

@@ -21,7 +21,7 @@ using namespace std;
 enum RecognitionStatus {RECOGNITION_ERROR, NOT_RECOGNIZED, RECOGNIZED};
 
 
-
+enum RecognitionMethod {REC_TYPE_SSG_NORMAL, REC_TYPE_SSG_VOTING, REC_TYPE_BD_NORMAL, REC_TYPE_BD_VOTING, REC_TYPE_HYBRID};
 /////////////////////////////////////////////
 //Performs recognition on hierarchical tree//
 //SSGs are used as tree elements           //
@@ -30,18 +30,15 @@ class Recognition : public QObject
 {
     Q_OBJECT
 private:
-    SSGParams* ssg_params;
-    SegmentTrackParams* seg_track_params;
-    SegmentationParams* seg_params;
-    GraphMatchParams* gm_params;
+    Parameters* params;
+    Dataset* dataset;
     GraphMatch *gm;
     Segmentation *seg;
-    RecognitionParams* rec_params;
     vector<string> img_files;
-    int img_width;
-    int img_height;
     float thumbnail_scale;
     int plot_offset;
+    int rec_method;
+    int norm_type;
 
     Node* solveSLink(int nrows, int ncols, double** data);
     void generateRAGs(const Node* tree, int nTree, vector<vector<NodeSig> >& rags, vector<Mat>& images);
@@ -58,16 +55,15 @@ private:
     void drawSSG(Mat& img, SSG ssg, Point coord);
 
 public:
-    Recognition(RecognitionParams* rec_params,
-                SSGParams* ssg_params,
-                SegmentTrackParams* seg_track_params,
-                SegmentationParams* seg_params,
-                GraphMatchParams* gm_params,
+    Recognition(Parameters* params,
+                Dataset* dataset,
                 GraphMatch* gm,
                 Segmentation* seg);
     ~Recognition();
     int performRecognition(vector<PlaceSSG>& places, PlaceSSG new_place, TreeNode* hierarchy);
     void testRecognition();
+    void setRecognitionMethod(int method);
+    void setNormType(int method);
     bool next;
 
     

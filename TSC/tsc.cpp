@@ -5,15 +5,38 @@
 
 
 
-TSC::TSC()
+TSC::TSC(Dataset* dataset)
 {
-    std::vector<std::string> img_files = getFiles(DATASET_FOLDER);
-    Mat img = imread(DATASET_FOLDER + img_files[START_IDX]);
+    std::vector<std::string> img_files = getFiles(dataset->location);
+    Mat img = imread(dataset->location + img_files[dataset->start_idx]);
     int img_height = img.size().height;
     int img_width = img.size().width;
 
-    detector.tau_w = 5;//20;//5;
-    detector.tau_n = 5;//15;
+    //deneme
+//    detector.tau_w = 3;//20;//5;
+//    detector.tau_n = 3;//15;
+//    detector.tau_p = 10;//3//20;
+//    detector.tau_avgdiff = 0.4;//0.00;//0.15;//0.4;
+//    detector.focalLengthPixels = 550;//350;//550;
+//    detector.satLower = 10;
+//    detector.satUpper = 255;
+//    detector.valLower = 10;
+//    detector.valUpper = 255;
+//    detector.noHarmonics = 10;
+//    detector.image_counter = dataset->start_idx;
+//    detector.shouldProcess = false;
+//    detector.debugMode = true;
+//    detector.debugFilePath = "/home/isl-mahmut/Datasets/New-College/";
+//    detector.debugFilePrefix = "rgb_";
+//    detector.debugFileNo = dataset->end_idx-dataset->start_idx;
+//    detector.usePreviousMemory = false;
+//    detector.previousMemoryPath = "";
+//    detector.dbmanager = &dbmanager;
+
+
+    //Benim degerler
+    detector.tau_w = 2;//20;//5;
+    detector.tau_n = 20;//15;
     detector.tau_p = 5;//3//20;
     detector.tau_avgdiff = 0.15;//0.00;//0.15;//0.4;
     detector.focalLengthPixels = 550;//350;//550;
@@ -22,20 +45,41 @@ TSC::TSC()
     detector.valLower = 10;
     detector.valUpper = 255;
     detector.noHarmonics = 10;
-    detector.image_counter = START_IDX;
+    detector.image_counter = dataset->start_idx;
     detector.shouldProcess = false;
     detector.debugMode = true;
     detector.debugFilePath = "/home/isl-mahmut/Datasets/New-College/";
     detector.debugFilePrefix = "rgb_";
-    detector.debugFileNo = END_IDX-START_IDX;
+    detector.debugFileNo = dataset->end_idx-dataset->start_idx;
     detector.usePreviousMemory = false;
     detector.previousMemoryPath = "";
     detector.dbmanager = &dbmanager;
 
+    //hakanin
+//    detector.tau_w = 5;//20;//5;
+//    detector.tau_n = 10;//15;
+//    detector.tau_p = 20;//5;//3//20;
+//    detector.tau_avgdiff = 0.4;//0.15;//0.00;//0.15;//0.4;
+//    detector.focalLengthPixels = 550;//350;//550;
+//    detector.satLower = 10;
+//    detector.satUpper = 255;
+//    detector.valLower = 10;
+//    detector.valUpper = 255;
+//    detector.noHarmonics = 10;
+//    detector.image_counter = dataset->start_idx;
+//    detector.shouldProcess = false;
+//    detector.debugMode = true;
+//    detector.debugFilePath = "/home/isl-mahmut/Datasets/New-College/";
+//    detector.debugFilePrefix = "rgb_";
+//    detector.debugFileNo = dataset->end_idx-dataset->start_idx;
+//    detector.usePreviousMemory = false;
+//    detector.previousMemoryPath = "";
+//    detector.dbmanager = &dbmanager;
 
-    detector.tau_inv = 0.4;//0.1;//0.4;        //Incoherency threshold
-    detector.tau_val_mean = 0.2;//0.2;   //tau_mu
-    detector.tau_val_var = 0.01;//0.01;    //tau_sigma
+
+    detector.tau_inv = 0.4;//0.4;//0.1;//0.4;        //Incoherency threshold
+    detector.tau_val_mean = 0.1;//0.2;//0.2;   //tau_mu
+    detector.tau_val_var = 0.003;//0.01;//0.01;    //tau_sigma
 
     // This should be done before starting the process
     bubbleProcess::calculateImagePanAngles(detector.focalLengthPixels,img_width,img_height);

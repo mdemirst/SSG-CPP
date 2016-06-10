@@ -1,14 +1,6 @@
 #include "segmentation.h"
 #include "utils.h"
 
-SegmentationParams::SegmentationParams(float sigma,
-                                       float k,
-                                       int min_size)
-{
-    this->sigma = sigma;
-    this->k = k;
-    this->min_size = min_size;
-}
 
 Segmentation::Segmentation(SegmentationParams* params)
 {

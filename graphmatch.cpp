@@ -3,23 +3,9 @@
 #include "utils.h"
 
 
-GraphMatchParams::GraphMatchParams(float pos_weight,
-                                   float color_weight,
-                                   float area_weight,
-                                   float bow_weight)
-{
-    this->pos_weight = pos_weight;
-    this->color_weight = color_weight;
-    this->area_weight = area_weight;
-    this->bow_weight = bow_weight;
-}
-
-GraphMatch::GraphMatch(int img_width, int img_height, GraphMatchParams* params)
+GraphMatch::GraphMatch(Parameters* params)
 {
     this->params = params;
-
-    this->img_width = img_width;
-    this->img_height = img_height;
 }
 
 //Calculates matching cost and show matching results on the window
@@ -274,22 +260,22 @@ double GraphMatch::calcN2NDistance(NodeSig s1, NodeSig s2)
     double dist = 0;
 
     //difference between centers
-    double max_dist = sqrt(img_width*img_width+img_height*img_width);   //for normalization purposes.
+    double max_dist = sqrt(params->ssg_params.img_width*params->ssg_params.img_width+params->ssg_params.img_height*params->ssg_params.img_width);   //for normalization purposes.
                                                                         //must be diagonal distance
                                                                         //of image = max distance
-    dist = dist + params->pos_weight*pow(sqrt(pow(s1.center.x-s2.center.x,2)+pow(s1.center.y-s2.center.y,2))/max_dist, 2);
+    dist = dist + params->gm_params.pos_weight*pow(sqrt(pow(s1.center.x-s2.center.x,2)+pow(s1.center.y-s2.center.y,2))/max_dist, 2);
 
 
     //difference between colors
     double color_dist = (fabs(s1.colorR-s2.colorR)+
                          fabs(s1.colorG-s2.colorG)+
                          fabs(s1.colorB-s2.colorB))/255.0/3.0;
-    dist = dist + params->color_weight*pow(color_dist,2);
+    dist = dist + params->gm_params.color_weight*pow(color_dist,2);
 
 
     //difference between areas
-    double area_dist = fabs(s1.area-s2.area) / (double)(img_width*img_height);
-    dist = dist + params->area_weight*pow(area_dist,2);
+    double area_dist = fabs(s1.area-s2.area) / (double)(params->ssg_params.img_width*params->ssg_params.img_height);
+    dist = dist + params->gm_params.area_weight*pow(area_dist,2);
 
 #ifdef BOW_APPROACH_USED
     //Used only when BOW approach is enabled!

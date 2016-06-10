@@ -4,25 +4,13 @@
 #include "segmentation.h"
 
 
-Recognition::Recognition(RecognitionParams* rec_params,
-                         SSGParams* ssg_params,
-                         SegmentTrackParams* seg_track_params,
-                         SegmentationParams* seg_params,
-                         GraphMatchParams* gm_params,
+Recognition::Recognition(Parameters* params,
+                         Dataset* dataset,
                          GraphMatch* gm,
                          Segmentation* seg)
 {
-    this->rec_params = rec_params;
-    this->ssg_params = ssg_params;
-    this->seg_track_params = seg_track_params;
-    this->seg_params = seg_params;
-    this->gm_params = gm_params;
-
-    img_files = getFiles(DATASET_FOLDER);
-
-    Mat img = imread(DATASET_FOLDER + img_files[START_IDX]);
-    img_height = img.size().height*IMG_RESCALE_RAT;
-    img_width = img.size().width*IMG_RESCALE_RAT;
+    this->params = params;
+    this->dataset = dataset;
 
     plot_offset = 150;
 
@@ -31,6 +19,9 @@ Recognition::Recognition(RecognitionParams* rec_params,
     this->seg = seg;
 
     next = false;
+
+    rec_method = REC_TYPE_SSG_NORMAL;
+    norm_type = NORM_L2;
 }
 
 Recognition::~Recognition()
@@ -39,6 +30,15 @@ Recognition::~Recognition()
     delete gm;
 }
 
+void Recognition::setNormType(int method)
+{
+    this->norm_type = method;
+}
+
+void Recognition::setRecognitionMethod(int method)
+{
+    this->rec_method = method;
+}
 
 
 void Recognition::processTree(Node* tree, int size)
@@ -52,51 +52,90 @@ void Recognition::processTree(Node* tree, int size)
     }
 }
 
+cv::Scalar getColor(int color)
+{
+    switch(color)
+    {
+        case 1:
+            return Scalar(255,0,0);     //blue      -- fr
+        case 2:
+            return Scalar(0,0,0);       //black     -- sa
+        case 3:
+            return Scalar(0,140,255);   //orange    -- lj
+        case 4:
+            return Scalar(0,255,0);     //green     -- nc
+        case 5:
+            return Scalar(255,255,0);   //aqua      -- fr2
+        case 6:
+            return Scalar(103,101,98);  //gray      -- sa2
+        case 7:
+            return Scalar(159,231,249); //yellow    -- lj2
+        case 8:
+            return Scalar(191,223,169); //l. green  -- nc2
+        default:
+            return Scalar(255,255,255);
+    }
+}
+
 void Recognition::drawSSG(Mat& img, SSG ssg, Point coord)
 {
-    if(coord.y + rec_params->ssg_h > img.size().height)
+    if(coord.y + params->rec_params.ssg_h > img.size().height)
     {
-        copyMakeBorder(img, img, 0, rec_params->ssg_h, 0, 0, BORDER_CONSTANT, Scalar(255,255,255));
+        copyMakeBorder(img, img, 0, params->rec_params.ssg_h, 0, 0, BORDER_CONSTANT, Scalar(255,255,255));
     }
 
-    Mat img_real = imread(DATASET_FOLDER + img_files[ssg.getSampleFrame()-START_IDX]);
-
-
-    Mat img_ssg(img_height, img_width, CV_8UC3, Scalar(255,255,255));
-
-    for(int i = 0; i < ssg.nodes.size(); i++)
+    if(params->rec_params.ssg_w < 10)
     {
-        Point p = ssg.nodes[i].first.center;
-        double r = sqrt(ssg.nodes[i].first.area)/4.0;
-        r = max(r,1.0);
-
-        circle(img_ssg,p,r,Scalar(ssg.nodes[i].first.colorB, ssg.nodes[i].first.colorG, ssg.nodes[i].first.colorR), -1);
+        stringstream ss;
+        ss.str("");
+        ss << ssg.getId();
+        Point str_coord(coord.x-5, coord.y+25);
+        putText(img, ss.str(), str_coord, FONT_HERSHEY_SIMPLEX, 0.5, getColor(ssg.getColor()),2);
+        circle(img,coord,10,  getColor(ssg.getColor()), -1);
     }
+    else
+    {
+        Mat img_real = imread(ssg.getSampleFrame());
 
-    //Predefined size
-    resize(img_real, img_real, cv::Size(rec_params->ssg_w,rec_params->ssg_h));
-    resize(img_ssg, img_ssg, cv::Size(rec_params->ssg_w,rec_params->ssg_h));
 
-    rectangle(img_real, Rect(0,0,img_real.size().width-1, img_real.size().height-1),Scalar(0,0,0));
-    rectangle(img_ssg, Rect(0,0,img_ssg.size().width-1, img_ssg.size().height-1),Scalar(0,0,0));
+        Mat img_ssg(params->ssg_params.img_height, params->ssg_params.img_width, CV_8UC3, Scalar(255,255,255));
 
-    Rect roi = Rect(coord.x-img_real.size().width, coord.y, img_real.size().width, img_real.size().height);
+        for(int i = 0; i < ssg.nodes.size(); i++)
+        {
+            Point p = ssg.nodes[i].first.center;
+            double r = sqrt(ssg.nodes[i].first.area)/4.0;
+            r = max(r,1.0);
 
-    Mat image_roi = img(roi);
+            circle(img_ssg,p,r,Scalar(ssg.nodes[i].first.colorB, ssg.nodes[i].first.colorG, ssg.nodes[i].first.colorR), -1);
+        }
 
-    img_real.copyTo(image_roi);
+        //Predefined size
+        resize(img_real, img_real, cv::Size(params->rec_params.ssg_w,params->rec_params.ssg_h));
+        resize(img_ssg, img_ssg, cv::Size(params->rec_params.ssg_w,params->rec_params.ssg_h));
 
-    Rect roi2 = Rect(coord.x, coord.y, img_ssg.size().width, img_ssg.size().height);
+        rectangle(img_real, Rect(0,0,img_real.size().width-1, img_real.size().height-1),Scalar(0,0,0));
+        rectangle(img_ssg, Rect(0,0,img_ssg.size().width-1, img_ssg.size().height-1),Scalar(0,0,0));
 
-    Mat image_roi2 = img(roi2);
+        Rect roi = Rect(coord.x-img_real.size().width, coord.y, img_real.size().width, img_real.size().height);
 
-    img_ssg.copyTo(image_roi2);
+        Mat image_roi = img(roi);
 
-    stringstream ss;
-    ss.str("");
-    ss << ssg.getId();
-    Point str_coord(coord.x+rec_params->ssg_w, coord.y+rec_params->ssg_h/2.0);
-    putText(img, ss.str(), str_coord, FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0,0,255),2);
+        img_real.copyTo(image_roi);
+
+        Rect roi2 = Rect(coord.x, coord.y, img_ssg.size().width, img_ssg.size().height);
+
+        Mat image_roi2 = img(roi2);
+
+        img_ssg.copyTo(image_roi2);
+
+        stringstream ss;
+        ss.str("");
+        ss << ssg.getId();
+        Point str_coord(coord.x+params->rec_params.ssg_w, coord.y+params->rec_params.ssg_h/2.0);
+        putText(img, ss.str(), str_coord, FONT_HERSHEY_SIMPLEX, 0.5, getColor(ssg.getColor()),2);
+
+        circle(img,coord,10,  getColor(ssg.getColor()), -1);
+    }
 
 }
 
@@ -133,7 +172,7 @@ void Recognition::drawBranch(Mat& img, TreeNode* node, int height, double scale_
         //Draw SSGs
         for(int i = 0; i < node->getDescriptor()->getCount(); i++)
         {
-            Point ssg_coord(coord.x, coord.y + i*rec_params->ssg_h);
+            Point ssg_coord(coord.x, coord.y + i*params->rec_params.ssg_h);
             drawSSG(img, node->getDescriptor()->getMember(i), ssg_coord);
         }
 
@@ -151,7 +190,7 @@ void Recognition::drawTree(TreeNode* root_node, int nrPlaces, int height, int wi
 
     emit showTree(mat2QImage(img));
     //imshow("Tree with images", img);
-    imwrite(getOutputFolder() + "tree.jpg",img);
+    imwrite(string(OUTPUT_FOLDER) + "tree.jpg",img);
     waitKey(0);
 }
 
@@ -228,14 +267,11 @@ double Recognition::calculateDistance(SSG& old_place, SSG& detected_place)
     {
         Mat P, C;
         //voting system
-        if(gm->matchTwoImages(detected_place.basepoints[i],ns,P,C) < rec_params->tau_v)
+        if(gm->matchTwoImages(detected_place.basepoints[i],ns,P,C) < params->rec_params.tau_v)
             vote += 1;
         count++;
     }
     vote /= count;
-
-
-    qDebug() << "Vote between" << old_place.getId() << detected_place.getId() << "is" << vote;
 
     return 1-vote;
 }
@@ -245,31 +281,30 @@ static inline float computeSquare (float x) { return x*x; }
 double Recognition::calculateDistanceTSC(SSG& old_place, SSG& detected_place)
 {
     double total_distance = 0;
-    int count = 0;
-    for(int i = 0; i < detected_place.member_invariants.size().width; i++)
+
+    if(rec_method == REC_TYPE_BD_NORMAL)
     {
-//        double distance = norm(old_place.mean_invariant,detected_place.member_invariants.col(i),NORM_L2);
-//        // This is the result string
-//        std::vector<float> result;
-
-//        // Now we take the difference between the member and detected place invariant
-//        std::transform(old_place.mean_invariant.begin(),old_place.mean_invariant.end(), detected_place.member_invariants.col(i).begin(),
-//                       std::back_inserter(result),
-//                       std::minus<float>());
-
-//        // Now we get the square of the result to eliminate minuses
-//        std::transform(result.begin(), result.end(), result.begin(), computeSquare);
-
-//        // We are summing the elements of the result
-//        distance = std::accumulate(result.begin(),result.end(),0.0);
-
-//        distance = sqrt(distance);
-
-        total_distance += norm(old_place.mean_invariant,detected_place.member_invariants.col(i),NORM_L2);
-
-        count++;
+        total_distance = norm(old_place.mean_invariant,detected_place.mean_invariant,norm_type);
     }
-    total_distance /= count;
+    else if(rec_method == REC_TYPE_BD_VOTING)
+    {
+        float votes = 0;
+        for(int i = 0; i < detected_place.member_invariants.size().width; i++)
+        {
+            if(norm(old_place.mean_invariant,detected_place.member_invariants.col(i),norm_type) < params->rec_params.tau_v)
+            {
+                votes += 1;
+            }
+        }
+        if(votes == 0)
+            total_distance = 100;
+        else
+        {
+            total_distance = votes / detected_place.member_invariants.size().width;
+            total_distance = 1 / total_distance;
+        }
+
+    }
 
     return total_distance;
 }
@@ -298,19 +333,30 @@ double** Recognition::calculateDistanceMatrix(vector<PlaceSSG>& places)
                 for(int j = 0; j < places[c].getCount(); j++)
                 {
                     Mat P, C;
-                    //Graph distance calculation -- method #1
-                    //distance += gm->matchTwoImages(places[r].getMember(i),places[c].getMember(j),P,C);
+                    if(rec_method == REC_TYPE_SSG_NORMAL)
+                    {
+                        //Graph distance calculation -- method #1
+                        distance += gm->matchTwoImages(places[r].getMember(i),places[c].getMember(j),P,C);
+                    }
+                    else if(rec_method == REC_TYPE_SSG_VOTING)
+                    {
+                        //Graph distance calculation -- method #2
+                        distance += calculateDistance(places[r].getMember(i),places[c].getMember(j));
+                    }
+                    else if(rec_method == REC_TYPE_BD_NORMAL || rec_method == REC_TYPE_BD_VOTING)
+                    {
+                        //Bubble descriptor distance -- method #3
+                        distance += calculateDistanceTSC(places[r].getMember(i),places[c].getMember(j));
+                    }
+                    else if(rec_method == REC_TYPE_HYBRID)
+                    {
 
-                    //Graph distance calculation -- method #2
-                    //distance += calculateDistance(places[r].getMember(i),places[c].getMember(j));
-
-                    //Bubble descriptor distance -- method #3
-                    distance += calculateDistanceTSC(places[r].getMember(i),places[c].getMember(j));
+                    }
                     count++;
                 }
             }
 
-            qDebug() << "Rec. score between" << r << c << "is " << distance;
+            //qDebug() << "Rec. score between" << r << c << "is " << distance;
 
             dist_matrix[r][c] = distance/count;
             dist_matrix[c][r] = distance/count;
@@ -346,7 +392,7 @@ int Recognition::performRecognition(vector<PlaceSSG>& places, PlaceSSG new_place
     hierarchy = convert2Tree(tree, nrPlaces-1, nrPlaces, places);
 
     //Draw tree
-    drawTree(hierarchy, nrPlaces, rec_params->plot_h, rec_params->plot_w);
+    drawTree(hierarchy, nrPlaces, params->rec_params.plot_h, params->rec_params.plot_w);
 
     //Get pointer to position of new detected place
     TreeNode* new_place_node = findNode(nrPlaces-1, hierarchy);
@@ -367,7 +413,7 @@ int Recognition::performRecognition(vector<PlaceSSG>& places, PlaceSSG new_place
                 int new_place_label = new_place_node->getLabel();
 
                 double dist = dist_matrix[sibling_label][new_place_label];
-                if(dist < rec_params->tau_r)
+                if(dist < params->rec_params.tau_r)
                 {
                     TreeNode* recognized_node = new_place_parent->getChildren()[i];
                     PlaceSSG* detected_place = new_place_node->getDescriptor();
@@ -405,7 +451,7 @@ void Recognition::testRecognition()
     //Read all images extract node signatures and store into vector
     for(int i = 0; i < img_files.size(); i++)
     {
-        Mat img = imread(DATASET_FOLDER + img_files[i]);
+        Mat img = imread(dataset->location + img_files[i]);
         images.push_back(img);
         resize(img, img, cv::Size(0,0), IMG_RESCALE_RAT, IMG_RESCALE_RAT);
         Mat img_seg;
@@ -449,7 +495,7 @@ Node* Recognition::solveSLink(int nrows, int ncols, double** data)
 
 Mat Recognition::saveRAG(const vector<NodeSig> ns, string name)
 {
-    Mat img(img_height, img_width, CV_8UC3, Scalar(255,255,255));
+    Mat img(params->ssg_params.img_height, params->ssg_params.img_width, CV_8UC3, Scalar(255,255,255));
 
     for(int i = 0; i < ns.size(); i++)
     {
@@ -486,7 +532,7 @@ void Recognition::generateRAGs(const Node* tree, int nTree, vector<vector<NodeSi
             for(int c = 0; c < P.size().width; c++)
             {
                 int r = getPermuted(P, c);
-                if( r != -1 && C.at<float>(r,c) < seg_track_params->tau_m)
+                if( r != -1 && C.at<float>(r,c) < params->seg_track_params.tau_m)
                 {
                     NodeSig ns;
                     NodeSig nsL = rags[tree[i].left][r];

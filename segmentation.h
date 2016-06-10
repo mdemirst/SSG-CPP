@@ -21,17 +21,6 @@
 using namespace std;
 using namespace cv;
 
-class SegmentationParams
-{
-public:
-    SegmentationParams(float sigma,
-                       float k,
-                       int min_size);
-    float sigma;
-    float k;
-    int min_size;
-};
-
 class Segmentation : public QObject
 {
     Q_OBJECT

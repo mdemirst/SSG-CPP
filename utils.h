@@ -17,6 +17,7 @@
 #include <QDir>
 
 
+
 using namespace cv;
 
 QImage mat2QImage(const Mat& mat);
@@ -35,20 +36,15 @@ bool getRegionStatus(vector<int> v);
 string getOutputFolder(bool = false);
 void savePlacesFrameInfo(vector<PlaceSSG>& places);
 
+void readDatasets(string filename,
+                  vector<Dataset>& datasets);
+
 void saveParameters(string filename,
-                    SSGParams* ssg_params,
-                    SegmentTrackParams* seg_track_params,
-                    SegmentationParams* seg_params,
-                    GraphMatchParams* gm_params,
-                    RecognitionParams* rec_params);
+                    Parameters* params);
 
 void readParameters(string filename,
-                    SSGParams* ssg_params,
-                    SegmentTrackParams* seg_track_params,
-                    SegmentationParams* seg_params,
-                    GraphMatchParams* gm_params,
-                    RecognitionParams* rec_params);
-int getMostCoherentFrame(vector<float> coh_scores, int start_frame, int end_frame);
+                    Parameters* params);
+int getMostCoherentFrame(vector<float> coh_scores, int start_frame, int end_frame, int start_idx);
 
 
 #endif // UTILS_H

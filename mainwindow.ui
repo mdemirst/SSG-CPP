@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1996</width>
+    <width>2058</width>
     <height>1084</height>
    </rect>
   </property>
@@ -30,7 +30,7 @@
        </size>
       </property>
       <property name="currentIndex">
-       <number>3</number>
+       <number>5</number>
       </property>
       <widget class="QWidget" name="tab">
        <attribute name="title">
@@ -197,7 +197,7 @@ QGroupBox::title {
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>98</width>
+                  <width>1686</width>
                   <height>198</height>
                  </rect>
                 </property>
@@ -248,7 +248,7 @@ QGroupBox::title {
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_41">
         <item>
-         <widget class="QLabel" name="lbl_map_x">
+         <widget class="QLabel" name="lbl_mapX">
           <property name="minimumSize">
            <size>
             <width>0</width>
@@ -261,7 +261,7 @@ QGroupBox::title {
          </widget>
         </item>
         <item>
-         <widget class="QCustomPlot" name="custom_plot_merged_ssg_x" native="true">
+         <widget class="QCustomPlot" name="custom_plot_merged_ssgX" native="true">
           <property name="minimumSize">
            <size>
             <width>0</width>
@@ -713,6 +713,9 @@ QGroupBox::title {
                      <height>0</height>
                     </size>
                    </property>
+                   <property name="minimum">
+                    <number>1</number>
+                   </property>
                    <property name="maximum">
                     <number>50</number>
                    </property>
@@ -881,6 +884,9 @@ QGroupBox::title {
              <widget class="QCheckBox" name="cb_auto_tune">
               <property name="text">
                <string>Auto Parameter Tuning Mode - Experimental</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
               </property>
              </widget>
             </item>
@@ -1255,60 +1261,8 @@ QGroupBox::title {
          </layout>
         </item>
        </layout>
-       <zorder>custom_plot_merged_ssg_x</zorder>
-       <zorder>lbl_map_x</zorder>
-      </widget>
-      <widget class="QWidget" name="tab_4">
-       <attribute name="title">
-        <string>TSC</string>
-       </attribute>
-       <layout class="QHBoxLayout" name="horizontalLayout_6">
-        <item>
-         <widget class="QGroupBox" name="groupBox_3">
-          <property name="styleSheet">
-           <string notr="true">QGroupBox {
-    border: 1px solid gray;
-    border-radius: 9px;
-    margin-top: 0.5em;
-}
-
-QGroupBox::title {
-    subcontrol-origin: margin;
-    left: 10px;
-    padding: 0 3px 0 3px;
-}</string>
-          </property>
-          <property name="title">
-           <string>TSC Functions</string>
-          </property>
-          <layout class="QVBoxLayout" name="verticalLayout_18">
-           <item>
-            <widget class="QPushButton" name="btn_tsc_process">
-             <property name="text">
-              <string>TSC Process</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QCustomPlot" name="tsc_cost_plot" native="true"/>
-           </item>
-           <item>
-            <spacer name="verticalSpacer_2">
-             <property name="orientation">
-              <enum>Qt::Vertical</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>20</width>
-               <height>40</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-          </layout>
-         </widget>
-        </item>
-       </layout>
+       <zorder>custom_plot_merged_ssgX</zorder>
+       <zorder>lbl_mapX</zorder>
       </widget>
       <widget class="QWidget" name="tab_6">
        <attribute name="title">
@@ -1366,6 +1320,20 @@ QGroupBox::title {
               <widget class="QPushButton" name="btn_process_hierarchical">
                <property name="text">
                 <string>Process Images - Hiearchical Method</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="btn_init_from_db">
+               <property name="text">
+                <string>Init from DB</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="btn_create_db">
+               <property name="text">
+                <string>Create Database</string>
                </property>
               </widget>
              </item>
@@ -1568,7 +1536,13 @@ QGroupBox::title {
                  <property name="minimumSize">
                   <size>
                    <width>0</width>
-                   <height>270</height>
+                   <height>10</height>
+                  </size>
+                 </property>
+                 <property name="maximumSize">
+                  <size>
+                   <width>16777215</width>
+                   <height>10</height>
                   </size>
                  </property>
                  <property name="widgetResizable">
@@ -1579,8 +1553,8 @@ QGroupBox::title {
                    <rect>
                     <x>0</x>
                     <y>0</y>
-                    <width>1376</width>
-                    <height>268</height>
+                    <width>1360</width>
+                    <height>38</height>
                    </rect>
                   </property>
                   <layout class="QHBoxLayout" name="horizontalLayout_3">
@@ -1618,7 +1592,7 @@ QGroupBox::title {
                <property name="minimumSize">
                 <size>
                  <width>0</width>
-                 <height>200</height>
+                 <height>400</height>
                 </size>
                </property>
                <property name="widgetResizable">
@@ -1630,14 +1604,14 @@ QGroupBox::title {
                   <x>0</x>
                   <y>0</y>
                   <width>1378</width>
-                  <height>198</height>
+                  <height>398</height>
                  </rect>
                 </property>
                 <layout class="QVBoxLayout" name="verticalLayout">
                  <item>
                   <widget class="QLabel" name="label_22">
                    <property name="text">
-                    <string>Detected Places - SSG Approach </string>
+                    <string>Detected Places</string>
                    </property>
                    <property name="alignment">
                     <set>Qt::AlignCenter</set>
@@ -1655,71 +1629,17 @@ QGroupBox::title {
                   </widget>
                  </item>
                  <item>
-                  <spacer name="verticalSpacer_7">
-                   <property name="orientation">
-                    <enum>Qt::Vertical</enum>
-                   </property>
-                   <property name="sizeHint" stdset="0">
-                    <size>
-                     <width>20</width>
-                     <height>40</height>
-                    </size>
-                   </property>
-                  </spacer>
-                 </item>
-                </layout>
-               </widget>
-              </widget>
-             </item>
-             <item>
-              <widget class="QScrollArea" name="scrollArea_6">
-               <property name="minimumSize">
-                <size>
-                 <width>0</width>
-                 <height>10</height>
-                </size>
-               </property>
-               <property name="maximumSize">
-                <size>
-                 <width>16777215</width>
-                 <height>10</height>
-                </size>
-               </property>
-               <property name="widgetResizable">
-                <bool>true</bool>
-               </property>
-               <widget class="QWidget" name="scrollAreaWidgetContents_6">
-                <property name="geometry">
-                 <rect>
-                  <x>0</x>
-                  <y>0</y>
-                  <width>1362</width>
-                  <height>57</height>
-                 </rect>
-                </property>
-                <layout class="QVBoxLayout" name="verticalLayout_30">
-                 <item>
-                  <widget class="QLabel" name="label_23">
-                   <property name="text">
-                    <string>Detected Places - TSC Approach</string>
-                   </property>
-                   <property name="alignment">
-                    <set>Qt::AlignCenter</set>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
                   <widget class="QCustomPlot" name="custom_plot_merged_tsc" native="true">
                    <property name="minimumSize">
                     <size>
                      <width>0</width>
-                     <height>0</height>
+                     <height>100</height>
                     </size>
                    </property>
                   </widget>
                  </item>
                  <item>
-                  <spacer name="verticalSpacer_8">
+                  <spacer name="verticalSpacer_7">
                    <property name="orientation">
                     <enum>Qt::Vertical</enum>
                    </property>
@@ -1823,7 +1743,7 @@ QGroupBox::title {
            <widget class="QGroupBox" name="groupBox_15">
             <property name="minimumSize">
              <size>
-              <width>200</width>
+              <width>300</width>
               <height>0</height>
              </size>
             </property>
@@ -1845,7 +1765,7 @@ QGroupBox::title {
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_29">
              <item>
-              <widget class="QCustomPlot" name="place_map" native="true"/>
+              <widget class="QCustomPlot" name="place_mapX" native="true"/>
              </item>
             </layout>
            </widget>
@@ -1985,8 +1905,8 @@ QGroupBox::title {
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>185</width>
-                  <height>35</height>
+                  <width>1686</width>
+                  <height>441</height>
                  </rect>
                 </property>
                 <layout class="QVBoxLayout" name="verticalLayout_23">
@@ -2037,6 +1957,19 @@ QGroupBox::title {
           <layout class="QHBoxLayout" name="horizontalLayout_16">
            <item>
             <layout class="QVBoxLayout" name="verticalLayout_38">
+             <item>
+              <widget class="QCheckBox" name="cb_rec_active">
+               <property name="text">
+                <string>Recognition is active</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QComboBox" name="combo_rec_method"/>
+             </item>
+             <item>
+              <widget class="QComboBox" name="combo_norm_type"/>
+             </item>
              <item>
               <widget class="QLineEdit" name="tb_tau_p">
                <property name="maximumSize">
@@ -2105,6 +2038,9 @@ QGroupBox::title {
              </item>
              <item>
               <widget class="QScrollBar" name="scroll_tau_v">
+               <property name="maximum">
+                <number>99</number>
+               </property>
                <property name="orientation">
                 <enum>Qt::Horizontal</enum>
                </property>
@@ -2154,20 +2090,6 @@ QGroupBox::title {
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="pushButton">
-          <property name="text">
-           <string>Slink Test Initialize</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="btn_test_next">
-          <property name="text">
-           <string>Next Frame</string>
-          </property>
-         </widget>
-        </item>
-        <item>
          <widget class="QScrollArea" name="scrollArea_8">
           <property name="maximumSize">
            <size>
@@ -2183,8 +2105,8 @@ QGroupBox::title {
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>98</width>
-             <height>35</height>
+             <width>1708</width>
+             <height>729</height>
             </rect>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_35">
@@ -2198,6 +2120,16 @@ QGroupBox::title {
            </layout>
           </widget>
          </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tab_3">
+       <attribute name="title">
+        <string>Page</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_4">
+        <item>
+         <widget class="QCustomPlot" name="place_map" native="true"/>
         </item>
        </layout>
       </widget>
@@ -2226,7 +2158,7 @@ QGroupBox::title {
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1996</width>
+     <width>2058</width>
      <height>25</height>
     </rect>
    </property>

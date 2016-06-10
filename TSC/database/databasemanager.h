@@ -4,6 +4,7 @@
 #include "../bubble/bubbleprocess.h"
 #include <opencv2/opencv.hpp>
 #include <QObject>
+#include <QtSql/QSqlQuery>
 #include <QtSql/QSqlDatabase>
 #include <QtSql/QSqlError>
 #include <QFile>

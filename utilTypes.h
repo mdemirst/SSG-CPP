@@ -9,22 +9,27 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/features2d/features2d.hpp>
 #include <opencv2/flann/flann.hpp>
+#include "TSC/bubble/bubbleprocess.h"
 
 using namespace std;
 using namespace cv;
 
+
+
+class SegmentationParams
+{
+public:
+    float sigma;
+    float k;
+    int min_size;
+};
+
 class SSGParams{
 public:
-    SSGParams(int tau_n,
-              float tau_c,
-              int tau_f,
-              float tau_d,
-              float tau_p,
-              float coeff_node_disappear1,
-              float coeff_node_disappear2,
-              float coeff_node_appear,
-              float coeff_coh_exp_base,
-              float coeff_coh_appear_thres);
+    int img_org_width;
+    int img_org_height;
+    int img_width;
+    int img_height;
     int tau_n;
     float tau_c;
     int tau_f;
@@ -40,20 +45,6 @@ public:
 class RecognitionParams
 {
 public:
-    RecognitionParams(float tau_r,
-                      int plot_h,
-                      int plot_w,
-                      int ssg_h,
-                      int ssg_w,
-                      float tau_v)
-    {
-        this->tau_r = tau_r;
-        this->plot_h = plot_h;
-        this->plot_w = plot_w;
-        this->ssg_h = ssg_h;
-        this->ssg_w = ssg_w;
-        this->tau_v = tau_v;
-    }
     float tau_r;
     int plot_h;
     int plot_w;
@@ -65,10 +56,6 @@ public:
 class GraphMatchParams
 {
 public:
-    GraphMatchParams(float pos_weight,
-                     float color_weight,
-                     float area_weight,
-                     float bow_weight);
     float pos_weight;
     float color_weight;
     float area_weight;
@@ -77,9 +64,37 @@ public:
 
 class SegmentTrackParams{
 public:
-    SegmentTrackParams(int tau_w, float tau_m);
     int tau_w;
     float tau_m;
+};
+
+class TSCParams{
+public:
+    float tau_mu;
+    float tau_sigma;
+
+};
+
+class Parameters{
+public:
+    SSGParams ssg_params;
+    RecognitionParams rec_params;
+    GraphMatchParams gm_params;
+    SegmentTrackParams seg_track_params;
+    SegmentationParams seg_params;
+    TSCParams tsc_params;
+};
+
+class Dataset{
+public:
+    Dataset(string location, int start_idx, int end_idx, int dataset_id);
+    int nr_files;
+    int start_idx;
+    int end_idx;
+    int dataset_id;
+    string location;
+    vector<string> files;
+    Parameters params;
 };
 
 typedef struct
@@ -153,7 +168,9 @@ class SSG
     int id;
     int start_frame;
     int end_frame;
-    int sample_frame;
+    string sample_frame;
+    Point2f sample_coord;
+    int color;
 public:
     SSG(int id){this->id = id;}
     SSG(int id, vector<NodeSig> nodes)
@@ -168,8 +185,12 @@ public:
     void setEndFrame(int frame){end_frame = frame;}
     int getStartFrame(){return start_frame;}
     int getEndFrame(){return end_frame;}
-    void setSampleFrame(int frame){this->sample_frame = frame;}
-    int getSampleFrame(){return sample_frame;}
+    void setSampleFrame(string sample_frame){this->sample_frame = sample_frame;}
+    string getSampleFrame(){return sample_frame;}
+    void setSampleCoord(Point2f sample_coord){this->sample_coord = sample_coord;}
+    Point2f getSampleCoord(){return sample_coord;}
+    void setColor(int color){this->color = color;}
+    int getColor(){return color;}
 public:
     vector<pair<NodeSig, int> > nodes;
     vector<vector<NodeSig> > basepoints;
@@ -261,6 +282,16 @@ public:
     bool isTerminal(){return children.size() == 0;}
     bool isRoot(){return parent == NULL;}
 
+};
+
+class FrameDesc
+{
+public:
+    int frame_nr;
+    string filename;
+    Mat bd;
+    bubbleStatistics bs;
+    vector<NodeSig> ns;
 };
 
 #endif // UTILTYPES_H

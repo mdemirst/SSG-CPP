@@ -6,6 +6,7 @@
 #include "graphmatch.h"
 #include "segmentation.h"
 #include "ssgproc.h"
+#include "utilTypes.h"
 #include <QObject>
 
 
@@ -14,12 +15,13 @@ class SegmentTrack : public QObject
 {
     Q_OBJECT
 public:
-    SegmentTrack(SegmentTrackParams* params, SegmentationParams* seg_params, GraphMatchParams* gm_params);
+    SegmentTrack(Parameters* params, Dataset* dataset);
     float fillNodeMap(const vector<vector<NodeSig> >& ns_vec);
     void processImagesOnline();
     bool eventFilter( QObject* watched, QEvent* event );
     void drawMap();
     void processImage(const Mat cur_img, vector<vector<NodeSig> > &ns_vec);
+    void processImageFromDB(const Mat cur_img, vector<vector<NodeSig> > &ns_vec, FrameDesc& frame_desc);
     Mat readBOWDict();
     GraphMatch* gm;
     Segmentation* seg;
@@ -32,14 +34,12 @@ public:
 private:
     Mat M;
     vector<pair<NodeSig, int> > M_ns; //Average node signatures
-    SegmentTrackParams* params;
+    Parameters* params;
+    Dataset* dataset;
 
 
     void drawCursor(Mat& img);
     Point cursor;
-    int img_height;
-    int img_width;
-    vector<string> img_files;
     vector<pair<int, float> > getCoherentSegments(const Mat map, const Mat img, float thres, Mat& img_seg);
 
     

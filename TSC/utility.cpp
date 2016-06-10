@@ -3,12 +3,14 @@
 Place::Place()
 {
     id = -1;
+    color = 0;
 
 }
 Place::Place(int id)
 {
     this->id = id;
     this->memberIds = cv::Mat::zeros(1,1,CV_16UC1);
+    color = 0;
 
 }
 void Place::calculateMeanInvariant()

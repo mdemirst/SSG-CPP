@@ -8,6 +8,9 @@
 #include "TSC/utility.h"
 #include "recognition.h"
 #include "opencv2/nonfree/features2d.hpp"
+#include "TSC/tsc.h"
+#include <queue>
+#include "databasehandler.h"
 
 enum{
     DETECTION_NOT_STARTED,
@@ -27,14 +30,16 @@ public:
               QCustomPlot* ssg_plot,
               QCustomPlot* place_map,
               QCustomPlot* tsc_avg_plot,
-              SSGParams* ssg_params,
-              SegmentTrackParams* seg_track_params,
-              SegmentationParams* seg_params,
-              GraphMatchParams* gm_params,
-              RecognitionParams* rec_params);
+              Parameters* params,
+              Dataset* dataset);
     ~TSCHybrid();
     void processImages(const string folder, const int start_idx, const int end_idx);
     void processImagesHierarchical(const string folder, const int start_idx, const int end_idx);
+    void processImagesHierarchical_(const string folder, const int start_idx, const int end_idx, int dataset_id);
+    void processImagesHierarchical2(const string folder, const int start_idx, const int end_idx, int dataset_id);
+    void processImagesHierarchicalFromDB(const string folder, const int start_idx, const int end_idx, int dataset_id);
+    void TSCPlaces2SSGPlaces(vector<Place>& TSC_places, vector<SSG>& SSG_places);
+    void createDatabase(const string folder, const int start_idx, const int end_idx, int dataset_id);
     SegmentTrack* seg_track;
     Recognition* recognition;
     bool eventFilter( QObject* watched, QEvent* event );
@@ -44,8 +49,10 @@ public:
     void stopProcessing();
     void autoTryParameters();
     void recalculateCoherencyAndPlot();
-    void reRecognize();
+    void reRecognize(int method, int norm_type);
+    void reRecognize2(int method, int norm_type);
     void performBOWTrain(const string folder, const int start_idx, const int end_idx, int step);
+    void readFromDB();
 
 
 
@@ -54,25 +61,27 @@ private:
     QCustomPlot* ssg_plot;
     QCustomPlot* place_map;
     QCustomPlot* tsc_avg_plot;
-    SSGParams* params;
-    SegmentTrackParams* seg_track_params;
-    SegmentationParams* seg_params;
-    GraphMatchParams* gm_params;
-    RecognitionParams* rec_params;
+    Parameters* params;
+    Dataset* dataset;
     int cursor;
     vector<string> img_files;
     vector<SSG> SSGs; //Stores SSGs
+    vector<SSG> SSGs_fromTSC; //Stores SSGs
     vector<cv::Point2f> coords;
     vector<PlaceSSG> places_unprocessed;
     Mat bow_dict;
+    TSC* tsc;
+    DatabaseHandler db;
     void calcCohScoreOneShot(SegmentTrack* seg_track, vector<float>& coh_scores,
                              vector<int>& detected_places_unfiltered,
                              vector<int>& detected_places);
     float calcCohScore(SegmentTrack* seg_track, vector<float>& coh_scores);
-    void plotScoresSSGOneShot(vector<float> coherency_scores, vector<int> detected_places, vector<cv::Point2f> coords, bool reset);
-    void plotScoresSSG(vector<float> coherency_scores, vector<int> detected_places, cv::Point2f coord, bool = false);
+    void plotScoresSSGOneShot(vector<float> coherency_scores, vector<int> detected_places, bool reset = false);
+    void plotScoresSSG(vector<float> coherency_scores, vector<int> detected_places, cv::Point2f coord = cv::Point2f(0,0), bool = false);
     void plotScoresTSC(vector<float> scores, Place* current_place, BasePoint cur_base_point, vector<Place> detected_places, vector<int>& tsc_detected_places);
+    void plotScoresTSC_(vector<float> scores, Place* current_place, BasePoint cur_base_point, vector<Place> detected_places);
     void plotAvgScoresTSC(vector<float>& scores, std::vector<BasePoint> wholebasepoints, vector<float>& avg_scoress);
+    void plotDetectedPlaces(vector<SSG> SSGs, const vector<string>& image_files, Dataset* dataset);
     void showMap(const Mat& M);
     int  detectPlace(vector<float> coherency_scores,
                      vector<int>& detected_places_unfiltered,
