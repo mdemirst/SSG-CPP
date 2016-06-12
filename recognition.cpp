@@ -206,7 +206,7 @@ void Recognition::sortTerminalNodes(TreeNode* node, int* last_pos)
         sortTerminalNodes(node->getChildren()[i], last_pos);
 }
 
-TreeNode* Recognition::convert2Tree(Node* tree, int nrNodes, int nrPlaces, vector<PlaceSSG>& places)
+TreeNode** Recognition::convert2Tree(Node* tree, int nrNodes, int nrPlaces, vector<PlaceSSG>& places)
 {
     TreeNode* nodes = new TreeNode[nrPlaces+nrNodes];
 
@@ -237,7 +237,7 @@ TreeNode* Recognition::convert2Tree(Node* tree, int nrNodes, int nrPlaces, vecto
         nodes[i+nrPlaces].setXPos((nodes[tree[i].left].getXPos() + nodes[tree[i].right].getXPos() ) / 2.0);
     }
 
-    return root_node;
+    return &root_node;
 }
 
 TreeNode* Recognition::findNode(int label, TreeNode* root)
@@ -253,6 +253,26 @@ TreeNode* Recognition::findNode(int label, TreeNode* root)
     return NULL;
 }
 
+TreeNode* Recognition::findNode( int site, int label, TreeNode* root)
+{
+    if(root->isTerminal())
+    {
+        for(int i = 0; i < root->getDescriptor()->getCount(); i++)
+        {
+            if(root->getDescriptor()->getMember(i).getColor() == site && root->getDescriptor()->getMember(i).getId() == label)
+            {
+                return root;
+            }
+        }
+    }
+    //Depth first traversal
+    for(int i = 0; i < root->getChildren().size(); i++){
+        TreeNode* p = findNode(site, label, root->getChildren()[i]);
+        if(p != NULL) return p;
+    }
+    return NULL;
+}
+
 double Recognition::calculateDistance(SSG& old_place, SSG& detected_place)
 {
     vector<NodeSig> ns;
@@ -262,6 +282,7 @@ double Recognition::calculateDistance(SSG& old_place, SSG& detected_place)
     //First option
     for(int i = 0; i < old_place.nodes.size(); i++)
         ns.push_back(old_place.nodes[i].first);
+
 
     for(int i = 0; i < detected_place.basepoints.size(); i++)
     {
@@ -282,9 +303,21 @@ double Recognition::calculateDistanceTSC(SSG& old_place, SSG& detected_place)
 {
     double total_distance = 0;
 
-    if(rec_method == REC_TYPE_BD_NORMAL)
+    if(rec_method == REC_TYPE_BD_NORMAL || rec_method == REC_TYPE_BD_BEST)
     {
-        total_distance = norm(old_place.mean_invariant,detected_place.mean_invariant,norm_type);
+        Mat oldp = old_place.mean_invariant.rowRange(100,599);
+        Mat newp = detected_place.mean_invariant.rowRange(100,599);
+        total_distance = norm(oldp, newp);
+    }
+    else if(rec_method == REC_TYPE_BD_COLOR)
+    {
+        Mat a = old_place.mean_invariant*25;
+        cv::pow(a,2.71,a);
+
+        Mat b = detected_place.mean_invariant*25;
+        cv::pow(b,2.71,b);
+        total_distance = norm(a,b,norm_type);
+        //total_distance = norm(old_place.mean_invariant,detected_place.mean_invariant,norm_type);
     }
     else if(rec_method == REC_TYPE_BD_VOTING)
     {
@@ -297,11 +330,11 @@ double Recognition::calculateDistanceTSC(SSG& old_place, SSG& detected_place)
             }
         }
         if(votes == 0)
-            total_distance = 100;
+            total_distance = 1;
         else
         {
             total_distance = votes / detected_place.member_invariants.size().width;
-            total_distance = 1 / total_distance;
+            total_distance = 1 - total_distance;
         }
 
     }
@@ -327,6 +360,8 @@ double** Recognition::calculateDistanceMatrix(vector<PlaceSSG>& places)
         for(int c = r+1; c < nrPlaces; c++)
         {
             double distance = 0;
+            if(rec_method == REC_TYPE_SSG_BEST || rec_method == REC_TYPE_BD_BEST)
+                distance = 999;
             int count = 0;
             for(int i = 0; i < places[r].getCount(); i++)
             {
@@ -343,10 +378,25 @@ double** Recognition::calculateDistanceMatrix(vector<PlaceSSG>& places)
                         //Graph distance calculation -- method #2
                         distance += calculateDistance(places[r].getMember(i),places[c].getMember(j));
                     }
-                    else if(rec_method == REC_TYPE_BD_NORMAL || rec_method == REC_TYPE_BD_VOTING)
+                    else if(rec_method == REC_TYPE_SSG_BEST)
+                    {
+                        double dist = gm->matchTwoImages(places[r].getMember(i),places[c].getMember(j),P,C);
+                        if(dist < distance)
+                            distance = dist;
+                    }
+                    else if(rec_method == REC_TYPE_BD_NORMAL || rec_method == REC_TYPE_BD_VOTING || rec_method == REC_TYPE_BD_COLOR)
                     {
                         //Bubble descriptor distance -- method #3
                         distance += calculateDistanceTSC(places[r].getMember(i),places[c].getMember(j));
+                    }
+                    else if(rec_method == REC_TYPE_BD_BEST)
+                    {
+                        double dist = calculateDistanceTSC(places[r].getMember(i),places[c].getMember(j));
+                        if(dist < distance)
+                        {
+                            qDebug() << "Dist:" << dist;
+                            distance = dist;
+                        }
                     }
                     else if(rec_method == REC_TYPE_HYBRID)
                     {
@@ -358,15 +408,24 @@ double** Recognition::calculateDistanceMatrix(vector<PlaceSSG>& places)
 
             //qDebug() << "Rec. score between" << r << c << "is " << distance;
 
-            dist_matrix[r][c] = distance/count;
-            dist_matrix[c][r] = distance/count;
+            if(rec_method == REC_TYPE_SSG_BEST || rec_method == REC_TYPE_BD_BEST)
+            {
+                dist_matrix[r][c] = distance;
+                dist_matrix[c][r] = distance;
+            }
+            else
+            {
+                dist_matrix[r][c] = distance/count;
+                dist_matrix[c][r] = distance/count;
+            }
+
         }
     }
 
     return dist_matrix;
 }
 
-int Recognition::performRecognition(vector<PlaceSSG>& places, PlaceSSG new_place, TreeNode* hierarchy)
+int Recognition::performRecognition(vector<PlaceSSG>& places, PlaceSSG new_place, TreeNode** hierarchy)
 {
     int recognition_status = NOT_RECOGNIZED;
     //TODO: Incremental distance matrix creation
@@ -382,20 +441,20 @@ int Recognition::performRecognition(vector<PlaceSSG>& places, PlaceSSG new_place
     int nrPlaces = places.size();
     thumbnail_scale = 1.0 / (nrPlaces+1);
 
-    qDebug() << "New recognition calculation...";
+    //qDebug() << "New recognition calculation...";
     double** dist_matrix = calculateDistanceMatrix(places);
 
 
     //Find hierarchical tree using SLINK algorithm
     Node* tree = solveSLink(nrPlaces, nrPlaces, dist_matrix);
 
-    hierarchy = convert2Tree(tree, nrPlaces-1, nrPlaces, places);
+    *hierarchy = *convert2Tree(tree, nrPlaces-1, nrPlaces, places);
 
     //Draw tree
-    drawTree(hierarchy, nrPlaces, params->rec_params.plot_h, params->rec_params.plot_w);
+    drawTree(*hierarchy, nrPlaces, params->rec_params.plot_h, params->rec_params.plot_w);
 
     //Get pointer to position of new detected place
-    TreeNode* new_place_node = findNode(nrPlaces-1, hierarchy);
+    TreeNode* new_place_node = findNode(nrPlaces-1, *hierarchy);
 
 
     //Check if there is any sibling of new place
@@ -424,7 +483,7 @@ int Recognition::performRecognition(vector<PlaceSSG>& places, PlaceSSG new_place
 
                     places.erase(places.end());
 
-                    qDebug() << "New place is recognized!" << "Recognized id's:" << sibling_label << new_place_label;
+                    //qDebug() << "New place is recognized!" << "Recognized id's:" << sibling_label << new_place_label;
 
                     emit printMessage("Rec: " + QString::number(sibling_label+1) + " " +  QString::number(new_place_label+1));
                     recognition_status = RECOGNIZED;
@@ -439,14 +498,12 @@ int Recognition::performRecognition(vector<PlaceSSG>& places, PlaceSSG new_place
     delete[] dist_matrix;
 
     return recognition_status;
-
-
 }
 
 void Recognition::testRecognition()
 {
     vector<Mat> images;
-    TreeNode* hierarchy_tree = NULL;
+    TreeNode** hierarchy_tree = NULL;
     vector<PlaceSSG> places;
     //Read all images extract node signatures and store into vector
     for(int i = 0; i < img_files.size(); i++)
@@ -472,7 +529,7 @@ Node* Recognition::solveSLink(int nrows, int ncols, double** data)
 {
     Node* tree;
 
-    tree = treecluster(nrows, ncols, 0, 0, 0, 0, 'e', 's', data);
+    tree = treecluster(nrows, ncols, 0, 0, 0, 0, 'e', 'a', data);
 
     processTree(tree, nrows-1);
 
@@ -562,3 +619,275 @@ void Recognition::generateRAGs(const Node* tree, int nTree, vector<vector<NodeSi
     }
 }
 
+//bool Recognition::isRevisited(int site1, int site2, int place1, int place2)
+//{
+//    if(site1 == site2)
+//        return false;
+//    else
+//    {
+//        if(site1 > site2)
+//        {
+//            int dum = place2;
+//            place2 = place1;
+//            place1 = dum;
+
+//            dum = site2;
+//            site2 = site1;
+//            site1 = dum;
+//        }
+//    }
+//    if(site1 == 1 && site2 == 5)
+//    {
+//        if(place1 == 0 && place2 == 0)
+//            return true;
+//        else if(place1 == 0 && place2 == 0)
+//            return true;
+//        else if(place1 == 1 && place2 == 1)
+//            return true;
+//        else if(place1 == 2 && place2 == 3)
+//            return true;
+//        else if(place1 == 3 && place2 == 4)
+//            return true;
+//        else if(place1 == 5 && place2 == 7)
+//            return true;
+//        else if(place1 == 6 && place2 == 8)
+//            return true;
+//        else if(place1 == 7 && place2 == 9)
+//            return true;
+//        else if(place1 == 8 && place2 == 10)
+//            return true;
+//        else if(place1 == 9 && place2 == 14)
+//            return true;
+//        else if(place1 == 10 && place2 == 14)
+//            return true;
+//        else if(place1 == 11 && place2 == 14)
+//            return true;
+//        else if(place1 == 13 && place2 == 15)
+//            return true;
+//        else if(place1 == 14 && place2 == 16)
+//            return true;
+//        else if(place1 == 15 && place2 == 17)
+//            return true;
+//        else if(place1 == 16 && place2 == 18)
+//            return true;
+//        else if(place1 == 17 && place2 == 19)
+//            return true;
+//        else if(place1 == 18 && place2 == 21)
+//            return true;
+//    }
+//    else if(site1 == 2 && site2 == 6)
+//    {
+//        if(place1 == 0 && place2 == 0)
+//            return true;
+//        else if(place1 == 0 && place2 == 0)
+//            return true;
+//        else if(place1 == 1 && place2 == 1)
+//            return true;
+//        else if(place1 == 1 && place2 == 2)
+//            return true;
+//        else if(place1 == 2 && place2 == 3)
+//            return true;
+//        else if(place1 == 3 && place2 == 4)
+//            return true;
+//        else if(place1 == 4 && place2 == 5)
+//            return true;
+//        else if(place1 == 6 && place2 == 5)
+//            return true;
+//        else if(place1 == 7 && place2 == 6)
+//            return true;
+//        else if(place1 == 7 && place2 == 7)
+//            return true;
+//        else if(place1 == 8 && place2 == 8)
+//            return true;
+//        else if(place1 == 9 && place2 == 10)
+//            return true;
+//        else if(place1 == 10 && place2 == 11)
+//            return true;
+//    }
+//    else if(site1 == 3 && site2 == 7)
+//    {
+//        if(place1 == 0 && place2 == 0)
+//            return true;
+//        else if(place1 == 0 && place2 == 0)
+//            return true;
+//        else if(place1 == 1 && place2 == 1)
+//            return true;
+//        else if(place1 == 2 && place2 == 2)
+//            return true;
+//        else if(place1 == 3 && place2 == 3)
+//            return true;
+//        else if(place1 == 4 && place2 == 4)
+//            return true;
+//        else if(place1 == 5 && place2 == 4)
+//            return true;
+//        else if(place1 == 6 && place2 == 5)
+//            return true;
+//        else if(place1 == 7 && place2 == 6)
+//            return true;
+//        else if(place1 == 8 && place2 == 7)
+//            return true;
+//        else if(place1 == 8 && place2 == 8)
+//            return true;
+//        else if(place1 == 9 && place2 == 9)
+//            return true;
+//        else if(place1 == 9 && place2 == 10)
+//            return true;
+//        else if(place1 == 10 && place2 == 12)
+//            return true;
+//        else if(place1 == 11 && place2 == 12)
+//            return true;
+//        else if(place1 == 12 && place2 == 12)
+//            return true;
+//        else if(place1 == 13 && place2 == 12)
+//            return true;
+//        else if(place1 == 14 && place2 == 22)
+//            return true;
+//        else if(place1 == 16 && place2 == 13)
+//            return true;
+//        else if(place1 == 17 && place2 == 15)
+//            return true;
+//        else if(place1 == 19 && place2 == 17)
+//            return true;
+//        else if(place1 == 20 && place2 == 17)
+//            return true;
+//        else if(place1 == 21 && place2 == 17)
+//            return true;
+//        else if(place1 == 22 && place2 == 19)
+//            return true;
+//        else if(place1 == 23 && place2 == 20)
+//            return true;
+//        else if(place1 == 24 && place2 == 21)
+//            return true;
+//        else if(place1 == 25 && place2 == 22)
+//            return true;
+//        else if(place1 == 27 && place2 == 23)
+//            return true;
+//        else if(place1 == 28 && place2 == 24)
+//            return true;
+//    }
+//    return false;
+//}
+
+void Recognition::calculateRecPerformance(TreeNode* root)
+{
+    int site1 = 1;
+    int site2 = 5;
+    vector<pair<int, int> > matches;
+    matches.push_back(make_pair(0, 0 ));
+    matches.push_back(make_pair(1, 1 ));
+    matches.push_back(make_pair(2, 3 ));
+    matches.push_back(make_pair(3, 4 ));
+    matches.push_back(make_pair(5, 7 ));
+    matches.push_back(make_pair(6, 8 ));
+    matches.push_back(make_pair(7, 9 ));
+    matches.push_back(make_pair(8, 10));
+    matches.push_back(make_pair(9, 14));
+    matches.push_back(make_pair(10, 14));
+    matches.push_back(make_pair(11, 14));
+    matches.push_back(make_pair(13, 15));
+    matches.push_back(make_pair(14, 16));
+    matches.push_back(make_pair(15, 17));
+    matches.push_back(make_pair(16, 18));
+    matches.push_back(make_pair(17, 19));
+    matches.push_back(make_pair(18, 21));
+
+
+//    int site1 = 2;
+//    int site2 = 6;
+//    vector<pair<int, int> > matches;
+//    matches.push_back(make_pair(0, 0 ));
+//    matches.push_back(make_pair(1, 1 ));
+//    matches.push_back(make_pair(1, 2 ));
+//    matches.push_back(make_pair(2, 3 ));
+//    matches.push_back(make_pair(3, 4 ));
+//    matches.push_back(make_pair(4, 5 ));
+//    matches.push_back(make_pair(6, 5 ));
+//    matches.push_back(make_pair(7, 6 ));
+//    matches.push_back(make_pair(7, 7));
+//    matches.push_back(make_pair(8, 8));
+//    matches.push_back(make_pair(9, 10));
+//    matches.push_back(make_pair(10, 11));
+
+
+//    int site1 = 3;
+//    int site2 = 7;
+//    vector<pair<int, int> > matches;
+//    matches.push_back(make_pair(0, 0));
+//    matches.push_back(make_pair(1, 1));
+//    matches.push_back(make_pair(2, 2));
+//    matches.push_back(make_pair(3, 3));
+//    matches.push_back(make_pair(4, 4));
+//    matches.push_back(make_pair(5, 4));
+//    matches.push_back(make_pair(6, 5));
+//    matches.push_back(make_pair(7, 6));
+//    matches.push_back(make_pair(8, 7));
+//    matches.push_back(make_pair(8, 8));
+//    matches.push_back(make_pair(9, 9));
+//    matches.push_back(make_pair(9, 10));
+//    matches.push_back(make_pair(10, 12));
+//    matches.push_back(make_pair(11, 12));
+//    matches.push_back(make_pair(12, 12));
+//    matches.push_back(make_pair(13, 12));
+//    matches.push_back(make_pair(14, 12));
+//    matches.push_back(make_pair(16, 13));
+//    matches.push_back(make_pair(17, 15));
+//    matches.push_back(make_pair(19, 17));
+//    matches.push_back(make_pair(20, 17));
+//    matches.push_back(make_pair(21, 17));
+//    matches.push_back(make_pair(22, 19));
+//    matches.push_back(make_pair(23, 20));
+//    matches.push_back(make_pair(24, 21));
+//    matches.push_back(make_pair(25, 22));
+//    matches.push_back(make_pair(27, 23));
+//    matches.push_back(make_pair(28, 24));
+
+
+
+    for(int i = 0; i < matches.size(); i++)
+    {
+        int place1 = matches[i].first;
+        int place2 = matches[i].second;
+
+
+        TreeNode* n1 = findNode(site1, place1, root);
+        TreeNode* n2 = findNode(site2, place2, root);
+
+        //qDebug() << n1->getLabel()<< n2->getLabel();
+
+        //qDebug() << place1 << "\t" << place2 << "\t" << calculateN2NTreeDistance(findNode(site1, place1, root), findNode(site2, place2, root));
+        qDebug() << calculateN2NTreeDistance(findNode(site1, place1, root), findNode(site2, place2, root));
+    }
+
+}
+
+int Recognition::calculateN2NTreeDistance(TreeNode* node1, TreeNode* node2)
+{
+    if(node1->getLabel() == node2->getLabel())
+        return 0;
+    else
+    {
+        vector<int> labels1, labels2;
+        while(node1->getParent() != NULL)
+        {
+            labels1.push_back(node1->getParent()->getLabel());
+            node1 = node1->getParent();
+        }
+        while(node2->getParent() != NULL)
+        {
+            labels2.push_back(node2->getParent()->getLabel());
+            node2 = node2->getParent();
+        }
+
+        for(int i = 0; i < labels1.size(); i++)
+        {
+            for(int j = 0; j < labels2.size(); j++)
+            {
+                if(labels1[i] == labels2[j])
+                {
+                    return i+j+1;
+                }
+            }
+        }
+        return -1;
+    }
+}

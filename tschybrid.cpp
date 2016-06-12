@@ -157,9 +157,9 @@ TSCHybrid::TSCHybrid(QCustomPlot* tsc_plot,
     stop_processing = false;
     next_frame = true;
 
-    db.setConnName("conn1");
-    db.openDB(OUTPUT_FOLDER+string("dataset1_full.db"));
-    db.createTables();
+//    db.setConnName("conn1");
+//    db.openDB(OUTPUT_FOLDER+string("dataset1_full.db"));
+//    db.createTables();
     //tsc = new TSC(dataset);
 
 
@@ -189,30 +189,28 @@ void TSCHybrid::readFromDB()
 //    db.closeDB();
 
 
+    vector<int> places;
+    places.push_back(1);
+    //places.push_back(2);
+    //places.push_back(3);
+    places.push_back(5);
+    //places.push_back(6);
+    //places.push_back(7);
 
-//    db.setConnName("conn1");
-//    db.openDB(OUTPUT_FOLDER+string("datasets_1_2_3_4_5_with_color_mod.db"));
 
-//    vector<SSG> allSSG = db.getAllSSGs();
-//    vector<SSG> allSSG1;
-//    vector<SSG> allSSG2;
-//    vector<SSG> allSSG3;
-//    for(int i = 0; i < allSSG.size(); i++)
-//    {
-//        if(allSSG[i].getColor() == 1)
-//        {
-//            allSSG1.push_back(allSSG[i]);
-//        }
-//        if(allSSG[i].getColor() == 2)
-//        {
-//            allSSG2.push_back(allSSG[i]);
-//        }
-//        if(allSSG[i].getColor() == 3)
-//        {
-//            allSSG3.push_back(allSSG[i]);
-//        }
-//    }
-//    db.closeDB();
+
+    for(int i = 0; i < places.size(); i++)
+    {
+        vector<SSG> readSSG;
+        DatabaseHandler db;
+        db.setConnName("conn"+QString::number(places[i]).toStdString());
+        db.openDB(OUTPUT_FOLDER+string("dataset_")+QString::number(places[i]).toStdString()+string("_places.db"));
+        readSSG = db.getAllSSGsNew();
+        db.closeDB();
+        SSGs.insert(SSGs.end(), readSSG.begin(), readSSG.end());
+        readSSG.clear();
+    }
+
 
 //    DatabaseHandler db2;
 //    db2.setConnName("conn2");
@@ -245,17 +243,17 @@ void TSCHybrid::readFromDB()
 
 //    vector<SSG> readSSG;
 
-    vector<SSG> readSSG;
-    DatabaseHandler db;
-    db.setConnName("conn");
-    db.openDB(OUTPUT_FOLDER+string("dataset_")+QString::number(dataset->dataset_id).toStdString()+string("_places.db"));
-    readSSG = db.getAllSSGsNew();
-    db.closeDB();
-    SSGs.insert(SSGs.end(), readSSG.begin(), readSSG.end());
-    qDebug() << readSSG.size();
-    readSSG.clear();
-    vector<string> image_files = getFiles(dataset->location);
-    plotDetectedPlaces(SSGs, image_files, dataset);
+//    vector<SSG> readSSG;
+//    DatabaseHandler db;
+//    db.setConnName("conn");
+//    db.openDB(OUTPUT_FOLDER+string("dataset_")+QString::number(dataset->dataset_id).toStdString()+string("_places.db"));
+//    readSSG = db.getAllSSGsNew();
+//    db.closeDB();
+//    SSGs.insert(SSGs.end(), readSSG.begin(), readSSG.end());
+//    qDebug() << readSSG.size();
+//    readSSG.clear();
+//    vector<string> image_files = getFiles(dataset->location);
+//    plotDetectedPlaces(SSGs, image_files, dataset);
 
 //    db.setConnName("conn2");
 //    db.openDB(OUTPUT_FOLDER+string("dataset_2.db"));
@@ -320,7 +318,7 @@ void TSCHybrid::readFromDB()
 //    qDebug() << readSSG.size();
 //    readSSG.clear();
 
-    qDebug() << SSGs.size();
+//    qDebug() << SSGs.size();
 
 }
 
@@ -533,7 +531,7 @@ void TSCHybrid::processImagesHierarchical(const string folder, const int start_i
             temp_SSG.setEndFrame(frame_no);
             //PlaceSSG new_place(temp_SSG.getId(), temp_SSG);
 
-            qDebug() << temp_SSG.member_invariants.size().width;
+            //qDebug() << temp_SSG.member_invariants.size().width;
             //Expermental purpose
             if(temp_SSG.member_invariants.empty() == false)
                 SSGs.push_back(temp_SSG);
@@ -694,7 +692,7 @@ void TSCHybrid::processImagesHierarchical_(const string folder, const int start_
         }
         else if(detection_result == DETECTION_PLACE_ENDED)
         {
-            qDebug() << temp_SSG.member_invariants.size().width;
+            //qDebug() << temp_SSG.member_invariants.size().width;
             //Commented out for experimental purpose
             //SSGProc::filterSummarySegments(temp_SSG, params->tau_p);
             //emit showSSG(mat2QImage(SSGProc::drawSSG(temp_SSG, img, params->tau_p)));
@@ -1284,42 +1282,39 @@ void TSCHybrid::performBOWTrain(const string folder, const int start_idx, const 
 
 void TSCHybrid::reRecognize(int method, int norm_type)
 {
-    TreeNode* hierarchy_tree = NULL;
+    TreeNode* hierarchy_tree;
     vector<PlaceSSG> places;
 
     //SSGs_fromTSC.clear();
     //TSCPlaces2SSGPlaces(tsc->detector.detectedPlaces, SSGs_fromTSC);
     //vector<SSG> SSGs = this->SSGs_fromTSC;
 
-    qDebug() << "SSGs size " << SSGs.size();
-
     recognition->setNormType(norm_type);
     recognition->setRecognitionMethod(method);
-    qDebug() << "Recognition method is " << method;
 
     for(int i = 0; i < SSGs.size(); i++)
     {
         SSGProc::filterSummarySegments(SSGs[i], params->ssg_params.tau_p);
         PlaceSSG new_place(SSGs[i].getId(), SSGs[i]);
-        recognition->performRecognition(places, new_place, hierarchy_tree);
+        recognition->performRecognition(places, new_place, &hierarchy_tree);
     }
+
+    qDebug() << "N2N Tree Distances:";
+    recognition->calculateRecPerformance(hierarchy_tree);
 
 }
 
 void TSCHybrid::reRecognize2(int method, int norm_type)
 {
-    TreeNode* hierarchy_tree = NULL;
+    TreeNode** hierarchy_tree = NULL;
     vector<PlaceSSG> places;
 
 //    SSGs_fromTSC.clear();
 //    TSCPlaces2SSGPlaces(tsc->detector.detectedPlaces, SSGs_fromTSC);
 //    vector<SSG> SSGs = this->SSGs_fromTSC;
 
-    qDebug() << "SSGs size " << SSGs.size();
-
     recognition->setNormType(norm_type);
     recognition->setRecognitionMethod(method);
-    qDebug() << "Recognition method is " << method;
 
     int i = 0;
     for(i = 0; i < SSGs.size()-1; i++)

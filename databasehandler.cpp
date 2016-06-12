@@ -293,8 +293,8 @@ vector<SSG> DatabaseHandler::getAllSSGsNew()
             ssg.mean_invariant = DatabaseHandler::byteArray2Mat(mean_inv);
             ssg.member_invariants = DatabaseHandler::byteArray2Mat(member_inv);
 
-//            vector<pair<NodeSig,int> > nodesigs = getNodeSigs(ssg_uniq_id);
-//            qDebug() << "nodess" << nodesigs.size();
+            vector<pair<NodeSig,int> > nodesigs = getNodeSigs(ssg_uniq_id);
+            ssg.nodes = nodesigs;
 
             SSGs.push_back(ssg);
         }
@@ -309,7 +309,7 @@ vector<pair<NodeSig,int> > DatabaseHandler::getNodeSigs(int ssg_id)
 
     if(db.isOpen())
     {
-        qDebug() << ssg_id;
+        //qDebug() << ssg_id;
         QSqlQuery query(QSqlDatabase::database(conn_name));
         query.prepare(QString("select* from nodesig where ssg_id = :ssg_id"));
         query.bindValue(":ssg_id",ssg_id);
