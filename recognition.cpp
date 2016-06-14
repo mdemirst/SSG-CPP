@@ -194,6 +194,17 @@ void Recognition::drawTree(TreeNode* root_node, int nrPlaces, int height, int wi
     waitKey(0);
 }
 
+void Recognition::getTerminalNodes(TreeNode* node, vector<TreeNode*>& terminal_nodes)
+{
+    if(node->isTerminal())
+    {
+        terminal_nodes.push_back(node);
+    }
+
+    for(int i = 0; i < node->getChildren().size(); i++)
+        getTerminalNodes(node->getChildren()[i], terminal_nodes);
+}
+
 void Recognition::sortTerminalNodes(TreeNode* node, int* last_pos)
 {
     if(node->isTerminal())
@@ -215,6 +226,7 @@ TreeNode** Recognition::convert2Tree(Node* tree, int nrNodes, int nrPlaces, vect
         nodes[i].setLabel(i);
         nodes[i].setXPos(i);
         nodes[i].setDescriptor(&places[i]);
+        nodes[i].setVal(0);
     }
 
     for(int i = 0; i < nrNodes; i++)
@@ -303,7 +315,7 @@ double Recognition::calculateDistanceTSC(SSG& old_place, SSG& detected_place)
 {
     double total_distance = 0;
 
-    if(rec_method == REC_TYPE_BD_NORMAL || rec_method == REC_TYPE_BD_BEST)
+    if(rec_method == REC_TYPE_BD_NORMAL )
     {
         Mat oldp = old_place.mean_invariant.rowRange(100,599);
         Mat newp = detected_place.mean_invariant.rowRange(100,599);
@@ -311,13 +323,16 @@ double Recognition::calculateDistanceTSC(SSG& old_place, SSG& detected_place)
     }
     else if(rec_method == REC_TYPE_BD_COLOR)
     {
+        total_distance = norm(old_place.mean_invariant,detected_place.mean_invariant,norm_type);
+    }
+    else if(rec_method == REC_TYPE_BD_COLOR_LOG)
+    {
         Mat a = old_place.mean_invariant*25;
         cv::pow(a,2.71,a);
 
         Mat b = detected_place.mean_invariant*25;
         cv::pow(b,2.71,b);
         total_distance = norm(a,b,norm_type);
-        //total_distance = norm(old_place.mean_invariant,detected_place.mean_invariant,norm_type);
     }
     else if(rec_method == REC_TYPE_BD_VOTING)
     {
@@ -342,7 +357,41 @@ double Recognition::calculateDistanceTSC(SSG& old_place, SSG& detected_place)
     return total_distance;
 }
 
+double Recognition::getDistance(PlaceSSG& p1, PlaceSSG& p2)
+{
+    int count = 0;
+    double distance = 0;
+    for(int i = 0; i < p1.getCount(); i++)
+    {
+        for(int j = 0; j < p2.getCount(); j++)
+        {
+            Mat P, C;
+            if(rec_method == REC_TYPE_SSG_NORMAL)
+            {
+                //Graph distance calculation -- method #1
+                distance += gm->matchTwoImages(p1.getMember(i),p2.getMember(j),P,C);
+            }
+            else if(rec_method == REC_TYPE_SSG_VOTING)
+            {
+                //Graph distance calculation -- method #2
+                distance += calculateDistance(p1.getMember(i),p2.getMember(j));
+            }
+            else if(rec_method == REC_TYPE_BD_NORMAL || rec_method == REC_TYPE_BD_VOTING || rec_method == REC_TYPE_BD_COLOR)
+            {
+                //Bubble descriptor distance -- method #3
+                distance += calculateDistanceTSC(p1.getMember(i),p2.getMember(j));
+            }
+            else if(rec_method == REC_TYPE_HYBRID)
+            {
 
+            }
+            count++;
+        }
+    }
+
+    return distance / count;
+
+}
 
 double** Recognition::calculateDistanceMatrix(vector<PlaceSSG>& places)
 {
@@ -360,64 +409,12 @@ double** Recognition::calculateDistanceMatrix(vector<PlaceSSG>& places)
         for(int c = r+1; c < nrPlaces; c++)
         {
             double distance = 0;
-            if(rec_method == REC_TYPE_SSG_BEST || rec_method == REC_TYPE_BD_BEST)
-                distance = 999;
-            int count = 0;
-            for(int i = 0; i < places[r].getCount(); i++)
-            {
-                for(int j = 0; j < places[c].getCount(); j++)
-                {
-                    Mat P, C;
-                    if(rec_method == REC_TYPE_SSG_NORMAL)
-                    {
-                        //Graph distance calculation -- method #1
-                        distance += gm->matchTwoImages(places[r].getMember(i),places[c].getMember(j),P,C);
-                    }
-                    else if(rec_method == REC_TYPE_SSG_VOTING)
-                    {
-                        //Graph distance calculation -- method #2
-                        distance += calculateDistance(places[r].getMember(i),places[c].getMember(j));
-                    }
-                    else if(rec_method == REC_TYPE_SSG_BEST)
-                    {
-                        double dist = gm->matchTwoImages(places[r].getMember(i),places[c].getMember(j),P,C);
-                        if(dist < distance)
-                            distance = dist;
-                    }
-                    else if(rec_method == REC_TYPE_BD_NORMAL || rec_method == REC_TYPE_BD_VOTING || rec_method == REC_TYPE_BD_COLOR)
-                    {
-                        //Bubble descriptor distance -- method #3
-                        distance += calculateDistanceTSC(places[r].getMember(i),places[c].getMember(j));
-                    }
-                    else if(rec_method == REC_TYPE_BD_BEST)
-                    {
-                        double dist = calculateDistanceTSC(places[r].getMember(i),places[c].getMember(j));
-                        if(dist < distance)
-                        {
-                            qDebug() << "Dist:" << dist;
-                            distance = dist;
-                        }
-                    }
-                    else if(rec_method == REC_TYPE_HYBRID)
-                    {
 
-                    }
-                    count++;
-                }
-            }
-
+            distance = getDistance(places[r], places[c]);
             //qDebug() << "Rec. score between" << r << c << "is " << distance;
 
-            if(rec_method == REC_TYPE_SSG_BEST || rec_method == REC_TYPE_BD_BEST)
-            {
-                dist_matrix[r][c] = distance;
-                dist_matrix[c][r] = distance;
-            }
-            else
-            {
-                dist_matrix[r][c] = distance/count;
-                dist_matrix[c][r] = distance/count;
-            }
+            dist_matrix[r][c] = distance;
+            dist_matrix[c][r] = distance;
 
         }
     }
@@ -490,6 +487,82 @@ int Recognition::performRecognition(vector<PlaceSSG>& places, PlaceSSG new_place
                     break;
                 }
             }
+        }
+    }
+
+    //Remove dist_matrix
+    for (int i = 0; i < nrPlaces; i++) delete[] dist_matrix[i];
+    delete[] dist_matrix;
+
+    return recognition_status;
+}
+
+int Recognition::performRecognition2(vector<PlaceSSG>& places, PlaceSSG new_place, TreeNode** hierarchy)
+{
+    int recognition_status = NOT_RECOGNIZED;
+    //TODO: Incremental distance matrix creation
+    //First create distance matrix (We don't need to calculate distance matrix from scratch)
+
+    //We'll push new place into places vector, then erase at the end
+    places.push_back(new_place);
+
+    //If there is not enough place for recognition
+    if(places.size() < 2)
+        return RECOGNITION_ERROR;
+
+    int nrPlaces = places.size();
+    thumbnail_scale = 1.0 / (nrPlaces+1);
+
+    //qDebug() << "New recognition calculation...";
+    double** dist_matrix = calculateDistanceMatrix(places);
+
+
+    //Find hierarchical tree using SLINK algorithm
+    Node* tree = solveSLink(nrPlaces, nrPlaces, dist_matrix);
+
+    *hierarchy = *convert2Tree(tree, nrPlaces-1, nrPlaces, places);
+
+    //Draw tree
+    drawTree(*hierarchy, nrPlaces, params->rec_params.plot_h, params->rec_params.plot_w);
+
+    //Get pointer to position of new detected place
+    TreeNode* new_place_node = findNode(nrPlaces-1, *hierarchy);
+
+    TreeNode* new_place_parent = new_place_node->getParent();
+
+    //If new detected place's h is below tau_r perform rec
+    //Assign it to the most closes terminal node..
+    if(new_place_parent->getVal() < params->rec_params.tau_r)
+    {
+        vector<TreeNode*> terminal_nodes;
+        getTerminalNodes(new_place_parent, terminal_nodes);
+
+        double best_dist = 999;
+        TreeNode* closest_node = NULL;
+
+        for(int i = 0; i < terminal_nodes.size(); i++)
+        {
+            if(new_place_node->getLabel() != terminal_nodes[i]->getLabel())
+            {
+                double dist = getDistance(*new_place_node->getDescriptor(), *terminal_nodes[i]->getDescriptor());
+
+                if(dist < best_dist)
+                {
+                    best_dist = dist;
+                    closest_node = terminal_nodes[i];
+                }
+            }
+        }
+
+        if(closest_node != NULL)
+        {
+            qDebug() << "Recognized place! " << closest_node->getLabel() << "<-" << new_place_node->getLabel();
+            for(int i = 0; i < new_place_node->getDescriptor()->getCount(); i++)
+                closest_node->getDescriptor()->addMember(new_place_node->getDescriptor()->getMember(i));
+
+            places.erase(places.end());
+
+            recognition_status = RECOGNIZED;
         }
     }
 

@@ -76,10 +76,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->combo_rec_method->addItem("Bubble-Voting",REC_TYPE_BD_VOTING);
     ui->combo_rec_method->addItem("Bubble-Color",REC_TYPE_BD_COLOR);
     ui->combo_rec_method->addItem("Bubble-Color-wlog",REC_TYPE_BD_COLOR_LOG);
-    ui->combo_rec_method->addItem("Bubble-Best",REC_TYPE_BD_BEST);
     ui->combo_rec_method->addItem("SSG",REC_TYPE_SSG_NORMAL);
     ui->combo_rec_method->addItem("SSG-Voting",REC_TYPE_SSG_VOTING);
-    ui->combo_rec_method->addItem("SSG-Best",REC_TYPE_SSG_BEST);
     ui->combo_rec_method->addItem("Hybrid",REC_TYPE_HYBRID);
 
     //Fill BD recognition norm type

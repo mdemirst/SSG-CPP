@@ -147,11 +147,11 @@ TSCHybrid::TSCHybrid(QCustomPlot* tsc_plot,
 
     //Filters init
     string filters_dir = OUTPUT_FOLDER+string("visual_filters");
-    ImageProcess::readFilter(QString(filters_dir.c_str()).append("/filtre0.txt"),29,false,false,false);
-    ImageProcess::readFilter(QString(filters_dir.c_str()).append("/filtre6.txt"),29,false,false,false);
-    ImageProcess::readFilter(QString(filters_dir.c_str()).append("/filtre12.txt"),29,false,false,false);
-    ImageProcess::readFilter(QString(filters_dir.c_str()).append("/filtre18.txt"),29,false,false,false);
-    ImageProcess::readFilter(QString(filters_dir.c_str()).append("/filtre36.txt"),29,false,false,false);
+//    ImageProcess::readFilter(QString(filters_dir.c_str()).append("/filtre0.txt"),29,false,false,false);
+//    ImageProcess::readFilter(QString(filters_dir.c_str()).append("/filtre6.txt"),29,false,false,false);
+//    ImageProcess::readFilter(QString(filters_dir.c_str()).append("/filtre12.txt"),29,false,false,false);
+//    ImageProcess::readFilter(QString(filters_dir.c_str()).append("/filtre18.txt"),29,false,false,false);
+//    ImageProcess::readFilter(QString(filters_dir.c_str()).append("/filtre36.txt"),29,false,false,false);
 
     is_processing = false;
     stop_processing = false;
@@ -160,7 +160,7 @@ TSCHybrid::TSCHybrid(QCustomPlot* tsc_plot,
 //    db.setConnName("conn1");
 //    db.openDB(OUTPUT_FOLDER+string("dataset1_full.db"));
 //    db.createTables();
-    //tsc = new TSC(dataset);
+    tsc = new TSC(dataset);
 
 
 }
@@ -191,8 +191,8 @@ void TSCHybrid::readFromDB()
 
     vector<int> places;
     places.push_back(1);
-    //places.push_back(2);
-    //places.push_back(3);
+    places.push_back(2);
+    places.push_back(3);
     places.push_back(5);
     //places.push_back(6);
     //places.push_back(7);
@@ -1049,9 +1049,11 @@ void TSCHybrid::TSCPlaces2SSGPlaces(vector<Place>& TSC_places, vector<SSG>& SSG_
 {
     for(int i = 0; i < TSC_places.size(); i++)
     {
-        SSG new_ssg(i);
+        SSG new_ssg(i%17);
         new_ssg.member_invariants = TSC_places[i].memberInvariants.clone();
         new_ssg.mean_invariant = TSC_places[i].meanInvariant.clone();
+        new_ssg.setStartFrame((int)TSC_places[i].members[0].id);
+        new_ssg.setEndFrame((int)TSC_places[i].members.back().id);
         new_ssg.setColor(TSC_places[i].color);
         SSG_places.push_back(new_ssg);
     }
@@ -1197,15 +1199,12 @@ void TSCHybrid::processImagesHierarchical2(const string folder, const int start_
         if(!isLastImage)
             plotScoresTSC_(scores_tsc, tsc->detector.currentPlace, tsc->detector.currentBasePoint, tsc->detector.detectedPlaces);
 
-
         frame_count++;
         if(frame_count%100 == 0)
         {
             qDebug() << "Time elapsed in 100 frames: " << frame_count << (QDateTime::currentMSecsSinceEpoch() - last_time)/1000.0;
             last_time = QDateTime::currentMSecsSinceEpoch();
         }
-
-
 
         //Free variables
         img.release();
@@ -1285,9 +1284,12 @@ void TSCHybrid::reRecognize(int method, int norm_type)
     TreeNode* hierarchy_tree;
     vector<PlaceSSG> places;
 
-    //SSGs_fromTSC.clear();
-    //TSCPlaces2SSGPlaces(tsc->detector.detectedPlaces, SSGs_fromTSC);
-    //vector<SSG> SSGs = this->SSGs_fromTSC;
+//    SSGs_fromTSC.clear();
+//    TSCPlaces2SSGPlaces(tsc->detector.detectedPlaces, SSGs_fromTSC);
+//    vector<SSG> SSGs = this->SSGs_fromTSC;
+
+//    vector<string> image_files = getFiles(dataset->location);
+//    plotDetectedPlaces(SSGs, image_files, dataset);
 
     recognition->setNormType(norm_type);
     recognition->setRecognitionMethod(method);
@@ -1296,7 +1298,7 @@ void TSCHybrid::reRecognize(int method, int norm_type)
     {
         SSGProc::filterSummarySegments(SSGs[i], params->ssg_params.tau_p);
         PlaceSSG new_place(SSGs[i].getId(), SSGs[i]);
-        recognition->performRecognition(places, new_place, &hierarchy_tree);
+        recognition->performRecognition2(places, new_place, &hierarchy_tree);
     }
 
     qDebug() << "N2N Tree Distances:";
@@ -1306,12 +1308,15 @@ void TSCHybrid::reRecognize(int method, int norm_type)
 
 void TSCHybrid::reRecognize2(int method, int norm_type)
 {
-    TreeNode** hierarchy_tree = NULL;
+    TreeNode* hierarchy_tree;
     vector<PlaceSSG> places;
 
 //    SSGs_fromTSC.clear();
 //    TSCPlaces2SSGPlaces(tsc->detector.detectedPlaces, SSGs_fromTSC);
 //    vector<SSG> SSGs = this->SSGs_fromTSC;
+
+//    vector<string> image_files = getFiles("/home/isl-mahmut/Datasets/fr_seq2_cloudy2/std_cam/");
+//    plotDetectedPlacesX(SSGs, image_files);
 
     recognition->setNormType(norm_type);
     recognition->setRecognitionMethod(method);
@@ -1323,13 +1328,18 @@ void TSCHybrid::reRecognize2(int method, int norm_type)
         SSGProc::filterSummarySegments(ssg, params->ssg_params.tau_p);
         PlaceSSG new_place(ssg.getId(), ssg);
         places.push_back(new_place);
+        qDebug() << ssg.mean_invariant.size().width << ssg.mean_invariant.size().height;
     }
 
     SSG ssg = SSGs[i];
     SSGProc::filterSummarySegments(ssg, params->ssg_params.tau_p);
+
     PlaceSSG new_place(ssg.getId(), ssg);
 
-    recognition->performRecognition(places, new_place, hierarchy_tree);
+    qDebug() << ssg.mean_invariant.size().width << ssg.mean_invariant.size().height;
+
+    recognition->performRecognition2(places, new_place, &hierarchy_tree);
+
 
 }
 
@@ -1895,23 +1905,223 @@ void TSCHybrid::plotScoresSSGOneShot(vector<float> coherency_scores, vector<int>
 }
 
 // Plots places and coherency scores
+void TSCHybrid::plotDetectedPlacesX(vector<SSG> SSGs, const vector<string>& image_files)
+{
+    //Cold-Fr
+    int MAP_W = 1000;
+    int MAP_H = 750;
+    int MAP_L = -20;
+    int MAP_R = 20;
+    int MAP_T = 10;
+    int MAP_B = -20;
+
+    qDebug() << "size" << SSGs.size();
+    int graph_idx = -1;
+
+    //Traveled places plot initialization
+    this->place_map = place_map;
+
+    this->place_map->axisRect()->setAutoMargins(QCP::msAll);
+    this->place_map->axisRect()->setMargins(QMargins(10,10,10,10));
+    this->place_map->setMaximumWidth(MAP_W);
+    this->place_map->setMinimumWidth(MAP_W);
+    this->place_map->setMinimumHeight(MAP_H);
+    this->place_map->setMaximumHeight(MAP_H);
+    this->place_map->xAxis->grid()->setVisible(false);
+    this->place_map->yAxis->grid()->setVisible(false);
+    this->place_map->xAxis->setTicks(false);
+    this->place_map->yAxis->setTicks(false);
+    this->place_map->xAxis->setVisible(false);
+    this->place_map->yAxis->setVisible(false);
+    this->place_map->xAxis->setRange(MAP_L, MAP_R);
+    this->place_map->yAxis->setRange(MAP_T, MAP_B);
+
+
+    for(int i = 0; i < SSGs.size(); i++)
+    {
+        QPen dumPen;
+        dumPen.setWidth(0.5);
+        dumPen.setColor(QColor(255, 0, 0, 50));
+
+        this->place_map->addGraph();
+        graph_idx++;
+        this->place_map->graph(graph_idx)->setPen(dumPen);
+        this->place_map->graph(graph_idx)->setLineStyle(QCPGraph::lsNone);
+        this->place_map->graph(graph_idx)->setScatterStyle(QCPScatterStyle::ssDisc);
+
+        qDebug() << "k" << SSGs[i].getStartFrame() << SSGs[i].getEndFrame();
+        for(int j = SSGs[i].getStartFrame(); j < SSGs[i].getEndFrame(); j++)
+        {
+            Point2f coord = getCoordCold(image_files[j]);
+            place_map->graph(graph_idx)->addData(coord.x, coord.y);
+            qDebug() << "a" << coord.x << coord.y;
+        }
+    }
+    for(int i = 0; i < SSGs.size()-1; i++)
+    {
+        QPen dumPen;
+        dumPen.setWidth(0.5);
+        dumPen.setColor(QColor(0, 0, 255, 50));
+
+        this->place_map->addGraph();
+        graph_idx++;
+        this->place_map->graph(graph_idx)->setPen(dumPen);
+        this->place_map->graph(graph_idx)->setLineStyle(QCPGraph::lsNone);
+        this->place_map->graph(graph_idx)->setScatterStyle(QCPScatterStyle::ssDisc);
+
+        qDebug() << "t" << SSGs[i].getEndFrame() << SSGs[i+1].getStartFrame();
+        for(int j = SSGs[i].getEndFrame(); j < SSGs[i+1].getStartFrame(); j++)
+        {
+            Point2f coord = getCoordCold(image_files[j]);
+            place_map->graph(graph_idx)->addData(coord.x, coord.y);
+            qDebug() << "b" << coord.x << coord.y;
+        }
+    }
+
+    place_map->replot();
+    QString save_loc = QString(OUTPUT_FOLDER).append("detected_places").append(QString::number(5)).append(".png");
+    this->place_map->savePng(save_loc);
+
+
+    for(int i = 0; i < SSGs.size(); i++)
+    {
+
+        float shift = 0;
+
+        //fr-1
+//        if(SSGs[i].getId() == 0)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 1)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 2)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 3)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 4)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 5)
+//            shift = 2;
+//        else if(SSGs[i].getId() == 6)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 7)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 8)
+//            shift = 2;
+//        else if(SSGs[i].getId() == 9)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 10)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 11)
+//            shift = -0.7;
+//        else if(SSGs[i].getId() == 12)
+//            shift = 0;
+//        else if(SSGs[i].getId() == 13)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 14)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 15)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 16)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 17)
+//            shift = -2.5;
+//        else if(SSGs[i].getId() == 18)
+//            shift = -2;
+//        else if(SSGs[i].getId() == 19)
+//            shift = 1;
+
+
+        //fr-2
+        if(SSGs[i].getId() == 0)
+            shift = -1;
+        else if(SSGs[i].getId() == 1)
+            shift = 1;
+        else if(SSGs[i].getId() == 2)
+            shift = -1;
+        else if(SSGs[i].getId() == 3)
+            shift = 1;
+        else if(SSGs[i].getId() == 4)
+            shift = 1;
+        else if(SSGs[i].getId() == 5)
+            shift = 0;
+        else if(SSGs[i].getId() == 6)
+            shift = 0.5;
+        else if(SSGs[i].getId() == 7)
+            shift = -1;
+        else if(SSGs[i].getId() == 8)
+            shift = -2;
+        else if(SSGs[i].getId() == 9)
+            shift = 1;
+        else if(SSGs[i].getId() == 10)
+            shift = 0.5;
+        else if(SSGs[i].getId() == 11)
+            shift = 0;
+        else if(SSGs[i].getId() == 12)
+            shift = 0;
+        else if(SSGs[i].getId() == 13)
+            shift = 0;
+        else if(SSGs[i].getId() == 14)
+            shift = -1;
+        else if(SSGs[i].getId() == 15)
+            shift = 1;
+        else if(SSGs[i].getId() == 16)
+            shift = -1;
+        else if(SSGs[i].getId() == 17)
+            shift = -1;
+        else if(SSGs[i].getId() == 18)
+            shift = -2.5;
+        else if(SSGs[i].getId() == 19)
+            shift = -1;
+        else if(SSGs[i].getId() == 20)
+            shift = 0.5;
+        else if(SSGs[i].getId() == 21)
+            shift = -1;
+        else if(SSGs[i].getId() == 22)
+            shift = -1;
+
+
+
+        int sample_frame_id = (SSGs[i].getEndFrame() + SSGs[i].getStartFrame()) / 2;
+        QCPItemText *textLabel = new QCPItemText(this->place_map);
+        this->place_map->addItem(textLabel);
+        textLabel->position->setType(QCPItemPosition::ptPlotCoords);
+        Point2f coord = getCoordCold(image_files[sample_frame_id]);
+        textLabel->position->setCoords(QPointF(coord.x+shift, coord.y+1));
+        textLabel->setFont(QFont(QFont().family(),16)); // make font a bit larger
+        textLabel->setText(QString::number(SSGs[i].getId()));
+        textLabel->setPen(QPen(Qt::black)); // show black border around text
+
+        // add the arrow:
+        QCPItemLine *arrow = new QCPItemLine(this->place_map);
+        this->place_map->addItem(arrow);
+        arrow->start->setParentAnchor(textLabel->bottom);
+        arrow->end->setCoords(coord.x, coord.y);
+        arrow->setHead(QCPLineEnding::esSpikeArrow);
+    }
+    //place_map->rescaleAxes();
+    place_map->replot();
+    save_loc = QString(OUTPUT_FOLDER).append("detected_places").append(5).append("_numbered.png");
+    this->place_map->savePng(save_loc);
+}
+
+// Plots places and coherency scores
 void TSCHybrid::plotDetectedPlaces(vector<SSG> SSGs, const vector<string>& image_files, Dataset* dataset)
 {
     //Cold-Fr
-//    int MAP_W = 1000;
-//    int MAP_H = 750;
-//    int MAP_L = -20;
-//    int MAP_R = 20;
-//    int MAP_T = 10;
-//    int MAP_B = -20;
-
-    //Cold-Sa
     int MAP_W = 1000;
     int MAP_H = 750;
-    int MAP_L = -15;
-    int MAP_R = 15;
-    int MAP_T = 15;
-    int MAP_B = -15;
+    int MAP_L = -20;
+    int MAP_R = 20;
+    int MAP_T = 10;
+    int MAP_B = -20;
+
+    //Cold-Sa
+//    int MAP_W = 1000;
+//    int MAP_H = 750;
+//    int MAP_L = -15;
+//    int MAP_R = 15;
+//    int MAP_T = 15;
+//    int MAP_B = -15;
 
     //Cold-Lj-1
 //    int MAP_W = 1000;
@@ -2002,46 +2212,46 @@ void TSCHybrid::plotDetectedPlaces(vector<SSG> SSGs, const vector<string>& image
         float shift = 0;
 
         //fr-1
-//        if(SSGs[i].getId() == 0)
-//            shift = -1;
-//        else if(SSGs[i].getId() == 1)
-//            shift = 1;
-//        else if(SSGs[i].getId() == 2)
-//            shift = 1;
-//        else if(SSGs[i].getId() == 3)
-//            shift = 1;
-//        else if(SSGs[i].getId() == 4)
-//            shift = 1;
-//        else if(SSGs[i].getId() == 5)
-//            shift = 2;
-//        else if(SSGs[i].getId() == 6)
-//            shift = -1;
-//        else if(SSGs[i].getId() == 7)
-//            shift = 1;
-//        else if(SSGs[i].getId() == 8)
-//            shift = 2;
-//        else if(SSGs[i].getId() == 9)
-//            shift = 1;
-//        else if(SSGs[i].getId() == 10)
-//            shift = -1;
-//        else if(SSGs[i].getId() == 11)
-//            shift = -0.7;
-//        else if(SSGs[i].getId() == 12)
-//            shift = 0;
-//        else if(SSGs[i].getId() == 13)
-//            shift = 1;
-//        else if(SSGs[i].getId() == 14)
-//            shift = 1;
-//        else if(SSGs[i].getId() == 15)
-//            shift = 1;
-//        else if(SSGs[i].getId() == 16)
-//            shift = 1;
-//        else if(SSGs[i].getId() == 17)
-//            shift = -2.5;
-//        else if(SSGs[i].getId() == 18)
-//            shift = -2;
-//        else if(SSGs[i].getId() == 19)
-//            shift = 1;
+        if(SSGs[i].getId() == 0)
+            shift = -1;
+        else if(SSGs[i].getId() == 1)
+            shift = 1;
+        else if(SSGs[i].getId() == 2)
+            shift = 1;
+        else if(SSGs[i].getId() == 3)
+            shift = 1;
+        else if(SSGs[i].getId() == 4)
+            shift = 1;
+        else if(SSGs[i].getId() == 5)
+            shift = 2;
+        else if(SSGs[i].getId() == 6)
+            shift = -1;
+        else if(SSGs[i].getId() == 7)
+            shift = 1;
+        else if(SSGs[i].getId() == 8)
+            shift = 2;
+        else if(SSGs[i].getId() == 9)
+            shift = 1;
+        else if(SSGs[i].getId() == 10)
+            shift = -1;
+        else if(SSGs[i].getId() == 11)
+            shift = -0.7;
+        else if(SSGs[i].getId() == 12)
+            shift = 0;
+        else if(SSGs[i].getId() == 13)
+            shift = 1;
+        else if(SSGs[i].getId() == 14)
+            shift = 1;
+        else if(SSGs[i].getId() == 15)
+            shift = 1;
+        else if(SSGs[i].getId() == 16)
+            shift = 1;
+        else if(SSGs[i].getId() == 17)
+            shift = -2.5;
+        else if(SSGs[i].getId() == 18)
+            shift = -2;
+        else if(SSGs[i].getId() == 19)
+            shift = 1;
 
 
         //fr-2
@@ -2093,28 +2303,28 @@ void TSCHybrid::plotDetectedPlaces(vector<SSG> SSGs, const vector<string>& image
 //            shift = -1;
 
 //        //sa-1
-        if(SSGs[i].getId() == 0)
-            shift = 0.5;
-        else if(SSGs[i].getId() == 1)
-            shift = -1;
-        else if(SSGs[i].getId() == 2)
-            shift = 1;
-        else if(SSGs[i].getId() == 3)
-            shift = -0.5;
-        else if(SSGs[i].getId() == 4)
-            shift = -2;
-        else if(SSGs[i].getId() == 5)
-            shift = 1;
-        else if(SSGs[i].getId() == 6)
-            shift = -1;
-        else if(SSGs[i].getId() == 7)
-            shift = -1;
-        else if(SSGs[i].getId() == 8)
-            shift = -1;
-        else if(SSGs[i].getId() == 9)
-            shift = 1;
-        else if(SSGs[i].getId() == 10)
-            shift = 1;
+//        if(SSGs[i].getId() == 0)
+//            shift = 0.5;
+//        else if(SSGs[i].getId() == 1)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 2)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 3)
+//            shift = -0.5;
+//        else if(SSGs[i].getId() == 4)
+//            shift = -2;
+//        else if(SSGs[i].getId() == 5)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 6)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 7)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 8)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 9)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 10)
+//            shift = 1;
 
         //sa-2
 //        if(SSGs[i].getId() == 0)

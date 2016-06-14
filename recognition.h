@@ -21,7 +21,7 @@ using namespace std;
 enum RecognitionStatus {RECOGNITION_ERROR, NOT_RECOGNIZED, RECOGNIZED};
 
 
-enum RecognitionMethod {REC_TYPE_SSG_NORMAL, REC_TYPE_SSG_VOTING, REC_TYPE_SSG_BEST, REC_TYPE_BD_NORMAL, REC_TYPE_BD_COLOR, REC_TYPE_BD_COLOR_LOG, REC_TYPE_BD_VOTING, REC_TYPE_BD_BEST, REC_TYPE_HYBRID};
+enum RecognitionMethod {REC_TYPE_SSG_NORMAL, REC_TYPE_SSG_VOTING, REC_TYPE_BD_NORMAL, REC_TYPE_BD_COLOR, REC_TYPE_BD_COLOR_LOG, REC_TYPE_BD_VOTING, REC_TYPE_HYBRID};
 /////////////////////////////////////////////
 //Performs recognition on hierarchical tree//
 //SSGs are used as tree elements           //
@@ -55,6 +55,7 @@ private:
     void processTree(Node* tree, int size);
     void drawSSG(Mat& img, SSG ssg, Point coord);
     int calculateN2NTreeDistance(TreeNode* node1, TreeNode* node2);
+    void getTerminalNodes(TreeNode* node, vector<TreeNode*>& terminal_nodes);
 
 
 public:
@@ -64,10 +65,12 @@ public:
                 Segmentation* seg);
     ~Recognition();
     int performRecognition(vector<PlaceSSG>& places, PlaceSSG new_place, TreeNode** hierarchy);
+    int performRecognition2(vector<PlaceSSG>& places, PlaceSSG new_place, TreeNode** hierarchy);
     void calculateRecPerformance(TreeNode* root);
     void testRecognition();
     void setRecognitionMethod(int method);
     void setNormType(int method);
+    double getDistance(PlaceSSG& p1, PlaceSSG& p2);
     bool next;
 
     

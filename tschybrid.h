@@ -82,6 +82,7 @@ private:
     void plotScoresTSC_(vector<float> scores, Place* current_place, BasePoint cur_base_point, vector<Place> detected_places);
     void plotAvgScoresTSC(vector<float>& scores, std::vector<BasePoint> wholebasepoints, vector<float>& avg_scoress);
     void plotDetectedPlaces(vector<SSG> SSGs, const vector<string>& image_files, Dataset* dataset);
+    void plotDetectedPlacesX(vector<SSG> SSGs, const vector<string>& image_files);
     void showMap(const Mat& M);
     int  detectPlace(vector<float> coherency_scores,
                      vector<int>& detected_places_unfiltered,
