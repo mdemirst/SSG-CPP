@@ -191,12 +191,12 @@ void TSCHybrid::readFromDB()
 
     vector<int> places;
     places.push_back(1);
-    places.push_back(2);
-    places.push_back(3);
-    places.push_back(5);
+//    places.push_back(2);
+//    places.push_back(3);
+//    places.push_back(5);
     //places.push_back(6);
     //places.push_back(7);
-
+    //places.push_back(8);
 
 
     for(int i = 0; i < places.size(); i++)
@@ -1302,7 +1302,8 @@ void TSCHybrid::reRecognize(int method, int norm_type)
     }
 
     qDebug() << "N2N Tree Distances:";
-    recognition->calculateRecPerformance(hierarchy_tree);
+    recognition->calculateN2NDistanceMatrix(hierarchy_tree);
+    //recognition->calculateRecPerformance(hierarchy_tree);
 
 }
 
@@ -1338,7 +1339,9 @@ void TSCHybrid::reRecognize2(int method, int norm_type)
 
     qDebug() << ssg.mean_invariant.size().width << ssg.mean_invariant.size().height;
 
+
     recognition->performRecognition2(places, new_place, &hierarchy_tree);
+    //recognition->calculateN2NDistanceMatrix(hierarchy_tree);
 
 
 }

@@ -139,6 +139,95 @@ void Recognition::drawSSG(Mat& img, SSG ssg, Point coord)
 
 }
 
+void Recognition::drawInnerSSG(Mat& img, SSG ssg, Point coord)
+{
+    Mat img_ssg(params->ssg_params.img_height, params->ssg_params.img_width, CV_8UC3, Scalar(255,255,255));
+
+    for(int i = 0; i < ssg.nodes.size(); i++)
+    {
+        Point p = ssg.nodes[i].first.center;
+        double r = sqrt(ssg.nodes[i].first.area)/4.0;
+        r = max(r,1.0);
+
+        circle(img_ssg,p,r,Scalar(ssg.nodes[i].first.colorB, ssg.nodes[i].first.colorG, ssg.nodes[i].first.colorR), -1);
+    }
+
+    //Predefined size
+    resize(img_ssg, img_ssg, cv::Size(params->rec_params.ssg_w,params->rec_params.ssg_h));
+
+    rectangle(img_ssg, Rect(0,0,img_ssg.size().width-1, img_ssg.size().height-1),Scalar(0,0,0));
+
+    Rect roi = Rect(coord.x-img_ssg.size().width/2, coord.y-img_ssg.size().height/2, img_ssg.size().width, img_ssg.size().height);
+
+    Mat image_roi = img(roi);
+
+    img_ssg.copyTo(image_roi);
+}
+
+void Recognition::drawSSG2(Mat& img, SSG ssg, Point coord)
+{
+    if(coord.y + params->rec_params.ssg_h > img.size().height)
+    {
+        copyMakeBorder(img, img, 0, params->rec_params.ssg_h, 0, 0, BORDER_CONSTANT, Scalar(255,255,255));
+    }
+
+    if(params->rec_params.ssg_w < 10)
+    {
+        stringstream ss;
+        ss.str("");
+        ss << ssg.getId();
+        Point str_coord(coord.x-5, coord.y+25);
+        putText(img, ss.str(), str_coord, FONT_HERSHEY_SIMPLEX, 0.5, getColor(ssg.getColor()),2);
+        circle(img,coord,10,  getColor(ssg.getColor()), -1);
+    }
+    else
+    {
+        vector<string> img_files = getFiles("/home/isl-mahmut/Datasets/fr_seq2_cloudy1/std_cam/");
+        int img_index = (ssg.getEndFrame()+ssg.getStartFrame())/2;
+        Mat img_real = imread(string("/home/isl-mahmut/Datasets/fr_seq2_cloudy1/std_cam/") + img_files[img_index]);
+
+
+        Mat img_ssg(params->ssg_params.img_height, params->ssg_params.img_width, CV_8UC3, Scalar(255,255,255));
+
+        for(int i = 0; i < ssg.nodes.size(); i++)
+        {
+            Point p = ssg.nodes[i].first.center;
+            double r = sqrt(ssg.nodes[i].first.area)/4.0;
+            r = max(r,1.0);
+
+            circle(img_ssg,p,r,Scalar(ssg.nodes[i].first.colorB, ssg.nodes[i].first.colorG, ssg.nodes[i].first.colorR), -1);
+        }
+
+        //Predefined size
+        resize(img_real, img_real, cv::Size(params->rec_params.ssg_w,params->rec_params.ssg_h));
+        resize(img_ssg, img_ssg, cv::Size(params->rec_params.ssg_w,params->rec_params.ssg_h));
+
+        rectangle(img_real, Rect(0,0,img_real.size().width-1, img_real.size().height-1),Scalar(0,0,0));
+        rectangle(img_ssg, Rect(0,0,img_ssg.size().width-1, img_ssg.size().height-1),Scalar(0,0,0));
+
+        Rect roi = Rect(coord.x-img_real.size().width, coord.y, img_real.size().width, img_real.size().height);
+
+        Mat image_roi = img(roi);
+
+        img_real.copyTo(image_roi);
+
+        Rect roi2 = Rect(coord.x, coord.y, img_ssg.size().width, img_ssg.size().height);
+
+        Mat image_roi2 = img(roi2);
+
+        img_ssg.copyTo(image_roi2);
+
+        stringstream ss;
+        ss.str("");
+        ss << ssg.getId();
+        Point str_coord(coord.x+params->rec_params.ssg_w, coord.y+params->rec_params.ssg_h/2.0);
+        putText(img, ss.str(), str_coord, FONT_HERSHEY_SIMPLEX, 0.5, getColor(ssg.getColor()),2);
+
+        circle(img,coord,10,  getColor(ssg.getColor()), -1);
+    }
+
+}
+
 void Recognition::drawBranch(Mat& img, TreeNode* node, int height, double scale_x, double scale_y)
 {
     if(!node->isTerminal())
@@ -153,7 +242,8 @@ void Recognition::drawBranch(Mat& img, TreeNode* node, int height, double scale_
             line(img, top, middle, Scalar(0,0,0), 2);
             line(img, middle, bottom, Scalar(0,0,0), 2);
 
-
+            Point coord(plot_offset+node->getXPos()*scale_x, height - plot_offset - 1 - node->getVal()*scale_y);
+            drawInnerSSG(img, node->getDescriptor()->getMember(0), coord);
 
             drawBranch(img, node->getChildren()[i], height, scale_x, scale_y);
         }
@@ -173,7 +263,7 @@ void Recognition::drawBranch(Mat& img, TreeNode* node, int height, double scale_
         for(int i = 0; i < node->getDescriptor()->getCount(); i++)
         {
             Point ssg_coord(coord.x, coord.y + i*params->rec_params.ssg_h);
-            drawSSG(img, node->getDescriptor()->getMember(i), ssg_coord);
+            drawSSG2(img, node->getDescriptor()->getMember(i), ssg_coord);
         }
 
     }
@@ -217,6 +307,62 @@ void Recognition::sortTerminalNodes(TreeNode* node, int* last_pos)
         sortTerminalNodes(node->getChildren()[i], last_pos);
 }
 
+//Burada memory leak olacak
+PlaceSSG* Recognition::mergeSSGs(PlaceSSG* p1, PlaceSSG* p2)
+{
+    SSG ssg(0);
+
+    if(p1->getMember(0).nodes.size() == 0 || p2->getMember(0).nodes.size() == 0)
+    {
+        PlaceSSG* place_ssg = new PlaceSSG(0,ssg);
+        return place_ssg;
+    }
+
+
+    Mat C, P;
+    SSG ssg1 = p1->getMember(0);
+    SSG ssg2 = p2->getMember(0);
+    qDebug() << "a";
+    vector<pair<NodeSig,int> > ns1 = ssg1.nodes;
+    vector<pair<NodeSig,int> > ns2 = ssg2.nodes;
+
+
+        qDebug() << "oyle iste";
+    gm->matchTwoImages(ssg1, ssg2, P, C);
+    qDebug() << "geldmedi";
+
+    vector<Point> nonzero_locs;
+    findNonZero(P,nonzero_locs);
+
+    qDebug() << "geldmedia";
+
+
+    for(int i = 0; i < nonzero_locs.size(); i++)
+    {
+        float cost = C.at<float>(nonzero_locs[i].y, nonzero_locs[i].x);
+        if(cost < params->rec_params.tau_v)
+        {
+            NodeSig ns;
+            cv::Point p =(ns1[nonzero_locs[i].y].first.center+ns2[nonzero_locs[i].x].first.center);
+            ns.center = cv::Point(p.x/2,p.y/2);
+            ns.area = (ns1[nonzero_locs[i].y].first.area + ns2[nonzero_locs[i].x].first.area) / 2;
+            ns.colorR = (ns1[nonzero_locs[i].y].first.colorR + ns2[nonzero_locs[i].x].first.colorR) / 2;
+            ns.colorG = (ns1[nonzero_locs[i].y].first.colorG + ns2[nonzero_locs[i].x].first.colorG) / 2;
+            ns.colorB = (ns1[nonzero_locs[i].y].first.colorB + ns2[nonzero_locs[i].x].first.colorB) / 2;
+            ssg.nodes.push_back(make_pair(ns,1));
+        }
+    }
+
+    qDebug() << "geldmedib";
+
+    ssg.setColor(ssg1.getColor());
+
+    PlaceSSG* place_ssg = new PlaceSSG(0,ssg);
+
+    qDebug() << "geldmedic";
+    return place_ssg;
+}
+
 TreeNode** Recognition::convert2Tree(Node* tree, int nrNodes, int nrPlaces, vector<PlaceSSG>& places)
 {
     TreeNode* nodes = new TreeNode[nrPlaces+nrNodes];
@@ -237,6 +383,9 @@ TreeNode** Recognition::convert2Tree(Node* tree, int nrNodes, int nrPlaces, vect
         //qDebug() << tree[i].distance;
         nodes[i+nrPlaces].addChild(&nodes[tree[i].left]);
         nodes[i+nrPlaces].addChild(&nodes[tree[i].right]);
+
+        //set merged ssg for inner nodes
+        nodes[i+nrPlaces].setDescriptor(mergeSSGs(nodes[tree[i].left].getDescriptor(), nodes[tree[i].right].getDescriptor()));
     }
 
     TreeNode* root_node = &nodes[nrPlaces+nrNodes-1];
@@ -931,6 +1080,28 @@ void Recognition::calculateRecPerformance(TreeNode* root)
         qDebug() << calculateN2NTreeDistance(findNode(site1, place1, root), findNode(site2, place2, root));
     }
 
+}
+
+void Recognition::calculateN2NDistanceMatrix(TreeNode* root_node)
+{
+    vector<TreeNode*> all_terminal_nodes;
+    getTerminalNodes(root_node, all_terminal_nodes);
+
+    int size = all_terminal_nodes.size();
+
+    Mat N2N_distance_matrix = Mat::zeros(size, size, CV_32F);
+    for(int i = 0; i < size; i++)
+    {
+        for(int j = 0; j < size; j++)
+        {
+            float dist = calculateN2NTreeDistance(all_terminal_nodes[i], all_terminal_nodes[j]);
+//            Mat P, C;
+//            float dist = gm->matchTwoImages(all_terminal_nodes[i]->getDescriptor()->getMember(0),all_terminal_nodes[j]->getDescriptor()->getMember(0),P,C);
+            //float dist = calculateDistanceTSC(all_terminal_nodes[i]->getDescriptor()->getMember(0),all_terminal_nodes[j]->getDescriptor()->getMember(0));
+            N2N_distance_matrix.at<float>(all_terminal_nodes[i]->getLabel(),all_terminal_nodes[j]->getLabel()) = dist;
+        }
+    }
+    cerr << N2N_distance_matrix << endl;
 }
 
 int Recognition::calculateN2NTreeDistance(TreeNode* node1, TreeNode* node2)

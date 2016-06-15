@@ -6,6 +6,8 @@
 
 QT       += core gui sql
 
+CONFIG += console
+
 TARGET = SegmentSummaryGraphs
 TEMPLATE = app
 
