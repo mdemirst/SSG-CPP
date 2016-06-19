@@ -120,15 +120,11 @@ private slots:
 
     void on_scroll_tau_v_sliderReleased();
 
-    void on_btn_bow_train_clicked();
-
     void on_scroll_bow_coeff_valueChanged(int value);
 
     void on_btn_next_frame_clicked();
 
     void on_btn_init_from_db_clicked();
-
-    void on_btn_create_db_clicked();
 
 private:
     Ui::MainWindow *ui;

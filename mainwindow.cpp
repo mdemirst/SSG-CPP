@@ -78,13 +78,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->combo_rec_method->addItem("Bubble-Color-wlog",REC_TYPE_BD_COLOR_LOG);
     ui->combo_rec_method->addItem("SSG",REC_TYPE_SSG_NORMAL);
     ui->combo_rec_method->addItem("SSG-Voting",REC_TYPE_SSG_VOTING);
-    ui->combo_rec_method->addItem("Hybrid",REC_TYPE_HYBRID);
 
-    //Fill BD recognition norm type
-    ui->combo_norm_type->addItem("BD NORM_L2",4);
-    ui->combo_norm_type->addItem("BD NORM_L2SQR",5);
-    ui->combo_norm_type->addItem("BD NORM_L1",2);
-    ui->combo_norm_type->addItem("BD NORM_INF",1);
 }
 
 MainWindow::~MainWindow()
@@ -137,9 +131,6 @@ void MainWindow::on_scroll_tau_n_valueChanged(int value)
 {
     ui->tb_tau_n->setText(QString::number(value));
     params->ssg_params.tau_n = value;
-
-    if(auto_tune)
-        tsc_hybrid->recalculateCoherencyAndPlot();
 }
 
 void MainWindow::on_scroll_tau_c_valueChanged(int value)
@@ -152,18 +143,12 @@ void MainWindow::on_scroll_tau_w_valueChanged(int value)
 {
     ui->tb_tau_w->setText(QString::number(value));
     params->seg_track_params.tau_w = value;
-
-    if(auto_tune)
-        tsc_hybrid->recalculateCoherencyAndPlot();
 }
 
 void MainWindow::on_scroll_tau_f_valueChanged(int value)
 {
     ui->tb_tau_f->setText(QString::number(value));
     params->ssg_params.tau_f = value;
-
-    if(auto_tune)
-        tsc_hybrid->recalculateCoherencyAndPlot();
 }
 
 void MainWindow::on_scroll_tau_m_valueChanged(int value)
@@ -177,16 +162,15 @@ void MainWindow::on_scroll_tau_p_sliderReleased()
     on_scroll_tau_p_valueChanged(ui->scroll_tau_p->value());
 
     int method = ui->combo_rec_method->itemData(ui->combo_rec_method->currentIndex()).toInt();
-    int norm_type = ui->combo_norm_type->itemData(ui->combo_norm_type->currentIndex()).toInt();
     if(ui->cb_auto_tune->isChecked())
     {
         if(ui->cb_rec_active->isChecked())
         {
-            tsc_hybrid->reRecognize(method, norm_type);
+            tsc_hybrid->reRecognizeInOrder(method);
         }
         else
         {
-            tsc_hybrid->reRecognize2(method, norm_type);
+            tsc_hybrid->reRecognizeBatch(method);
         }
     }
 }
@@ -196,16 +180,15 @@ void MainWindow::on_scroll_tau_r_sliderReleased()
     on_scroll_tau_r_valueChanged(ui->scroll_tau_r->value());
 
     int method = ui->combo_rec_method->itemData(ui->combo_rec_method->currentIndex()).toInt();
-    int norm_type = ui->combo_norm_type->itemData(ui->combo_norm_type->currentIndex()).toInt();
     if(ui->cb_auto_tune->isChecked())
     {
         if(ui->cb_rec_active->isChecked())
         {
-            tsc_hybrid->reRecognize(method, norm_type);
+            tsc_hybrid->reRecognizeInOrder(method);
         }
         else
         {
-            tsc_hybrid->reRecognize2(method, norm_type);
+            tsc_hybrid->reRecognizeBatch(method);
         }
     }
 }
@@ -215,16 +198,15 @@ void MainWindow::on_scroll_tau_v_sliderReleased()
     on_scroll_tau_v_valueChanged(ui->scroll_tau_v->value());
 
     int method = ui->combo_rec_method->itemData(ui->combo_rec_method->currentIndex()).toInt();
-    int norm_type = ui->combo_norm_type->itemData(ui->combo_norm_type->currentIndex()).toInt();
     if(ui->cb_auto_tune->isChecked())
     {
         if(ui->cb_rec_active->isChecked())
         {
-            tsc_hybrid->reRecognize(method, norm_type);
+            tsc_hybrid->reRecognizeInOrder(method);
         }
         else
         {
-            tsc_hybrid->reRecognize2(method, norm_type);
+            tsc_hybrid->reRecognizeBatch(method);
         }
     }
 }
@@ -263,45 +245,30 @@ void MainWindow::on_scroll_disapp_coeff1_valueChanged(int value)
 {
     ui->tb_disapp1->setText(QString::number(value/10.0));
     params->ssg_params.coeff_node_disappear1 = value/10.0;
-
-    if(auto_tune)
-        tsc_hybrid->recalculateCoherencyAndPlot();
 }
 
 void MainWindow::on_scroll_disapp_coeff2_valueChanged(int value)
 {
     ui->tb_disapp2->setText(QString::number(value/10.0));
     params->ssg_params.coeff_node_disappear2 = value/10.0;
-
-    if(auto_tune)
-        tsc_hybrid->recalculateCoherencyAndPlot();
 }
 
 void MainWindow::on_scroll_appear_coeff_valueChanged(int value)
 {
     ui->tb_appear->setText(QString::number(value/10.0));
     params->ssg_params.coeff_node_appear = value/10.0;
-
-    if(auto_tune)
-        tsc_hybrid->recalculateCoherencyAndPlot();
 }
 
 void MainWindow::on_scroll_coh_base_valueChanged(int value)
 {
     ui->tb_coh_exp_base->setText(QString::number(value));
     params->ssg_params.coeff_coh_exp_base = value;
-
-    if(auto_tune)
-        tsc_hybrid->recalculateCoherencyAndPlot();
 }
 
 void MainWindow::on_scroll_appear_thres_valueChanged(int value)
 {
     ui->tb_coh_app_thres->setText(QString::number(value/100.0));
     params->ssg_params.coeff_coh_appear_thres = value/100.0;
-
-    if(auto_tune)
-        tsc_hybrid->recalculateCoherencyAndPlot();
 }
 
 void MainWindow::on_scroll_tau_r_valueChanged(int value)
@@ -390,7 +357,6 @@ void MainWindow::on_btn_merged_process_images_clicked()
                      this, SLOT(showMatchImage(QImage)));
 
     ui->lbl_map->installEventFilter(tsc_hybrid);
-    tsc_hybrid->processImages(datasets[0].location, datasets[0].start_idx, datasets[0].end_idx);
 }
 
 void MainWindow::on_pushButton_clicked()
@@ -409,7 +375,6 @@ void MainWindow::printMessage(QString str)
 
 void MainWindow::on_btn_test_next_clicked()
 {
-    recognition->next = true;
 }
 
 
@@ -461,7 +426,7 @@ void MainWindow::on_btn_process_hierarchical_clicked()
         bubbleProcess::calculateImagePanAngles(FOCAL_LENGHT_PIXELS, params->ssg_params.img_org_width, params->ssg_params.img_org_height);
         bubbleProcess::calculateImageTiltAngles(FOCAL_LENGHT_PIXELS, params->ssg_params.img_org_width, params->ssg_params.img_org_height);
 
-        tsc_hybrid->processImagesHierarchical_(datasets[i].location, datasets[i].start_idx, datasets[i].end_idx, datasets[i].dataset_id);
+        tsc_hybrid->processImagesHierarchical(datasets[i].location, datasets[i].start_idx, datasets[i].end_idx, datasets[i].dataset_id);
         //tsc_hybrid->processImagesHierarchical2(datasets[i].location, datasets[i].start_idx, datasets[i].end_idx, datasets[i].dataset_id);
         //tsc_hybrid->createDatabase(datasets[i].location, datasets[i].start_idx, datasets[i].end_idx, datasets[i].dataset_id);
         //tsc_hybrid->processImagesHierarchicalFromDB(datasets[i].location, datasets[i].start_idx, datasets[i].end_idx, datasets[i].dataset_id);
@@ -514,17 +479,6 @@ void MainWindow::on_cb_auto_tune_clicked()
         this->auto_tune = false;
 }
 
-void MainWindow::on_btn_bow_train_clicked()
-{
-    tsc_hybrid = new TSCHybrid(ui->custom_plot_merged_tsc, ui->custom_plot_merged_ssg, ui->place_map, ui->custom_plot_tsc_average,
-                               params,
-                               &datasets[0]);
-
-    tsc_hybrid->performBOWTrain(datasets[0].location, datasets[0].start_idx, datasets[0].end_idx, 5);
-}
-
-
-
 void MainWindow::on_btn_next_frame_clicked()
 {
     tsc_hybrid->next_frame = true;
@@ -554,55 +508,4 @@ void MainWindow::on_btn_init_from_db_clicked()
     ui->lbl_map->installEventFilter(tsc_hybrid);
 
     tsc_hybrid->readFromDB();
-}
-
-void MainWindow::on_btn_create_db_clicked()
-{
-    if(tsc_hybrid == NULL)
-    {
-        tsc_hybrid = new TSCHybrid(ui->custom_plot_merged_tsc, ui->custom_plot_merged_ssg, ui->place_map, ui->custom_plot_tsc_average,
-                                   params,
-                                   &datasets[0]);
-
-        QObject::connect(tsc_hybrid, SIGNAL(showImgOrg(QImage)),
-                         this, SLOT(showImgOrg(QImage)));
-        QObject::connect(tsc_hybrid, SIGNAL(showSSG(QImage)),
-                         this, SLOT(showSSG(QImage)));
-        QObject::connect(tsc_hybrid, SIGNAL(showMap(QImage)),
-                         this, SLOT(showMap(QImage)));
-        QObject::connect(tsc_hybrid->seg_track, SIGNAL(showImgOrg(QImage)),
-                         this, SLOT(showImgOrg(QImage)));
-        QObject::connect(tsc_hybrid->seg_track->gm, SIGNAL(showMatchImage(QImage)),
-                         this, SLOT(showMatchImage(QImage)));
-        QObject::connect(tsc_hybrid->recognition, SIGNAL(showTree(QImage)),
-                         this, SLOT(showTree(QImage)));
-        QObject::connect(tsc_hybrid->recognition, SIGNAL(printMessage(QString)),
-                         this, SLOT(printMessage(QString)));
-
-        ui->lbl_map->installEventFilter(tsc_hybrid);
-    }
-    else
-    {
-        if(tsc_hybrid->is_processing)
-        {
-            qDebug() << "Stop process first!";
-            return;
-        }
-    }
-
-    for(int i = 0; i < datasets.size(); i++)
-    {
-        *params = *params_all[i];
-
-        //Save parameters
-        stringstream ss;
-        ss << getOutputFolder(false) << "parameters-" << datasets[i].dataset_id << ".txt";
-        saveParameters(ss.str(),params);
-
-        //Bubble process init
-        bubbleProcess::calculateImagePanAngles(FOCAL_LENGHT_PIXELS, params->ssg_params.img_org_width, params->ssg_params.img_org_height);
-        bubbleProcess::calculateImageTiltAngles(FOCAL_LENGHT_PIXELS, params->ssg_params.img_org_width, params->ssg_params.img_org_height);
-
-        tsc_hybrid->createDatabase(datasets[i].location, datasets[i].start_idx, datasets[i].end_idx, datasets[i].dataset_id);
-    }
 }

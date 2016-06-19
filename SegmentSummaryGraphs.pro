@@ -46,7 +46,8 @@ SOURCES += main.cpp\
     cluster.c \
     recognition.cpp \
     utilTypes.cpp \
-    databasehandler.cpp
+    databasehandler.cpp \
+    experimentalData.cpp
 
 HEADERS  += mainwindow.h \
       segmentation.h \
@@ -80,7 +81,8 @@ HEADERS  += mainwindow.h \
     cluster.h \
     recognition.h \
     SimpleMatrix.h \
-    databasehandler.h
+    databasehandler.h \
+    experimentalData.h
 
 FORMS    += mainwindow.ui
 

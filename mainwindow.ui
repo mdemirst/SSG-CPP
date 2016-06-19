@@ -30,7 +30,7 @@
        </size>
       </property>
       <property name="currentIndex">
-       <number>4</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="tab">
        <attribute name="title">
@@ -197,7 +197,7 @@ QGroupBox::title {
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>98</width>
+                  <width>1686</width>
                   <height>198</height>
                  </rect>
                 </property>
@@ -1330,27 +1330,6 @@ QGroupBox::title {
                </property>
               </widget>
              </item>
-             <item>
-              <widget class="QPushButton" name="btn_create_db">
-               <property name="text">
-                <string>Create Database</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="btn_merged_process_images">
-               <property name="text">
-                <string>Process Images</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="btn_bow_train">
-               <property name="text">
-                <string>BOW Train</string>
-               </property>
-              </widget>
-             </item>
             </layout>
            </widget>
           </item>
@@ -1395,8 +1374,8 @@ QGroupBox::title {
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>451</width>
-                  <height>66</height>
+                  <width>1378</width>
+                  <height>298</height>
                  </rect>
                 </property>
                 <layout class="QHBoxLayout" name="horizontalLayout_11">
@@ -1553,7 +1532,7 @@ QGroupBox::title {
                    <rect>
                     <x>0</x>
                     <y>0</y>
-                    <width>98</width>
+                    <width>1360</width>
                     <height>38</height>
                    </rect>
                   </property>
@@ -1603,8 +1582,8 @@ QGroupBox::title {
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>128</width>
-                  <height>253</height>
+                  <width>1378</width>
+                  <height>398</height>
                  </rect>
                 </property>
                 <layout class="QVBoxLayout" name="verticalLayout">
@@ -1677,7 +1656,7 @@ QGroupBox::title {
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>168</width>
+                  <width>1362</width>
                   <height>147</height>
                  </rect>
                 </property>
@@ -1905,8 +1884,8 @@ QGroupBox::title {
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>185</width>
-                  <height>35</height>
+                  <width>1686</width>
+                  <height>441</height>
                  </rect>
                 </property>
                 <layout class="QVBoxLayout" name="verticalLayout_23">
@@ -1969,9 +1948,6 @@ QGroupBox::title {
              </item>
              <item>
               <widget class="QComboBox" name="combo_rec_method"/>
-             </item>
-             <item>
-              <widget class="QComboBox" name="combo_norm_type"/>
              </item>
              <item>
               <widget class="QLineEdit" name="tb_tau_p">
@@ -2112,7 +2088,7 @@ QGroupBox::title {
              <x>0</x>
              <y>0</y>
              <width>1708</width>
-             <height>729</height>
+             <height>762</height>
             </rect>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_35">
