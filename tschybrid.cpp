@@ -193,7 +193,7 @@ void TSCHybrid::readFromDB()
     places.push_back(1);
 //    places.push_back(2);
 //    places.push_back(3);
-//    places.push_back(5);
+    places.push_back(5);
     //places.push_back(6);
     //places.push_back(7);
     //places.push_back(8);
@@ -1301,9 +1301,9 @@ void TSCHybrid::reRecognize(int method, int norm_type)
         recognition->performRecognition2(places, new_place, &hierarchy_tree);
     }
 
-    qDebug() << "N2N Tree Distances:";
-    recognition->calculateN2NDistanceMatrix(hierarchy_tree);
-    //recognition->calculateRecPerformance(hierarchy_tree);
+    //qDebug() << "N2N Tree Distances:";
+    //recognition->calculateN2NDistanceMatrix(hierarchy_tree);
+    recognition->calculateRecPerformance(hierarchy_tree);
 
 }
 
@@ -1329,7 +1329,6 @@ void TSCHybrid::reRecognize2(int method, int norm_type)
         SSGProc::filterSummarySegments(ssg, params->ssg_params.tau_p);
         PlaceSSG new_place(ssg.getId(), ssg);
         places.push_back(new_place);
-        qDebug() << ssg.mean_invariant.size().width << ssg.mean_invariant.size().height;
     }
 
     SSG ssg = SSGs[i];
@@ -1337,10 +1336,12 @@ void TSCHybrid::reRecognize2(int method, int norm_type)
 
     PlaceSSG new_place(ssg.getId(), ssg);
 
-    qDebug() << ssg.mean_invariant.size().width << ssg.mean_invariant.size().height;
-
-
     recognition->performRecognition2(places, new_place, &hierarchy_tree);
+    //recognition->calculateRecPerformance3(places);
+
+    //recognition->calculatePlaceCandidates(places);
+    //double** dist_matrix = recognition->calculateDistanceMatrix(places);
+    //recognition->calculateRecPerformance2(places.size(), dist_matrix, hierarchy_tree);
     //recognition->calculateN2NDistanceMatrix(hierarchy_tree);
 
 

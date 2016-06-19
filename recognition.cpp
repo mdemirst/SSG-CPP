@@ -152,6 +152,12 @@ void Recognition::drawInnerSSG(Mat& img, SSG ssg, Point coord)
         circle(img_ssg,p,r,Scalar(ssg.nodes[i].first.colorB, ssg.nodes[i].first.colorG, ssg.nodes[i].first.colorR), -1);
     }
 
+    stringstream ss;
+    ss.str("");
+    ss << ssg.getId();
+    Point str_coord(coord.x+params->rec_params.ssg_w/2, coord.y-3);
+    putText(img, ss.str(), str_coord, FONT_HERSHEY_SIMPLEX, 0.5, getColor(ssg.getColor()),2);
+
     //Predefined size
     resize(img_ssg, img_ssg, cv::Size(params->rec_params.ssg_w,params->rec_params.ssg_h));
 
@@ -242,8 +248,8 @@ void Recognition::drawBranch(Mat& img, TreeNode* node, int height, double scale_
             line(img, top, middle, Scalar(0,0,0), 2);
             line(img, middle, bottom, Scalar(0,0,0), 2);
 
-            Point coord(plot_offset+node->getXPos()*scale_x, height - plot_offset - 1 - node->getVal()*scale_y);
-            drawInnerSSG(img, node->getDescriptor()->getMember(0), coord);
+            //Point coord(plot_offset+node->getXPos()*scale_x, height - plot_offset - 1 - node->getVal()*scale_y);
+            //drawInnerSSG(img, node->getDescriptor()->getMember(0), coord);
 
             drawBranch(img, node->getChildren()[i], height, scale_x, scale_y);
         }
@@ -308,13 +314,13 @@ void Recognition::sortTerminalNodes(TreeNode* node, int* last_pos)
 }
 
 //Burada memory leak olacak
-PlaceSSG* Recognition::mergeSSGs(PlaceSSG* p1, PlaceSSG* p2)
+PlaceSSG* Recognition::mergeSSGs(PlaceSSG* p1, PlaceSSG* p2, int id)
 {
-    SSG ssg(0);
+    SSG ssg(id);
 
     if(p1->getMember(0).nodes.size() == 0 || p2->getMember(0).nodes.size() == 0)
     {
-        PlaceSSG* place_ssg = new PlaceSSG(0,ssg);
+        PlaceSSG* place_ssg = new PlaceSSG(id,ssg);
         return place_ssg;
     }
 
@@ -322,19 +328,15 @@ PlaceSSG* Recognition::mergeSSGs(PlaceSSG* p1, PlaceSSG* p2)
     Mat C, P;
     SSG ssg1 = p1->getMember(0);
     SSG ssg2 = p2->getMember(0);
-    qDebug() << "a";
     vector<pair<NodeSig,int> > ns1 = ssg1.nodes;
     vector<pair<NodeSig,int> > ns2 = ssg2.nodes;
 
 
-        qDebug() << "oyle iste";
     gm->matchTwoImages(ssg1, ssg2, P, C);
-    qDebug() << "geldmedi";
 
     vector<Point> nonzero_locs;
     findNonZero(P,nonzero_locs);
 
-    qDebug() << "geldmedia";
 
 
     for(int i = 0; i < nonzero_locs.size(); i++)
@@ -353,13 +355,11 @@ PlaceSSG* Recognition::mergeSSGs(PlaceSSG* p1, PlaceSSG* p2)
         }
     }
 
-    qDebug() << "geldmedib";
 
     ssg.setColor(ssg1.getColor());
 
     PlaceSSG* place_ssg = new PlaceSSG(0,ssg);
 
-    qDebug() << "geldmedic";
     return place_ssg;
 }
 
@@ -385,7 +385,7 @@ TreeNode** Recognition::convert2Tree(Node* tree, int nrNodes, int nrPlaces, vect
         nodes[i+nrPlaces].addChild(&nodes[tree[i].right]);
 
         //set merged ssg for inner nodes
-        nodes[i+nrPlaces].setDescriptor(mergeSSGs(nodes[tree[i].left].getDescriptor(), nodes[tree[i].right].getDescriptor()));
+        nodes[i+nrPlaces].setDescriptor(mergeSSGs(nodes[tree[i].left].getDescriptor(), nodes[tree[i].right].getDescriptor(), i+nrPlaces));
     }
 
     TreeNode* root_node = &nodes[nrPlaces+nrNodes-1];
@@ -655,6 +655,9 @@ int Recognition::performRecognition2(vector<PlaceSSG>& places, PlaceSSG new_plac
     //We'll push new place into places vector, then erase at the end
     places.push_back(new_place);
 
+    //calculcate place candidates
+    vector<vector<int> > candidates_mat = calculatePlaceCandidates(places);
+
     //If there is not enough place for recognition
     if(places.size() < 2)
         return RECOGNITION_ERROR;
@@ -705,13 +708,25 @@ int Recognition::performRecognition2(vector<PlaceSSG>& places, PlaceSSG new_plac
 
         if(closest_node != NULL)
         {
-            qDebug() << "Recognized place! " << closest_node->getLabel() << "<-" << new_place_node->getLabel();
-            for(int i = 0; i < new_place_node->getDescriptor()->getCount(); i++)
-                closest_node->getDescriptor()->addMember(new_place_node->getDescriptor()->getMember(i));
+            vector<int> candidates = candidates_mat[new_place_node->getLabel()];
+            //Check candidates contains recognized place
+            if(find(candidates.begin(), candidates.end(),closest_node->getLabel()) != candidates.end())
+            {
+                qDebug() << "Recognized!" << closest_node->getDescriptor()->getMember(0).getId() << "->" << new_place_node->getDescriptor()->getMember(0).getId();
 
-            places.erase(places.end());
+                //qDebug() << "Recognized place! " << closest_node->getLabel() << "<-" << new_place_node->getLabel();
+                for(int i = 0; i < new_place_node->getDescriptor()->getCount(); i++)
+                    closest_node->getDescriptor()->addMember(new_place_node->getDescriptor()->getMember(i));
 
-            recognition_status = RECOGNIZED;
+                places.erase(places.end());
+
+                recognition_status = RECOGNIZED;
+
+            }
+            else
+            {
+                qDebug() << "Couldn't pass SSG candidates test" << closest_node->getDescriptor()->getMember(0).getId() << "->" << new_place_node->getDescriptor()->getMember(0).getId();
+            }
         }
     }
 
@@ -990,6 +1005,111 @@ void Recognition::generateRAGs(const Node* tree, int nTree, vector<vector<NodeSi
 //    return false;
 //}
 
+
+void Recognition::calculateRecPerformance2(int nrPlaces, double** dist_matrix, TreeNode* root)
+{
+    int site1 = 1;
+    int site2 = 5;
+    vector<pair<int, int> > matches;
+    matches.push_back(make_pair(0, 0 ));
+    matches.push_back(make_pair(1, 1 ));
+    matches.push_back(make_pair(2, 3 ));
+    matches.push_back(make_pair(3, 4 ));
+    matches.push_back(make_pair(5, 7 ));
+    matches.push_back(make_pair(6, 8 ));
+    matches.push_back(make_pair(7, 9 ));
+    matches.push_back(make_pair(8, 10));
+    matches.push_back(make_pair(9, 14));
+    matches.push_back(make_pair(10, 14));
+    matches.push_back(make_pair(11, 14));
+    matches.push_back(make_pair(13, 15));
+    matches.push_back(make_pair(14, 16));
+    matches.push_back(make_pair(15, 17));
+    matches.push_back(make_pair(16, 18));
+    matches.push_back(make_pair(17, 19));
+    matches.push_back(make_pair(18, 21));
+
+    qDebug() << "Distances to match";
+    for(int i = 0; i < matches.size(); i++)
+    {
+        TreeNode* n1 = findNode(site1, matches[i].first, root);
+        TreeNode* n2 = findNode(site2, matches[i].second, root);
+        int n1_label = n1->getLabel();
+        int n2_label = n2->getLabel();
+
+        float n1n2_dist = dist_matrix[n1_label][n2_label];
+        int count = 0;
+        for(int j = 0; j < nrPlaces; j++)
+        {
+            if(j != n1_label && dist_matrix[n1_label][j] < n1n2_dist)
+            {
+                count++;
+            }
+        }
+        qDebug() << matches[i].first << "->" << matches[i].second << ":" << count;
+    }
+}
+
+void Recognition::calculateRecPerformance3(vector<PlaceSSG> places)
+{
+    int site1 = 1;
+    int site2 = 5;
+    vector<pair<int, int> > matches;
+    matches.push_back(make_pair(0, 0 ));
+    matches.push_back(make_pair(1, 1 ));
+    matches.push_back(make_pair(2, 3 ));
+    matches.push_back(make_pair(3, 4 ));
+    matches.push_back(make_pair(5, 7 ));
+    matches.push_back(make_pair(6, 8 ));
+    matches.push_back(make_pair(7, 9 ));
+    matches.push_back(make_pair(8, 10));
+    matches.push_back(make_pair(9, 14));
+    matches.push_back(make_pair(10, 14));
+    matches.push_back(make_pair(11, 14));
+    matches.push_back(make_pair(13, 15));
+    matches.push_back(make_pair(14, 16));
+    matches.push_back(make_pair(15, 17));
+    matches.push_back(make_pair(16, 18));
+    matches.push_back(make_pair(17, 19));
+    matches.push_back(make_pair(18, 21));
+    int nrPlaces1 = 19;
+
+    vector<vector<int> > candidates_mat = calculatePlaceCandidates(places);
+
+    double** dist_matrix = calculateDistanceMatrix(places);
+
+    for(int i = 0; i < matches.size(); i++)
+    {
+        int n1 = matches[i].first;
+
+        float best_score = 1000;
+        float best_id = -1;
+        for(int j = 0; j < candidates_mat[n1].size(); j++)
+        {
+            int n2 = candidates_mat[n1][j];
+            if(n1 != n2 && dist_matrix[n1][n2] < best_score)
+            {
+                best_score = dist_matrix[n1][n2];
+                best_id = n2;
+            }
+        }
+
+        //qDebug() << n1 << "->" << best_id-nrPlaces1;
+        if(best_score < params->rec_params.tau_r)
+        {
+            if(best_id == matches[i].second+nrPlaces1)
+                qDebug() << 1;
+            else
+                qDebug() << -1;
+        }
+        else
+        {
+            qDebug() << 0;
+        }
+
+    }
+}
+
 void Recognition::calculateRecPerformance(TreeNode* root)
 {
     int site1 = 1;
@@ -1064,6 +1184,45 @@ void Recognition::calculateRecPerformance(TreeNode* root)
 //    matches.push_back(make_pair(28, 24));
 
 
+    qDebug() << "N2N";
+    for(int i = 0; i < matches.size(); i++)
+    {
+        int place1 = matches[i].first;
+        int place2 = matches[i].second;
+
+
+        TreeNode* n1 = findNode(site1, place1, root);
+        TreeNode* n2 = findNode(site2, place2, root);
+
+        //qDebug() << n1->getLabel()<< n2->getLabel();
+
+        //qDebug() << place1 << "\t" << place2 << "\t" << calculateN2NTreeDistance(findNode(site1, place1, root), findNode(site2, place2, root));
+        Mat P, C;
+
+        //qDebug() << findNode(site1, place1, root)->getDescriptor()->getCount() << findNode(site2, place2, root)->getDescriptor()->getCount();
+        qDebug() << calculateN2NTreeDistance(findNode(site1, place1, root), findNode(site2, place2, root));
+    }
+
+    qDebug() << "SSG";
+    for(int i = 0; i < matches.size(); i++)
+    {
+        int place1 = matches[i].first;
+        int place2 = matches[i].second;
+
+
+        TreeNode* n1 = findNode(site1, place1, root);
+        TreeNode* n2 = findNode(site2, place2, root);
+
+        //qDebug() << n1->getLabel()<< n2->getLabel();
+
+        //qDebug() << place1 << "\t" << place2 << "\t" << calculateN2NTreeDistance(findNode(site1, place1, root), findNode(site2, place2, root));
+        Mat P, C;
+
+        //qDebug() << findNode(site1, place1, root)->getDescriptor()->getCount() << findNode(site2, place2, root)->getDescriptor()->getCount();
+        qDebug() << gm->matchTwoImages(findNode(site1, place1, root)->getDescriptor()->getMember(0),findNode(site2, place2, root)->getDescriptor()->getMember(0),P,C);
+    }
+
+    qDebug() << "BD";
 
     for(int i = 0; i < matches.size(); i++)
     {
@@ -1077,9 +1236,70 @@ void Recognition::calculateRecPerformance(TreeNode* root)
         //qDebug() << n1->getLabel()<< n2->getLabel();
 
         //qDebug() << place1 << "\t" << place2 << "\t" << calculateN2NTreeDistance(findNode(site1, place1, root), findNode(site2, place2, root));
-        qDebug() << calculateN2NTreeDistance(findNode(site1, place1, root), findNode(site2, place2, root));
+        Mat P, C;
+
+        //qDebug() << findNode(site1, place1, root)->getDescriptor()->getCount() << findNode(site2, place2, root)->getDescriptor()->getCount();
+        qDebug() << calculateDistanceTSC(findNode(site1, place1, root)->getDescriptor()->getMember(0),findNode(site2, place2, root)->getDescriptor()->getMember(0));
     }
 
+}
+
+
+void printMat(Mat mat, int prec)
+{
+    for(int i=0; i<mat.size().height; i++)
+    {
+        cout << "[";
+        for(int j=0; j<mat.size().width; j++)
+        {
+            cout << setprecision(prec) << mat.at<double>(i,j);
+            if(j != mat.size().width-1)
+                cout << ", ";
+            else
+                cout << "]" << endl;
+        }
+    }
+}
+
+vector<vector<int> > Recognition::calculatePlaceCandidates(vector<PlaceSSG>& places)
+{
+    Mat cue_matrix = Mat::zeros(places.size(), places.size(), CV_32F);
+    vector<vector<int> > candidates_mat;
+
+    for(int i = 0; i < places.size(); i++)
+    {
+        vector<int> candidates_vec;
+        for(int j = 0; j < places.size(); j++)
+        {
+            Mat P, C;
+            gm->matchTwoImages(places[i].getMember(0),places[j].getMember(0),P,C);
+
+            vector<Point> nonzero_locs;
+            findNonZero(P,nonzero_locs);
+
+            int nr_cue = 0;
+            for(int i = 0; i < nonzero_locs.size(); i++)
+            {
+                float cost = C.at<float>(nonzero_locs[i].y, nonzero_locs[i].x);
+                if(cost < params->rec_params.tau_v)
+                {
+                    nr_cue++;
+                }
+            }
+
+            cue_matrix.at<float>(i,j) = nr_cue;
+
+            if(nr_cue > 0)
+            {
+                candidates_vec.push_back(j);
+                //if(places[i].getMember(0).getColor() == 1 && places[j].getMember(0).getColor() == 5)
+                    //qDebug() << places[i].getMember(0).getId() << "->" << places[j].getMember(0).getId() << ":" << nr_cue;
+            }
+        }
+        candidates_mat.push_back(candidates_vec);
+    }
+
+    return candidates_mat;
 }
 
 void Recognition::calculateN2NDistanceMatrix(TreeNode* root_node)
@@ -1094,13 +1314,16 @@ void Recognition::calculateN2NDistanceMatrix(TreeNode* root_node)
     {
         for(int j = 0; j < size; j++)
         {
-            float dist = calculateN2NTreeDistance(all_terminal_nodes[i], all_terminal_nodes[j]);
-//            Mat P, C;
-//            float dist = gm->matchTwoImages(all_terminal_nodes[i]->getDescriptor()->getMember(0),all_terminal_nodes[j]->getDescriptor()->getMember(0),P,C);
-            //float dist = calculateDistanceTSC(all_terminal_nodes[i]->getDescriptor()->getMember(0),all_terminal_nodes[j]->getDescriptor()->getMember(0));
+            //float dist = calculateN2NTreeDistance(all_terminal_nodes[i], all_terminal_nodes[j]);
+
+            Mat P, C;
+            //float dist = gm->matchTwoImages(all_terminal_nodes[i]->getDescriptor()->getMember(0),all_terminal_nodes[j]->getDescriptor()->getMember(0),P,C);
+            float dist = calculateDistanceTSC(all_terminal_nodes[i]->getDescriptor()->getMember(0),all_terminal_nodes[j]->getDescriptor()->getMember(0));
             N2N_distance_matrix.at<float>(all_terminal_nodes[i]->getLabel(),all_terminal_nodes[j]->getLabel()) = dist;
         }
     }
+    setprecision(3);
+
     cerr << N2N_distance_matrix << endl;
 }
 

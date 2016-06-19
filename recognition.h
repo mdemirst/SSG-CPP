@@ -44,7 +44,6 @@ private:
     void generateRAGs(const Node* tree, int nTree, vector<vector<NodeSig> >& rags, vector<Mat>& images);
     Mat saveRAG(const vector<NodeSig> ns, string name);
     void drawTree(TreeNode* root_node, int size, int height, int width);
-    double** calculateDistanceMatrix(vector<PlaceSSG>& places);
     double calculateDistance(SSG& old_place, SSG& detected_place);
     double calculateDistanceTSC(SSG& old_place, SSG& detected_place);
     TreeNode* findNode(int label, TreeNode* root);
@@ -75,7 +74,11 @@ public:
     void setNormType(int method);
     double getDistance(PlaceSSG& p1, PlaceSSG& p2);
     void calculateN2NDistanceMatrix(TreeNode* root_node);
-    PlaceSSG* mergeSSGs(PlaceSSG* p1, PlaceSSG* p2);
+    PlaceSSG* mergeSSGs(PlaceSSG* p1, PlaceSSG* p2, int id);
+    double** calculateDistanceMatrix(vector<PlaceSSG>& places);
+    void calculateRecPerformance2(int nrPlaces, double** dist_matrix, TreeNode* root);
+    void calculateRecPerformance3(vector<PlaceSSG> places);
+    vector<vector<int> > calculatePlaceCandidates(vector<PlaceSSG>& places);
     bool next;
 
     

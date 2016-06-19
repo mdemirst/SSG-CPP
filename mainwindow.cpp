@@ -62,7 +62,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->scroll_bow_coeff->setValue(params->gm_params.bow_weight*10);
 
     ui->scroll_tau_r->setValue(params->rec_params.tau_r*100);
-    ui->scroll_tau_v->setValue(params->rec_params.tau_v*100);
+    ui->scroll_tau_v->setValue(params->rec_params.tau_v*1000);
 
     ui->tb_tree_plot_h->setText(QString::number(params->rec_params.plot_h));
     ui->tb_tree_plot_w->setText(QString::number(params->rec_params.plot_w));
@@ -312,8 +312,8 @@ void MainWindow::on_scroll_tau_r_valueChanged(int value)
 
 void MainWindow::on_scroll_tau_v_valueChanged(int value)
 {
-    ui->tb_tau_v->setText(QString::number(value/100.0));
-    params->rec_params.tau_v = value/100.0;
+    ui->tb_tau_v->setText(QString::number(value/1000.0));
+    params->rec_params.tau_v = value/1000.0;
 }
 
 void MainWindow::on_cb_framebyframe_clicked()
