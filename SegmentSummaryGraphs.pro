@@ -47,7 +47,10 @@ SOURCES += main.cpp\
     recognition.cpp \
     utilTypes.cpp \
     databasehandler.cpp \
-    experimentalData.cpp
+    experimentalData.cpp \
+    GraphSegmentation/ColoredSegments/LUT.cpp \
+    GraphSegmentation/ColoredSegments/mycolors.cpp \
+    GraphSegmentation/ColoredSegments/ColoredSegments.cpp
 
 HEADERS  += mainwindow.h \
       segmentation.h \
@@ -82,8 +85,21 @@ HEADERS  += mainwindow.h \
     recognition.h \
     SimpleMatrix.h \
     databasehandler.h \
-    experimentalData.h
+    experimentalData.h \
+    GraphSegmentation/ColoredSegments/mycolors.h \
+    GraphSegmentation/ColoredSegments/rgb_colors.h \
+    GraphSegmentation/ColoredSegments/HEADER.h \
+    GraphSegmentation/ColoredSegments/hsv_colors.h \
+    GraphSegmentation/ColoredSegments/ImData.h \
+    GraphSegmentation/ColoredSegments/LUT.h \
+    GraphSegmentation/ColoredSegments/coor.h \
+    GraphSegmentation/ColoredSegments/MyLibConstants.h \
+    GraphSegmentation/ColoredSegments/coloredSegments.h
 
 FORMS    += mainwindow.ui
 
 LIBS += `pkg-config opencv --libs`
+
+OTHER_FILES += \
+    GraphSegmentation/ColoredSegments/ColorQuantas.txt \
+    GraphSegmentation/ColoredSegments/SegmentColors.txt

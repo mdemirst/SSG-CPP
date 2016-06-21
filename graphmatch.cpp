@@ -8,10 +8,13 @@ GraphMatch::GraphMatch(Parameters* params)
     this->params = params;
 }
 
+//#define DRAW_MATCHES
 //Calculates matching cost and show matching results on the window
 float GraphMatch::drawMatches(vector<NodeSig> ns1, vector<NodeSig> ns2,
                                 Mat img1, Mat img2)
 {
+    bool draw_matches = false;
+#ifdef DRAW_MATCHES
     Mat assignment, cost;
     //Construct [rowsxcols] cost matrix using pairwise
     //distance between node signature
@@ -50,6 +53,7 @@ float GraphMatch::drawMatches(vector<NodeSig> ns1, vector<NodeSig> ns2,
     //free cost matrix
     for (int i = 0; i < rows; i++) free(cost_matrix[i]);
     free(cost_matrix);
+#endif
 
     // Calculate match score and
     // show matching results given assignment and cost matrix
@@ -59,6 +63,7 @@ float GraphMatch::drawMatches(vector<NodeSig> ns1, vector<NodeSig> ns2,
     //Concatenate two images
     hconcat(img1, img2, img_merged);
 
+#ifdef DRAW_MATCHES
     //Produce white image for whitening images
     Mat img_merged_white = Mat::zeros(img_merged.size(), CV_8UC3);
     img_merged_white = Scalar(255,255,255);
@@ -149,6 +154,7 @@ float GraphMatch::drawMatches(vector<NodeSig> ns1, vector<NodeSig> ns2,
         Point center_pt((p1.x + p2.x) / 2.0, (p1.y + p2.y) / 2.0);
         putText(img_merged, cost_str, center_pt, cv::FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0, 0, 255), 1);
     }
+#endif
 
 
     //Show matching results image on the window

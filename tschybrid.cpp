@@ -1,5 +1,6 @@
 #include "tschybrid.h"
 #include "experimentalData.h"
+#include "GraphSegmentation/ColoredSegments/coloredSegments.h"
 
 TSCHybrid::TSCHybrid(QCustomPlot* tsc_plot,
                      QCustomPlot* ssg_plot,
@@ -147,50 +148,37 @@ TSCHybrid::TSCHybrid(QCustomPlot* tsc_plot,
 
     //Filters init
     string filters_dir = OUTPUT_FOLDER+string("visual_filters");
-//    ImageProcess::readFilter(QString(filters_dir.c_str()).append("/filtre0.txt"),29,false,false,false);
-//    ImageProcess::readFilter(QString(filters_dir.c_str()).append("/filtre6.txt"),29,false,false,false);
-//    ImageProcess::readFilter(QString(filters_dir.c_str()).append("/filtre12.txt"),29,false,false,false);
-//    ImageProcess::readFilter(QString(filters_dir.c_str()).append("/filtre18.txt"),29,false,false,false);
-//    ImageProcess::readFilter(QString(filters_dir.c_str()).append("/filtre36.txt"),29,false,false,false);
+    ImageProcess::readFilter(QString(filters_dir.c_str()).append("/filtre0.txt"),29,false,false,false);
+    ImageProcess::readFilter(QString(filters_dir.c_str()).append("/filtre6.txt"),29,false,false,false);
+    ImageProcess::readFilter(QString(filters_dir.c_str()).append("/filtre12.txt"),29,false,false,false);
+    ImageProcess::readFilter(QString(filters_dir.c_str()).append("/filtre18.txt"),29,false,false,false);
+    ImageProcess::readFilter(QString(filters_dir.c_str()).append("/filtre36.txt"),29,false,false,false);
 
     is_processing = false;
     stop_processing = false;
     next_frame = true;
 
-//    db.setConnName("conn1");
-//    db.openDB(OUTPUT_FOLDER+string("dataset1_full.db"));
-//    db.createTables();
-    tsc = new TSC(dataset);
+    perform_recognition = false;
+    save2database = false;
+
+
+    //If you're running TSC model, erase comments
+    //tsc = new TSC(dataset);
 
 
 }
 
 TSCHybrid::~TSCHybrid()
 {
-    db.closeDB();
-
     delete recognition;
     delete seg_track;
 }
 
 void TSCHybrid::readFromDB()
 {
-//    FrameDesc frame_desc;
-//    DatabaseHandler db;
-//    db.setConnName("conn");
-//    db.openDB(OUTPUT_FOLDER+string("dataset_1_frames.db"));
-//    qint64 last_time = QDateTime::currentMSecsSinceEpoch();
-//    for(int i = 0; i < 100; i++)
-//    {
-//        frame_desc = db.getFrame(i);
-//        qDebug() << "read" << i;
-//    }
-//    qDebug() << QDateTime::currentMSecsSinceEpoch() - last_time;
-//    db.closeDB();
-
-
+    //remove comments on places you like to load from DB
     vector<int> places;
-    places.push_back(SITE_FR1);
+    //places.push_back(SITE_FR1);
     //places.push_back(SITE_SA1);
     //places.push_back(SITE_LJ1);
     //places.push_back(SITE_NC1);
@@ -220,107 +208,7 @@ void TSCHybrid::readFromDB()
 //    db2.createTables();
 //    for(int i = 0; i < allSSG1.size(); i++)
 //        db2.insertSSG(allSSG1[i]);
-
 //    db2.closeDB();
-
-//    DatabaseHandler db3;
-//    db3.setConnName("conn3");
-//    db3.openDB(OUTPUT_FOLDER+string("dataset_2.db"));
-//    db3.createTables();
-//    for(int i = 0; i < allSSG2.size(); i++)
-//        db3.insertSSG(allSSG2[i]);
-
-//    db3.closeDB();
-
-//    DatabaseHandler db4;
-//    db4.setConnName("conn4");
-//    db4.openDB(OUTPUT_FOLDER+string("dataset_3.db"));
-//    db4.createTables();
-//    for(int i = 0; i < allSSG3.size(); i++)
-//        db4.insertSSG(allSSG3[i]);
-
-//    db4.closeDB();
-
-//    SSGs = db.getAllSSGs();
-
-//    vector<SSG> readSSG;
-
-//    vector<SSG> readSSG;
-//    DatabaseHandler db;
-//    db.setConnName("conn");
-//    db.openDB(OUTPUT_FOLDER+string("dataset_")+QString::number(dataset->dataset_id).toStdString()+string("_places.db"));
-//    readSSG = db.getAllSSGsNew();
-//    db.closeDB();
-//    SSGs.insert(SSGs.end(), readSSG.begin(), readSSG.end());
-//    qDebug() << readSSG.size();
-//    readSSG.clear();
-//    vector<string> image_files = getFiles(dataset->location);
-//    plotDetectedPlaces(SSGs, image_files, dataset);
-
-//    db.setConnName("conn2");
-//    db.openDB(OUTPUT_FOLDER+string("dataset_2.db"));
-//    readSSG = db.getAllSSGs();
-//    db.closeDB();
-
-//    SSGs.insert(SSGs.end(), readSSG.begin(), readSSG.end());
-//    qDebug() << readSSG.size();
-//    readSSG.clear();
-
-//    db.setConnName("conn3");
-//    db.openDB(OUTPUT_FOLDER+string("dataset_3.db"));
-//    readSSG = db.getAllSSGs();
-//    db.closeDB();
-
-//    SSGs.insert(SSGs.end(), readSSG.begin(), readSSG.end());
-//    qDebug() << readSSG.size();
-//    readSSG.clear();
-
-//    db.setConnName("conn4");
-//    db.openDB(OUTPUT_FOLDER+string("dataset_4.db"));
-//    readSSG = db.getAllSSGs();
-//    db.closeDB();
-
-//    SSGs.insert(SSGs.end(), readSSG.begin(), readSSG.end());
-//    qDebug() << readSSG.size();
-//    readSSG.clear();
-
-//    db.setConnName("conn5");
-//    db.openDB(OUTPUT_FOLDER+string("dataset_5.db"));
-//    readSSG = db.getAllSSGs();
-//    db.closeDB();
-
-//    SSGs.insert(SSGs.end(), readSSG.begin(), readSSG.end());
-//    qDebug() << readSSG.size();
-//    readSSG.clear();
-
-//    db.setConnName("conn6");
-//    db.openDB(OUTPUT_FOLDER+string("dataset_6.db"));
-//    readSSG = db.getAllSSGs();
-//    db.closeDB();
-
-//    SSGs.insert(SSGs.end(), readSSG.begin(), readSSG.end());
-//    qDebug() << readSSG.size();
-//    readSSG.clear();
-
-//    db.setConnName("conn7");
-//    db.openDB(OUTPUT_FOLDER+string("dataset_7.db"));
-//    readSSG = db.getAllSSGs();
-//    db.closeDB();
-
-//    SSGs.insert(SSGs.end(), readSSG.begin(), readSSG.end());
-//    qDebug() << readSSG.size();
-//    readSSG.clear();
-
-//    db.setConnName("conn8");
-//    db.openDB(OUTPUT_FOLDER+string("dataset_8.db"));
-//    readSSG = db.getAllSSGs();
-//    db.closeDB();
-
-//    SSGs.insert(SSGs.end(), readSSG.begin(), readSSG.end());
-//    qDebug() << readSSG.size();
-//    readSSG.clear();
-
-//    qDebug() << SSGs.size();
 
 }
 
@@ -364,7 +252,7 @@ void TSCHybrid::processImagesHierarchical(const string folder, const int start_i
     static vector<int> detected_places_unfiltered;
     static vector<int> detected_places; //Stores all detected place ids
     static SSG temp_SSG(0); temp_SSG.setStartFrame(0);
-    static TreeNode* hierarchy_tree = NULL;
+    static TreeNode* hierarchy_tree;
     static vector<PlaceSSG> places;
 
     static int frame_count = 0;
@@ -376,22 +264,27 @@ void TSCHybrid::processImagesHierarchical(const string folder, const int start_i
     int delay = params->seg_track_params.tau_w/2 + params->ssg_params.tau_n;
     static queue<int> hist;
 
+    //Create database
     DatabaseHandler db;
-    stringstream ss_db;
-    ss_db << "conn_db_" << dataset_id;
-    db.setConnName(ss_db.str());
-    stringstream ss;
-    ss << OUTPUT_FOLDER << "dataset_" << dataset_id << "_places.db";
-    db.openDB(ss.str());
-    db.createTables();
+    if(save2database)
+    {
+        stringstream ss_db;
+        ss_db << "conn_db_" << dataset_id;
+        db.setConnName(ss_db.str());
+        stringstream ss;
+        ss << OUTPUT_FOLDER << "dataset_" << dataset_id << "_places.db";
+        db.openDB(ss.str());
+        db.createTables();
+    }
+
 
     //Process all images
     for(int frame_no = start_idx; frame_no < end_idx-1; frame_no++)
     {
         if(stop_processing)
         {
-            //clearPastData();
-            //break;
+            clearPastData();
+            break;
         }
 
         while(next_frame == false)
@@ -400,8 +293,11 @@ void TSCHybrid::processImagesHierarchical(const string folder, const int start_i
         }
 
         img_org = imread(folder + img_files[frame_no]);
-        //resize(img_org, img, cv::Size(0,0), IMG_RESCALE_RAT, IMG_RESCALE_RAT);
         resize(img_org, img, cv::Size(params->ssg_params.img_width, params->ssg_params.img_height));
+
+        //Remove comments if you want to use
+        //Gokce's segmentation results
+        img = segmentImageGokce(img);
 
         //Keep last tau_w/2+tau_n images.
         img_history.push(img_org);
@@ -414,7 +310,6 @@ void TSCHybrid::processImagesHierarchical(const string folder, const int start_i
             hist.pop();
         }
         emit showImgOrg(mat2QImage(img_resized_history.front()));
-
 
         ///////////////
         //Process SSG//
@@ -461,25 +356,28 @@ void TSCHybrid::processImagesHierarchical(const string folder, const int start_i
         }
         else if(detection_result == DETECTION_PLACE_ENDED)
         {
-            //qDebug() << temp_SSG.member_invariants.size().width;
-            //Commented out for experimental purpose
-            //SSGProc::filterSummarySegments(temp_SSG, params->tau_p);
-            //emit showSSG(mat2QImage(SSGProc::drawSSG(temp_SSG, img, params->tau_p)));
-
             temp_SSG.setEndFrame(frame_no);
-            //PlaceSSG new_place(temp_SSG.getId(), temp_SSG);
 
-
-            //Expermental purpose
             if(temp_SSG.member_invariants.empty() == false)
             {
                 SSGs.push_back(temp_SSG);
-                db.insertSSG(temp_SSG);
+                if(save2database)
+                {
+                    db.insertSSG(temp_SSG);
+                }
             }
+
             qDebug() << "Place detected" << SSGs.size();
 
-            //Commented out for experimental purpose
-            //recognition->performRecognition(places, new_place, hierarchy_tree);
+            if(perform_recognition)
+            {
+                SSGProc::filterSummarySegments(temp_SSG, params->ssg_params.tau_p);
+                emit showSSG(mat2QImage(SSGProc::drawSSG(temp_SSG, img)));
+
+                PlaceSSG new_place(temp_SSG.getId(), temp_SSG);
+                recognition->performRecognition(places, new_place, &hierarchy_tree);
+            }
+
         }
         else if(detection_result == DETECTION_IN_PLACE)
         {
@@ -512,8 +410,12 @@ void TSCHybrid::processImagesHierarchical(const string folder, const int start_i
         //next_frame = false;
     }
 
-    qDebug() << "Finished creating" << dataset_id << "th" << "dataset in " << (QDateTime::currentMSecsSinceEpoch()-last_time)/1000.0 << "seconds";
-    db.closeDB();
+    if(save2database)
+    {
+        qDebug() << "Finished creating" << dataset_id << "th" << "dataset in " << (QDateTime::currentMSecsSinceEpoch()-last_time)/1000.0 << "seconds";
+        db.closeDB();
+    }
+
 
     is_processing = false;
     stop_processing = false;
@@ -769,7 +671,12 @@ void TSCHybrid::reRecognizeBatch(int method)
     recognition->performRecognitionHybrid(places, new_place, &hierarchy_tree);
 
     //recognition->calculateRecPerformance(places.size(), dist_matrix, hierarchy_tree);
-    //recognition->calculateN2NDistanceMatrix(hierarchy_tree);
+    qDebug() << "N2N";
+    recognition->calculateN2NTreeDistanceMatrix(hierarchy_tree);
+    qDebug() << "BD";
+    recognition->calculateBDDistanceMatrix(hierarchy_tree);
+    qDebug() << "SSG";
+    recognition->calculateSSGDistanceMatrix(hierarchy_tree);
 }
 
 float TSCHybrid::calcCohScore(SegmentTrack* seg_track, vector<float>& coh_scores)
@@ -1574,7 +1481,7 @@ void TSCHybrid::plotScoresSSG(vector<float> coherency_scores, vector<int> detect
     //coherency_plot->yAxis->setRange(*min_element(coherency_scores.begin(),coherency_scores.end()), *max_element(coherency_scores.begin(),coherency_scores.end()));
     //coherency_plot->xAxis->setRange(0, detected_places.size()+1);
 
-    //ssg_plot->rescaleAxes();
+    ssg_plot->rescaleAxes();
     ssg_plot->replot();
     //place_map->rescaleAxes();
     //place_map->replot();

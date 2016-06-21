@@ -1,0 +1,35 @@
+#include <math.h>
+#include <stdlib.h>  
+#include <ctype.h>
+#include <float.h>
+#include <string.h>
+#include <stdarg.h>
+#include <limits.h>
+#include <locale.h>
+#include <errno.h>
+#include "opencv2/imgproc/imgproc_c.h"
+#include "opencv2/imgproc/imgproc.hpp"
+#include "opencv2/core/core_c.h"
+#include "opencv2/core/core.hpp"
+#include "opencv2/highgui/highgui_c.h"
+#include "opencv2/highgui/highgui.hpp"
+#include <ctime>    
+#include <iostream>  
+#include <fstream>  
+#include <fstream>
+#include <sstream>
+#include <algorithm>
+#include <vector>
+#include <opencv2/objdetect/objdetect.hpp>
+#include <opencv2/features2d/features2d.hpp>
+#include <list>
+#include "hsv_colors.h"
+#include "ImData.h"
+#include "rgb_colors.h"
+#include "MyLibConstants.h"
+#include <iomanip>
+#include <opencv2/ml/ml.hpp>
+#include "LUT.h"
+#include "mycolors.h"
+
+

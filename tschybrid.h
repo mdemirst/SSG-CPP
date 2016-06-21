@@ -41,10 +41,11 @@ public:
     vector<cv::Point2f> coords;
     vector<PlaceSSG> places_unprocessed;
     TSC* tsc;
-    DatabaseHandler db;
     bool is_processing;
     bool stop_processing;
     bool next_frame;
+    bool perform_recognition;
+    bool save2database;
 
     TSCHybrid(QCustomPlot* tsc_plot,
               QCustomPlot* ssg_plot,

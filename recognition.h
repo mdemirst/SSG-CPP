@@ -54,7 +54,6 @@ public:
     void testRecognition();
     void setRecognitionMethod(int method);
     double getDistance(PlaceSSG& p1, PlaceSSG& p2);
-    void calculateN2NDistanceMatrix(TreeNode* root_node);
     PlaceSSG* mergeSSGs(PlaceSSG* p1, PlaceSSG* p2, int id);
     double** calculateDistanceMatrix(vector<PlaceSSG>& places);
     void calculateRecPerformanceDist2Match(vector<PlaceSSG>& places, TreeNode* root);
