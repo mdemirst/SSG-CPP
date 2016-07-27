@@ -8,7 +8,7 @@ GraphMatch::GraphMatch(Parameters* params)
     this->params = params;
 }
 
-//#define DRAW_MATCHES
+#define DRAW_MATCHES
 //Calculates matching cost and show matching results on the window
 float GraphMatch::drawMatches(vector<NodeSig> ns1, vector<NodeSig> ns2,
                                 Mat img1, Mat img2)

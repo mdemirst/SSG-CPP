@@ -42,16 +42,6 @@ void ImageProcess::readFilter(QString fileName, int filterSize, bool transpose, 
 
     QString dirr = fileName;
 
-   /* QString str;
-
-    str.setNum(filterNum);
-
-    dirr.append(str);
-
-    dirr.append(".txt"); */
-
-    qDebug()<<"Dir is :"<<dirr;
-
     QFile file(dirr);
 
     if(!file.open(QFile::ReadOnly))

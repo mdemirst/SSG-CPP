@@ -87,7 +87,7 @@ void SSGProc::updateSSGInvariants(SSG& ssg, Mat& current_image, Parameters* para
     //If frame is not informative, return..
     if(stats_val.mean <=  params->tsc_params.tau_mu || stats_val.variance <= params->tsc_params.tau_sigma)
     {
-        //qDebug() << "Uninformative" << stats_val.mean << stats_val.variance;
+        qDebug() << "Uninformative" << stats_val.mean << stats_val.variance;
         return;
     }
 
@@ -316,6 +316,14 @@ void SSGProc::filterSummarySegments(SSG& ssg, float tau_p)
         if(ssg.nodes[i].second > longestApp)
             longestApp = ssg.nodes[i].second;
     }
+
+    //Experimental
+    //Adaptive tau_p thresholding
+//    float ratio = (ssg.getEndFrame()-ssg.getStartFrame())/100;
+//    ratio = ratio > 1 ? 1 : ratio;
+
+//    tau_p = tau_p - 0.3*ratio;
+//    tau_p = tau_p < 0 ? 0 : tau_p;
 
 
     for(int i = 0; i < ssg.nodes.size();)

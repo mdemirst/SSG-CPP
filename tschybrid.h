@@ -37,6 +37,7 @@ public:
     int cursor;
     vector<string> img_files;
     vector<SSG> SSGs; //Stores SSGs
+    vector<SSG> SSGs_second_visit; //Stores SSGs
     vector<SSG> SSGs_fromTSC; //Stores SSGs
     vector<cv::Point2f> coords;
     vector<PlaceSSG> places_unprocessed;
@@ -78,6 +79,8 @@ public:
                      vector<int>& detected_places_unfiltered,
                      vector<int>& detected_places);
     void clearPastData();
+    void reRecognizeInOrderSecondVisits(int method);
+    void plotDetectedPlacesBD(vector<SSG> SSGs, const vector<string>& image_files, Dataset* dataset);
 
 public slots:
     

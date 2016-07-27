@@ -78,19 +78,11 @@ private slots:
 
     void on_cb_framebyframe_clicked();
 
-    void on_btn_tsc_process_clicked();
-
     void on_btn_tracking_start_clicked();
 
     void on_lbl_find_coherent_clicked();
 
     void on_btn_stop_process_clicked();
-
-    void on_btn_merged_process_images_clicked();
-
-    void on_pushButton_clicked();
-
-    void on_btn_test_next_clicked();
 
     void on_scroll_tau_r_valueChanged(int value);
 
@@ -125,6 +117,12 @@ private slots:
     void on_btn_next_frame_clicked();
 
     void on_btn_init_from_db_clicked();
+
+    void on_cb_place_circle_clicked();
+
+    void on_cb_show_inner_ssgs_clicked();
+
+    void on_btn_init_from_db_2_clicked();
 
 private:
     Ui::MainWindow *ui;

@@ -37,6 +37,8 @@ public:
     vector<string> img_files;
     int plot_offset;
     int rec_method;
+    int showPlaceAsCircle;
+    int showInnerSSGs;
 
 public:
     Recognition(Parameters* params,
@@ -45,14 +47,18 @@ public:
                 Segmentation* seg);
     ~Recognition();
     int performRecognition(vector<PlaceSSG>& places, PlaceSSG new_place, TreeNode** hierarchy);
-    int performRecognitionHybrid(vector<PlaceSSG>& places, PlaceSSG new_place, TreeNode** hierarchy);
+    int performRecognitionHybrid(vector<PlaceSSG>& places, PlaceSSG new_place, TreeNode** hierarchy, vector<vector<vector<pair<int,int> > > >& familiarities);
+    int performRecognitionHybridOld(vector<PlaceSSG>& places, PlaceSSG new_place, TreeNode** hierarchy);
     void calculateRecPerformance(TreeNode* root);
+    void calculateN2NRecPerformance(TreeNode* root);
     void calculateRecPerformanceWithHValues(TreeNode* root);
     void calculateN2NTreeDistanceMatrix(TreeNode* root);
     void calculateSSGDistanceMatrix(TreeNode* root);
     void calculateBDDistanceMatrix(TreeNode* root);
     void testRecognition();
     void setRecognitionMethod(int method);
+    void setPlaceDisplayType(int isCircle);
+    void setInnerSSGDisplayType(int isShowInnerSSG);
     double getDistance(PlaceSSG& p1, PlaceSSG& p2);
     PlaceSSG* mergeSSGs(PlaceSSG* p1, PlaceSSG* p2, int id);
     double** calculateDistanceMatrix(vector<PlaceSSG>& places);
@@ -76,6 +82,13 @@ public:
     void drawInnerSSG(Mat& img, SSG ssg, Point coord);
     int calculateN2NTreeDistance(TreeNode* node1, TreeNode* node2);
     void getTerminalNodes(TreeNode* node, vector<TreeNode*>& terminal_nodes);
+    int getNumberMatchedSSGNodes(PlaceSSG place1, PlaceSSG place2, float threshold);
+    bool getMatchStatus(int psite1, int place1, int psite2, int place2);
+    void calculateFamiliarityPerformance(vector<vector<vector<pair<int,int> > > >& familiarities);
+    int performRecognitionHybridNoRec(vector<PlaceSSG>& places, PlaceSSG new_place, TreeNode** hierarchy, vector<vector<vector<pair<int, int> > > >& familiarities,
+                                      vector<pair<pair<int,int>, pair<int,int> > >& recognized_places);
+    void calculateRecPerformance(vector<pair<pair<int,int>, pair<int,int> > >& recognized_places);
+    void calculateRecPerformanceCombined(vector<pair<pair<int,int>, pair<int,int> > >& recognized_places);
 
     
 signals:

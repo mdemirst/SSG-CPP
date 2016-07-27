@@ -142,17 +142,9 @@ TSCHybrid::TSCHybrid(QCustomPlot* tsc_plot,
                                    seg_track->gm,
                                    seg_track->seg);
 
-    //Bubble process init
-    bubbleProcess::calculateImagePanAngles(FOCAL_LENGHT_PIXELS, params->ssg_params.img_width, params->ssg_params.img_height);
-    bubbleProcess::calculateImageTiltAngles(FOCAL_LENGHT_PIXELS, params->ssg_params.img_width, params->ssg_params.img_height);
 
-    //Filters init
-    string filters_dir = OUTPUT_FOLDER+string("visual_filters");
-    ImageProcess::readFilter(QString(filters_dir.c_str()).append("/filtre0.txt"),29,false,false,false);
-    ImageProcess::readFilter(QString(filters_dir.c_str()).append("/filtre6.txt"),29,false,false,false);
-    ImageProcess::readFilter(QString(filters_dir.c_str()).append("/filtre12.txt"),29,false,false,false);
-    ImageProcess::readFilter(QString(filters_dir.c_str()).append("/filtre18.txt"),29,false,false,false);
-    ImageProcess::readFilter(QString(filters_dir.c_str()).append("/filtre36.txt"),29,false,false,false);
+
+
 
     is_processing = false;
     stop_processing = false;
@@ -164,6 +156,18 @@ TSCHybrid::TSCHybrid(QCustomPlot* tsc_plot,
 
     //If you're running TSC model, erase comments
     //tsc = new TSC(dataset);
+
+    //If you're not running TSC model
+    //Filters init
+    string filters_dir = OUTPUT_FOLDER+string("visual_filters");
+    ImageProcess::readFilter(QString(filters_dir.c_str()).append("/filtre0.txt"),29,false,false,false);
+    ImageProcess::readFilter(QString(filters_dir.c_str()).append("/filtre6.txt"),29,false,false,false);
+    ImageProcess::readFilter(QString(filters_dir.c_str()).append("/filtre12.txt"),29,false,false,false);
+    ImageProcess::readFilter(QString(filters_dir.c_str()).append("/filtre18.txt"),29,false,false,false);
+    ImageProcess::readFilter(QString(filters_dir.c_str()).append("/filtre36.txt"),29,false,false,false);
+    //Bubble process init
+    bubbleProcess::calculateImagePanAngles(FOCAL_LENGHT_PIXELS, params->ssg_params.img_width, params->ssg_params.img_height);
+    bubbleProcess::calculateImageTiltAngles(FOCAL_LENGHT_PIXELS, params->ssg_params.img_width, params->ssg_params.img_height);
 
 
 }
@@ -178,17 +182,17 @@ void TSCHybrid::readFromDB()
 {
     //remove comments on places you like to load from DB
     vector<int> places;
-    //places.push_back(SITE_FR1);
+    places.push_back(SITE_FR1);
     //places.push_back(SITE_SA1);
     //places.push_back(SITE_LJ1);
     //places.push_back(SITE_NC1);
     places.push_back(SITE_FR2);
     //places.push_back(SITE_SA2);
     //places.push_back(SITE_LJ2);
-    //places.push_back(SITE_NC2);
-
-
-
+//    places.push_back(SITE_NC2);
+    //places.push_back(SITE_CV);
+    //places.push_back(SITE_JM);
+    //places.push_back(SITE_JM2
     for(int i = 0; i < places.size(); i++)
     {
         vector<SSG> readSSG;
@@ -200,6 +204,26 @@ void TSCHybrid::readFromDB()
         SSGs.insert(SSGs.end(), readSSG.begin(), readSSG.end());
         readSSG.clear();
     }
+
+    //remove comments on places you like to load from DB
+    vector<int> places_second_visit;
+    //places_second_visit.push_back(SITE_FR2);
+    //places_second_visit.push_back(SITE_SA2);
+    //places_second_visit.push_back(SITE_LJ2);
+    //places_second_visit.push_back(SITE_NC2);
+
+    for(int i = 0; i < places_second_visit.size(); i++)
+    {
+        vector<SSG> readSSG;
+        DatabaseHandler db;
+        db.setConnName("conn"+QString::number(places_second_visit[i]).toStdString());
+        db.openDB(OUTPUT_FOLDER+string("dataset_")+QString::number(places_second_visit[i]).toStdString()+string("_places.db"));
+        readSSG = db.getAllSSGsNew();
+        db.closeDB();
+        SSGs_second_visit.insert(SSGs_second_visit.end(), readSSG.begin(), readSSG.end());
+        readSSG.clear();
+    }
+
 
 
 //    DatabaseHandler db2;
@@ -243,6 +267,8 @@ void TSCHybrid::processImagesHierarchical(const string folder, const int start_i
     //Read dataset image files
     img_files = getFiles(folder);
 
+    qDebug() << "dadsa";
+
     Mat img_org, img;
     qint64 last_time;
 
@@ -281,6 +307,8 @@ void TSCHybrid::processImagesHierarchical(const string folder, const int start_i
     //Process all images
     for(int frame_no = start_idx; frame_no < end_idx-1; frame_no++)
     {
+        qint64 time = QDateTime::currentMSecsSinceEpoch();
+
         if(stop_processing)
         {
             clearPastData();
@@ -297,7 +325,8 @@ void TSCHybrid::processImagesHierarchical(const string folder, const int start_i
 
         //Remove comments if you want to use
         //Gokce's segmentation results
-        img = segmentImageGokce(img);
+        //img = segmentImageGokce(img);
+
 
         //Keep last tau_w/2+tau_n images.
         img_history.push(img_org);
@@ -306,8 +335,7 @@ void TSCHybrid::processImagesHierarchical(const string folder, const int start_i
         if(img_history.size() > delay)
         {
             img_history.pop();
-            img_resized_history.pop();
-            hist.pop();
+            img_resized_history.pop();            hist.pop();
         }
         emit showImgOrg(mat2QImage(img_resized_history.front()));
 
@@ -349,7 +377,6 @@ void TSCHybrid::processImagesHierarchical(const string folder, const int start_i
             vector<NodeSig> ns = ns_vec[ns_vec.size() - 1 - delay];
             SSGProc::updateSSG(temp_SSG, ns, map_col);
             SSGProc::updateSSGInvariants(temp_SSG, img_history.front(), params);
-            qDebug() << "Place frame " << hist.front();
 
             //Reset coherency score
             ssg_best_coherency_score = coherency_scores_ssg.back();
@@ -358,13 +385,24 @@ void TSCHybrid::processImagesHierarchical(const string folder, const int start_i
         {
             temp_SSG.setEndFrame(frame_no);
 
+            SSGs.push_back(temp_SSG);
+//            if(save2database)
+//            {
+//                db.insertSSG(temp_SSG);
+//            }
             if(temp_SSG.member_invariants.empty() == false)
             {
+
+                qint64 timex1 = QDateTime::currentMSecsSinceEpoch();
                 SSGs.push_back(temp_SSG);
+                qint64 timex2 = QDateTime::currentMSecsSinceEpoch();
                 if(save2database)
                 {
                     db.insertSSG(temp_SSG);
                 }
+                qint64 timex3 = QDateTime::currentMSecsSinceEpoch();
+
+                qDebug() << "Place recognized time SSG:" << timex2-timex1 << "DB: " << timex3-timex2;
             }
 
             qDebug() << "Place detected" << SSGs.size();
@@ -375,7 +413,11 @@ void TSCHybrid::processImagesHierarchical(const string folder, const int start_i
                 emit showSSG(mat2QImage(SSGProc::drawSSG(temp_SSG, img)));
 
                 PlaceSSG new_place(temp_SSG.getId(), temp_SSG);
+
+                qint64 last_time = QDateTime::currentMSecsSinceEpoch();
                 recognition->performRecognition(places, new_place, &hierarchy_tree);
+                qint64 last_time2 = QDateTime::currentMSecsSinceEpoch();
+                qDebug() << "Rec time:" << places.size() << (last_time2-last_time)/1000.0;
             }
 
         }
@@ -387,7 +429,6 @@ void TSCHybrid::processImagesHierarchical(const string folder, const int start_i
             vector<NodeSig> ns = ns_vec[ns_vec.size() - 1 - delay];
             SSGProc::updateSSG(temp_SSG, ns, map_col);
             SSGProc::updateSSGInvariants(temp_SSG, img_history.front(), params);
-            qDebug() << "Place frame " << hist.front();
 
             //If current frame is more coherent, set this frame as sample frame of SSG
             if(ssg_best_coherency_score < coherency_scores_ssg.back())
@@ -407,6 +448,13 @@ void TSCHybrid::processImagesHierarchical(const string folder, const int start_i
         //Wait a little for GUI processing
         waitKey(1);
 
+        qint64 time2 = QDateTime::currentMSecsSinceEpoch();
+        writeFrameSec(time2-time);
+        if(detected_places.size() > 0)
+            writeDetectedPlace(detected_places.back());
+        else
+            writeDetectedPlace(0);
+        //qDebug() << frame_no;
         //next_frame = false;
     }
 
@@ -425,7 +473,7 @@ void TSCHybrid::TSCPlaces2SSGPlaces(vector<Place>& TSC_places, vector<SSG>& SSG_
 {
     for(int i = 0; i < TSC_places.size(); i++)
     {
-        SSG new_ssg(i%17);
+        SSG new_ssg(i);
         new_ssg.member_invariants = TSC_places[i].memberInvariants.clone();
         new_ssg.mean_invariant = TSC_places[i].meanInvariant.clone();
         new_ssg.setStartFrame((int)TSC_places[i].members[0].id);
@@ -457,11 +505,8 @@ void TSCHybrid::processImagesHierarchicalTSC(const string folder, const int star
     //TSC related variables
     static vector<float> scores_tsc;
 
-
     static int frame_count = 0;
     last_time = QDateTime::currentMSecsSinceEpoch();
-    static float ssg_best_coherency_score = 0;
-
 
     //Process all images
     for(int frame_no = start_idx; frame_no < end_idx-1; frame_no++)
@@ -482,81 +527,6 @@ void TSCHybrid::processImagesHierarchicalTSC(const string folder, const int star
         resize(img_org, img, cv::Size(params->ssg_params.img_width, params->ssg_params.img_height));
         //emit showImgOrg(mat2QImage(img));
 
-//        ///////////////
-//        //Process SSG//
-//        ///////////////
-
-//        seg_track->processImage(img, ns_vec);
-
-//        //Calculate coherency based on existence map
-//        calcCohScore(seg_track, coherency_scores_ssg);
-
-
-//        //Show connectivity map
-//        //showMap(seg_track->getM());
-
-//        //Decide last frame is whether transition or place
-//        //Results are written into detected places
-//        int detection_result = detectPlace(coherency_scores_ssg,detected_places_unfiltered,detected_places);
-
-
-//        //cv::Point2f coord = getCoordCold(img_files[dataset->start_idx+detected_places.size()]);
-//        //coords.push_back(coord);
-
-//        //Plot transition and place regions
-//        //plotScoresSSG(coherency_scores_ssg, detected_places);
-
-
-//        //If started for new place
-//        //Create new SSG
-//        if(detection_result == DETECTION_PLACE_STARTED)
-//        {
-//            //Clear SSG
-//            temp_SSG.nodes.clear();
-//            temp_SSG.mean_invariant.release();
-//            temp_SSG.member_invariants.release();
-//            temp_SSG.setId(temp_SSG.getId()+1);
-//            temp_SSG.setStartFrame(frame_no);
-//            SSGProc::updateSSG(temp_SSG, ns_vec.back(), seg_track->getM());
-//            SSGProc::updateSSGInvariants(temp_SSG, img_org, params);
-
-//            //Reset coherency score
-//            ssg_best_coherency_score = coherency_scores_ssg.back();
-//        }
-//        else if(detection_result == DETECTION_PLACE_ENDED)
-//        {
-//            //Commented out for experimental purpose
-//            //SSGProc::filterSummarySegments(temp_SSG, params->tau_p);
-//            //emit showSSG(mat2QImage(SSGProc::drawSSG(temp_SSG, img, params->tau_p)));
-
-//            temp_SSG.setEndFrame(frame_no);
-//            //PlaceSSG new_place(temp_SSG.getId(), temp_SSG);
-
-
-//            //Expermental purpose
-//            if(temp_SSG.member_invariants.empty() == false)
-//                SSGs.push_back(temp_SSG);
-//            qDebug() << "Place detected" << SSGs.size();
-
-//            //Commented out for experimental purpose
-//            //recognition->performRecognition(places, new_place, hierarchy_tree);
-//        }
-//        else if(detection_result == DETECTION_IN_PLACE)
-//        {
-//            temp_SSG.basepoints.push_back(ns_vec.back());
-//            SSGProc::updateSSG(temp_SSG, ns_vec.back(), seg_track->getM());
-//            SSGProc::updateSSGInvariants(temp_SSG, img_org, params);
-
-//            //If current frame is more coherent, set this frame as sample frame of SSG
-//            if(ssg_best_coherency_score < coherency_scores_ssg.back())
-//            {
-//                temp_SSG.setSampleFrame(folder + img_files[frame_no]);
-//                temp_SSG.setColor(dataset_id);
-//                ssg_best_coherency_score = coherency_scores_ssg.back();
-//            }
-//        }
-
-
         ///////////////
         //Process TSC//
         ///////////////
@@ -564,6 +534,21 @@ void TSCHybrid::processImagesHierarchicalTSC(const string folder, const int star
         //Process image
         bool isLastImage = frame_no == end_idx-2;
         float score = tsc->processImage(img_org, false);
+        if(isLastImage)
+        {
+            if(tsc->detector.currentPlace && tsc->detector.currentPlace->id > 0 && tsc->detector.currentPlace->members.size() > 0)
+            {
+                tsc->detector.currentPlace->calculateMeanInvariant();
+
+                if(tsc->detector.currentPlace->memberIds.rows >= tsc->detector.tau_p)
+                {
+
+                    tsc->detector.detectedPlaces.push_back(*tsc->detector.currentPlace);
+
+                    tsc->detector.placeID++;
+                }
+            }
+        }
         if(tsc->detector.detectedPlaces.size() > 0 && tsc->detector.detectedPlaces.back().color == 0)
         {
             tsc->detector.detectedPlaces.back().color = dataset_id;
@@ -592,9 +577,25 @@ void TSCHybrid::processImagesHierarchicalTSC(const string folder, const int star
         //next_frame = false;
     }
 
-    //autoTryParameters();
-    //qDebug() << places.size();
-    //savePlacesFrameInfo(places);
+    //Create database
+    DatabaseHandler db;
+    if(save2database)
+    {
+        stringstream ss_db;
+        ss_db << "conn_db_" << dataset_id;
+        db.setConnName(ss_db.str());
+        stringstream ss;
+        ss << OUTPUT_FOLDER << "dataset_bd_" << dataset_id << "_places.db";
+        db.openDB(ss.str());
+        db.createTables();
+    }
+    vector<SSG> SSGs_fromTSC;
+    TSCPlaces2SSGPlaces(tsc->detector.detectedPlaces, SSGs_fromTSC);
+    for(int i = 0; i < SSGs_fromTSC.size(); i++)
+    {
+        db.insertSSG(SSGs_fromTSC[i]);
+    }
+    db.closeDB();
 
     is_processing = false;
     stop_processing = false;
@@ -629,18 +630,61 @@ void TSCHybrid::reRecognizeInOrder(int method)
     vector<PlaceSSG> places;
 
     recognition->setRecognitionMethod(method);
+    vector<vector<vector<pair<int,int> > > > familiarities;
+    vector<pair<pair<int,int>, pair<int,int> > > recognized_places;
 
     for(int i = 0; i < SSGs.size(); i++)
     {
-        SSGProc::filterSummarySegments(SSGs[i], params->ssg_params.tau_p);
-        PlaceSSG new_place(SSGs[i].getId(), SSGs[i]);
-        recognition->performRecognitionHybrid(places, new_place, &hierarchy_tree);
+        qint64 last_time = QDateTime::currentMSecsSinceEpoch();
+        SSG ssg = SSGs[i];
+        SSGProc::filterSummarySegments(ssg, params->ssg_params.tau_p);
+        PlaceSSG new_place(SSGs[i].getId(), ssg);
+
+        recognition->performRecognitionHybrid(places, new_place, &hierarchy_tree, familiarities);
+        qint64 last_time2 = QDateTime::currentMSecsSinceEpoch();
+        qDebug() << last_time2 - last_time;
     }
 
     //qDebug() << "N2N Tree Distances:";
     //recognition->calculateN2NDistanceMatrix(hierarchy_tree);
-    recognition->calculateRecPerformance(hierarchy_tree);
+    //recognition->calculateRecPerformance(hierarchy_tree);
+    //recognition->calculateFamiliarityPerformance(familiarities);
+    //recognition->calculateRecPerformance(recognized_places);
+    //recognition->calculateBDDistanceMatrix(hierarchy_tree);
+    //recognition->calculateSSGDistanceMatrix(hierarchy_tree);
+}
 
+void TSCHybrid::reRecognizeInOrderSecondVisits(int method)
+{
+    TreeNode* hierarchy_tree;
+    vector<PlaceSSG> places;
+
+    recognition->setRecognitionMethod(method);
+    vector<vector<vector<pair<int,int> > > > familiarities;
+    vector<pair<pair<int,int>, pair<int,int> > > recognized_places;
+
+    for(int i = 0; i < SSGs.size(); i++)
+    {
+        SSG ssg = SSGs[i];
+        SSGProc::filterSummarySegments(ssg, params->ssg_params.tau_p);
+        PlaceSSG new_place(ssg.getId(), ssg);
+        places.push_back(new_place);
+    }
+
+    for(int i = 0; i < SSGs_second_visit.size(); i++)
+    {
+        SSG ssg = SSGs_second_visit[i];
+        SSGProc::filterSummarySegments(ssg, params->ssg_params.tau_p);
+        PlaceSSG new_place(SSGs_second_visit[i].getId(), ssg);
+        recognition->performRecognitionHybridNoRec(places, new_place, &hierarchy_tree, familiarities, recognized_places);
+    }
+
+    //qDebug() << "N2N Tree Distances:";
+    //recognition->calculateN2NDistanceMatrix(hierarchy_tree);
+    //recognition->calculateRecPerformance(hierarchy_tree);
+    //recognition->calculateFamiliarityPerformance(familiarities);
+    //recognition->calculateRecPerformance(recognized_places);
+    recognition->calculateRecPerformanceCombined(recognized_places);
 }
 
 void TSCHybrid::reRecognizeBatch(int method)
@@ -649,34 +693,34 @@ void TSCHybrid::reRecognizeBatch(int method)
     vector<PlaceSSG> places;
 
     //Plot place in map
-//    vector<string> image_files = getFiles("/home/isl-mahmut/Datasets/fr_seq2_cloudy2/std_cam/");
-//    plotDetectedPlacesX(SSGs, image_files);
+    vector<string> image_files = getFiles("/home/isl-mahmut/Datasets/lj_seq1_cloudy2/std_cam/");
+    plotDetectedPlacesBD(SSGs, image_files, dataset);
 
-    recognition->setRecognitionMethod(method);
+//    recognition->setRecognitionMethod(method);
 
-    int i = 0;
-    for(i = 0; i < SSGs.size()-1; i++)
-    {
-        SSG ssg = SSGs[i];
-        SSGProc::filterSummarySegments(ssg, params->ssg_params.tau_p);
-        PlaceSSG new_place(ssg.getId(), ssg);
-        places.push_back(new_place);
-    }
+//    int i = 0;
+//    for(i = 0; i < SSGs.size()-1; i++)
+//    {
+//        SSG ssg = SSGs[i];
+//        SSGProc::filterSummarySegments(ssg, params->ssg_params.tau_p);
+//        PlaceSSG new_place(ssg.getId(), ssg);
+//        places.push_back(new_place);
+//    }
 
-    SSG ssg = SSGs[i];
-    SSGProc::filterSummarySegments(ssg, params->ssg_params.tau_p);
+//    SSG ssg = SSGs[i];
+//    SSGProc::filterSummarySegments(ssg, params->ssg_params.tau_p);
 
-    PlaceSSG new_place(ssg.getId(), ssg);
+//    PlaceSSG new_place(ssg.getId(), ssg);
+//    vector<vector<vector<pair<int,int> > > > familiarities;
+//    recognition->performRecognitionHybrid(places, new_place, &hierarchy_tree, familiarities);
 
-    recognition->performRecognitionHybrid(places, new_place, &hierarchy_tree);
-
-    //recognition->calculateRecPerformance(places.size(), dist_matrix, hierarchy_tree);
-    qDebug() << "N2N";
-    recognition->calculateN2NTreeDistanceMatrix(hierarchy_tree);
-    qDebug() << "BD";
-    recognition->calculateBDDistanceMatrix(hierarchy_tree);
-    qDebug() << "SSG";
-    recognition->calculateSSGDistanceMatrix(hierarchy_tree);
+//    //recognition->calculateRecPerformance(places.size(), dist_matrix, hierarchy_tree);
+//    qDebug() << "N2N";
+//    recognition->calculateN2NTreeDistanceMatrix(hierarchy_tree);
+//    qDebug() << "BD";
+//    recognition->calculateBDDistanceMatrix(hierarchy_tree);
+//    qDebug() << "SSG";
+//    recognition->calculateSSGDistanceMatrix(hierarchy_tree);
 }
 
 float TSCHybrid::calcCohScore(SegmentTrack* seg_track, vector<float>& coh_scores)
@@ -899,95 +943,95 @@ void TSCHybrid::plotDetectedPlacesX(vector<SSG> SSGs, const vector<string>& imag
         float shift = 0;
 
         //fr-1
-//        if(SSGs[i].getId() == 0)
-//            shift = -1;
-//        else if(SSGs[i].getId() == 1)
-//            shift = 1;
-//        else if(SSGs[i].getId() == 2)
-//            shift = 1;
-//        else if(SSGs[i].getId() == 3)
-//            shift = 1;
-//        else if(SSGs[i].getId() == 4)
-//            shift = 1;
-//        else if(SSGs[i].getId() == 5)
-//            shift = 2;
-//        else if(SSGs[i].getId() == 6)
-//            shift = -1;
-//        else if(SSGs[i].getId() == 7)
-//            shift = 1;
-//        else if(SSGs[i].getId() == 8)
-//            shift = 2;
-//        else if(SSGs[i].getId() == 9)
-//            shift = 1;
-//        else if(SSGs[i].getId() == 10)
-//            shift = -1;
-//        else if(SSGs[i].getId() == 11)
-//            shift = -0.7;
-//        else if(SSGs[i].getId() == 12)
-//            shift = 0;
-//        else if(SSGs[i].getId() == 13)
-//            shift = 1;
-//        else if(SSGs[i].getId() == 14)
-//            shift = 1;
-//        else if(SSGs[i].getId() == 15)
-//            shift = 1;
-//        else if(SSGs[i].getId() == 16)
-//            shift = 1;
-//        else if(SSGs[i].getId() == 17)
-//            shift = -2.5;
-//        else if(SSGs[i].getId() == 18)
-//            shift = -2;
-//        else if(SSGs[i].getId() == 19)
-//            shift = 1;
-
-
-        //fr-2
         if(SSGs[i].getId() == 0)
             shift = -1;
         else if(SSGs[i].getId() == 1)
             shift = 1;
         else if(SSGs[i].getId() == 2)
-            shift = -1;
+            shift = 1;
         else if(SSGs[i].getId() == 3)
             shift = 1;
         else if(SSGs[i].getId() == 4)
             shift = 1;
         else if(SSGs[i].getId() == 5)
-            shift = 0;
+            shift = 2;
         else if(SSGs[i].getId() == 6)
-            shift = 0.5;
-        else if(SSGs[i].getId() == 7)
             shift = -1;
+        else if(SSGs[i].getId() == 7)
+            shift = 1;
         else if(SSGs[i].getId() == 8)
-            shift = -2;
+            shift = 2;
         else if(SSGs[i].getId() == 9)
             shift = 1;
         else if(SSGs[i].getId() == 10)
-            shift = 0.5;
+            shift = -1;
         else if(SSGs[i].getId() == 11)
-            shift = 0;
+            shift = -0.7;
         else if(SSGs[i].getId() == 12)
             shift = 0;
         else if(SSGs[i].getId() == 13)
-            shift = 0;
+            shift = 1;
         else if(SSGs[i].getId() == 14)
-            shift = -1;
+            shift = 1;
         else if(SSGs[i].getId() == 15)
             shift = 1;
         else if(SSGs[i].getId() == 16)
-            shift = -1;
+            shift = 1;
         else if(SSGs[i].getId() == 17)
-            shift = -1;
-        else if(SSGs[i].getId() == 18)
             shift = -2.5;
+        else if(SSGs[i].getId() == 18)
+            shift = -2;
         else if(SSGs[i].getId() == 19)
-            shift = -1;
-        else if(SSGs[i].getId() == 20)
-            shift = 0.5;
-        else if(SSGs[i].getId() == 21)
-            shift = -1;
-        else if(SSGs[i].getId() == 22)
-            shift = -1;
+            shift = 1;
+
+
+        //fr-2
+//        if(SSGs[i].getId() == 0)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 1)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 2)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 3)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 4)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 5)
+//            shift = 0;
+//        else if(SSGs[i].getId() == 6)
+//            shift = 0.5;
+//        else if(SSGs[i].getId() == 7)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 8)
+//            shift = -2;
+//        else if(SSGs[i].getId() == 9)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 10)
+//            shift = 0.5;
+//        else if(SSGs[i].getId() == 11)
+//            shift = 0;
+//        else if(SSGs[i].getId() == 12)
+//            shift = 0;
+//        else if(SSGs[i].getId() == 13)
+//            shift = 0;
+//        else if(SSGs[i].getId() == 14)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 15)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 16)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 17)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 18)
+//            shift = -2.5;
+//        else if(SSGs[i].getId() == 19)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 20)
+//            shift = 0.5;
+//        else if(SSGs[i].getId() == 21)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 22)
+//            shift = -1;
 
 
 
@@ -1112,7 +1156,7 @@ void TSCHybrid::plotDetectedPlaces(vector<SSG> SSGs, const vector<string>& image
     }
 
     place_map->replot();
-    QString save_loc = QString(OUTPUT_FOLDER).append("detected_places").append(QString::number(dataset->dataset_id)).append(".png");
+    QString save_loc = QString(OUTPUT_FOLDER).append("detected_places").append(QString::number(SSGs[0].getColor())).append(".png");
     this->place_map->savePng(save_loc);
 
 
@@ -1409,7 +1453,402 @@ void TSCHybrid::plotDetectedPlaces(vector<SSG> SSGs, const vector<string>& image
     }
     //place_map->rescaleAxes();
     place_map->replot();
-    save_loc = QString(OUTPUT_FOLDER).append("detected_places").append(QString::number(dataset->dataset_id)).append("_numbered.png");
+    save_loc = QString(OUTPUT_FOLDER).append("detected_places").append(QString::number(SSGs[0].getColor())).append("_numbered.png");
+    this->place_map->savePng(save_loc);
+}
+
+// Plots places and coherency scores
+void TSCHybrid::plotDetectedPlacesBD(vector<SSG> SSGs, const vector<string>& image_files, Dataset* dataset)
+{
+    //Cold-Fr
+//    int MAP_W = 1000;
+//    int MAP_H = 750;
+//    int MAP_L = -20;
+//    int MAP_R = 20;
+//    int MAP_T = 10;
+//    int MAP_B = -20;
+
+    //Cold-Sa
+//    int MAP_W = 1000;
+//    int MAP_H = 750;
+//    int MAP_L = -15;
+//    int MAP_R = 15;
+//    int MAP_T = 15;
+//    int MAP_B = -15;
+
+    //Cold-Lj-1
+//    int MAP_W = 1000;
+//    int MAP_H = 750;
+//    int MAP_L = -10;
+//    int MAP_R = 30;
+//    int MAP_T = 100;
+//    int MAP_B = 0;
+
+    //Cold-Lj-2
+    int MAP_W = 1000;
+    int MAP_H = 750;
+    int MAP_L = -15;
+    int MAP_R = 35;
+    int MAP_T = 100;
+    int MAP_B = 0;
+    qDebug() << "size" << SSGs.size();
+    int graph_idx = -1;
+
+    //Traveled places plot initialization
+    this->place_map = place_map;
+
+    this->place_map->axisRect()->setAutoMargins(QCP::msAll);
+    this->place_map->axisRect()->setMargins(QMargins(10,10,10,10));
+    this->place_map->setMaximumWidth(MAP_W);
+    this->place_map->setMinimumWidth(MAP_W);
+    this->place_map->setMinimumHeight(MAP_H);
+    this->place_map->setMaximumHeight(MAP_H);
+    this->place_map->xAxis->grid()->setVisible(false);
+    this->place_map->yAxis->grid()->setVisible(false);
+    this->place_map->xAxis->setTicks(false);
+    this->place_map->yAxis->setTicks(false);
+    this->place_map->xAxis->setVisible(false);
+    this->place_map->yAxis->setVisible(false);
+    this->place_map->xAxis->setRange(MAP_L, MAP_R);
+    this->place_map->yAxis->setRange(MAP_T, MAP_B);
+
+
+    for(int i = 0; i < SSGs.size(); i++)
+    {
+        QPen dumPen;
+        dumPen.setWidth(0.5);
+        dumPen.setColor(QColor(255, 0, 0, 50));
+
+        this->place_map->addGraph();
+        graph_idx++;
+        this->place_map->graph(graph_idx)->setPen(dumPen);
+        this->place_map->graph(graph_idx)->setLineStyle(QCPGraph::lsNone);
+        this->place_map->graph(graph_idx)->setScatterStyle(QCPScatterStyle::ssDisc);
+
+        qDebug() << "k" << SSGs[i].getStartFrame() << SSGs[i].getEndFrame();
+        for(int j = SSGs[i].getStartFrame(); j < SSGs[i].getEndFrame(); j++)
+        {
+            Point2f coord = getCoordCold(image_files[j]);
+            place_map->graph(graph_idx)->addData(coord.x, coord.y);
+            qDebug() << "a" << coord.x << coord.y;
+        }
+    }
+    for(int i = 0; i < SSGs.size()-1; i++)
+    {
+        QPen dumPen;
+        dumPen.setWidth(0.5);
+        dumPen.setColor(QColor(0, 0, 255, 50));
+
+        this->place_map->addGraph();
+        graph_idx++;
+        this->place_map->graph(graph_idx)->setPen(dumPen);
+        this->place_map->graph(graph_idx)->setLineStyle(QCPGraph::lsNone);
+        this->place_map->graph(graph_idx)->setScatterStyle(QCPScatterStyle::ssDisc);
+
+        qDebug() << "t" << SSGs[i].getEndFrame() << SSGs[i+1].getStartFrame();
+        for(int j = SSGs[i].getEndFrame(); j < SSGs[i+1].getStartFrame(); j++)
+        {
+            Point2f coord = getCoordCold(image_files[j]);
+            place_map->graph(graph_idx)->addData(coord.x, coord.y);
+            qDebug() << "b" << coord.x << coord.y;
+        }
+    }
+
+    place_map->replot();
+    QString save_loc = QString(OUTPUT_FOLDER).append("detected_places").append(QString::number(SSGs[0].getColor())).append(".png");
+    this->place_map->savePng(save_loc);
+
+
+    for(int i = 0; i < SSGs.size(); i++)
+    {
+
+        float shift = 0;
+
+//        //fr-1
+//        if(SSGs[i].getId() == 0)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 1)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 2)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 3)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 4)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 5)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 6)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 7)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 8)
+//            shift = 2;
+//        else if(SSGs[i].getId() == 9)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 10)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 11)
+//            shift = -2;
+//        else if(SSGs[i].getId() == 12)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 13)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 14)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 15)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 16)
+//            shift = 2;
+//        else if(SSGs[i].getId() == 17)
+//            shift = 1;
+
+
+//        fr-2
+//        if(SSGs[i].getId() == 0)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 1)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 2)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 3)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 4)
+//            shift = 0;
+//        else if(SSGs[i].getId() == 5)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 6)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 7)
+//            shift = -2;
+//        else if(SSGs[i].getId() == 8)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 9)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 10)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 11)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 12)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 13)
+//            shift = 0;
+//        else if(SSGs[i].getId() == 14)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 15)
+//            shift = -0.5;
+//        else if(SSGs[i].getId() == 16)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 17)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 18)
+//            shift = -2.5;
+//        else if(SSGs[i].getId() == 19)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 20)
+//            shift = 0.5;
+//        else if(SSGs[i].getId() == 21)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 22)
+//            shift = -1;
+
+//        //sa-1
+//        if(SSGs[i].getId() == 0)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 1)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 2)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 3)
+//            shift = -0.5;
+//        else if(SSGs[i].getId() == 4)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 5)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 6)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 7)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 8)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 9)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 10)
+//            shift = 1;
+
+        //sa-2
+//        if(SSGs[i].getId() == 0)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 1)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 2)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 3)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 4)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 5)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 6)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 7)
+//            shift = -1.3;
+//        else if(SSGs[i].getId() == 8)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 9)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 10)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 11)
+//            shift = 2;
+//        else if(SSGs[i].getId() == 12)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 13)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 14)
+//            shift = 2;
+//        else if(SSGs[i].getId() == 15)
+//            shift = 1.2;
+
+//        //lj-1
+//        if(SSGs[i].getId() == 0)
+//            shift = -2;
+//        else if(SSGs[i].getId() == 1)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 2)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 3)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 4)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 5)
+//            shift = 2;
+//        else if(SSGs[i].getId() == 6)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 7)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 8)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 9)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 10)
+//            shift = 2;
+//        else if(SSGs[i].getId() == 11)
+//            shift = 2;
+//        else if(SSGs[i].getId() == 12)
+//            shift = 2;
+//        else if(SSGs[i].getId() == 13)
+//            shift = 2;
+//        else if(SSGs[i].getId() == 14)
+//            shift = 3;
+//        else if(SSGs[i].getId() == 15)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 16)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 17)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 18)
+//            shift = -2.5;
+//        else if(SSGs[i].getId() == 19)
+//            shift = -3;
+//        else if(SSGs[i].getId() == 20)
+//            shift = -1.5;
+//        else if(SSGs[i].getId() == 21)
+//            shift = -1;
+//        else if(SSGs[i].getId() == 22)
+//            shift = -2;
+//        else if(SSGs[i].getId() == 23)
+//            shift = 1.5;
+//        else if(SSGs[i].getId() == 24)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 25)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 26)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 27)
+//            shift = 1;
+//        else if(SSGs[i].getId() == 28)
+//            shift = 0.5;
+
+//        //lj-2
+        if(SSGs[i].getId() == 0)
+            shift = -2;
+        else if(SSGs[i].getId() == 1)
+            shift = -1;
+        else if(SSGs[i].getId() == 2)
+            shift = 1;
+        else if(SSGs[i].getId() == 3)
+            shift = 1;
+        else if(SSGs[i].getId() == 4)
+            shift = -1;
+        else if(SSGs[i].getId() == 5)
+            shift = -1;
+        else if(SSGs[i].getId() == 6)
+            shift = -2;
+        else if(SSGs[i].getId() == 7)
+            shift = -1;
+        else if(SSGs[i].getId() == 8)
+            shift = 1;
+        else if(SSGs[i].getId() == 9)
+            shift = 2;
+        else if(SSGs[i].getId() == 10)
+            shift = 1;
+        else if(SSGs[i].getId() == 11)
+            shift = 1;
+        else if(SSGs[i].getId() == 12)
+            shift = 2;
+        else if(SSGs[i].getId() == 13)
+            shift = 1;
+        else if(SSGs[i].getId() == 14)
+            shift = 3;
+        else if(SSGs[i].getId() == 15)
+            shift = -1;
+        else if(SSGs[i].getId() == 16)
+            shift = -2;
+        else if(SSGs[i].getId() == 17)
+            shift = -1;
+        else if(SSGs[i].getId() == 18)
+            shift = 1;
+        else if(SSGs[i].getId() == 19)
+            shift = 1;
+        else if(SSGs[i].getId() == 20)
+            shift = 1;
+        else if(SSGs[i].getId() == 21)
+            shift = 1;
+        else if(SSGs[i].getId() == 22)
+            shift = 1;
+        else if(SSGs[i].getId() == 23)
+            shift = 0.5;
+        else if(SSGs[i].getId() == 24)
+            shift = 1.5;
+        else if(SSGs[i].getId() == 25)
+            shift = 1;
+        else if(SSGs[i].getId() == 26)
+            shift = 1;
+        else if(SSGs[i].getId() == 27)
+            shift = 1;
+        else if(SSGs[i].getId() == 28)
+            shift = 0.5;
+
+        int sample_frame_id = (SSGs[i].getEndFrame() + SSGs[i].getStartFrame()) / 2;
+        QCPItemText *textLabel = new QCPItemText(this->place_map);
+        this->place_map->addItem(textLabel);
+        textLabel->position->setType(QCPItemPosition::ptPlotCoords);
+        Point2f coord = getCoordCold(image_files[sample_frame_id]);
+        textLabel->position->setCoords(QPointF(coord.x+shift, coord.y+4));
+        textLabel->setFont(QFont(QFont().family(),16)); // make font a bit larger
+        textLabel->setText(QString::number(SSGs[i].getId()));
+        textLabel->setPen(QPen(Qt::black)); // show black border around text
+
+        // add the arrow:
+        QCPItemLine *arrow = new QCPItemLine(this->place_map);
+        this->place_map->addItem(arrow);
+        arrow->start->setParentAnchor(textLabel->bottom);
+        arrow->end->setCoords(coord.x, coord.y);
+        arrow->setHead(QCPLineEnding::esSpikeArrow);
+    }
+    //place_map->rescaleAxes();
+    place_map->replot();
+    save_loc = QString(OUTPUT_FOLDER).append("detected_places").append(QString::number(SSGs[0].getColor())).append("_numbered.png");
     this->place_map->savePng(save_loc);
 }
 

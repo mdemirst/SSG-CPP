@@ -20,6 +20,8 @@ Recognition::Recognition(Parameters* params,
     this->seg = seg;
 
     rec_method = REC_TYPE_SSG_NORMAL;
+    showPlaceAsCircle = true;
+    showInnerSSGs = false;
 }
 
 Recognition::~Recognition()
@@ -33,30 +35,14 @@ void Recognition::setRecognitionMethod(int method)
     this->rec_method = method;
 }
 
-//Returns color of place
-cv::Scalar getPlaceColor(int place)
+void Recognition::setPlaceDisplayType(int isCircle)
 {
-    switch(place)
-    {
-        case SITE_FR1:
-            return Scalar(255,0,0);     //blue      -- fr
-        case SITE_SA1:
-            return Scalar(0,0,0);       //black     -- sa
-        case SITE_LJ1:
-            return Scalar(0,140,255);   //orange    -- lj
-        case SITE_NC1:
-            return Scalar(0,255,0);     //green     -- nc
-        case SITE_FR2:
-            return Scalar(255,255,0);   //aqua      -- fr2
-        case SITE_SA2:
-            return Scalar(103,101,98);  //gray      -- sa2
-        case SITE_LJ2:
-            return Scalar(159,231,249); //yellow    -- lj2
-        case SITE_NC2:
-            return Scalar(191,223,169); //l. green  -- nc2
-        default:
-            return Scalar(255,255,255);
-    }
+    this->showPlaceAsCircle = isCircle;
+}
+
+void Recognition::setInnerSSGDisplayType(int isShowInnerSSG)
+{
+    this->showInnerSSGs = isShowInnerSSG;
 }
 
 //Draws SSGs at terminal nodes
@@ -67,14 +53,34 @@ void Recognition::drawSSG(Mat& img, SSG ssg, Point coord)
         copyMakeBorder(img, img, 0, params->rec_params.ssg_h, 0, 0, BORDER_CONSTANT, Scalar(255,255,255));
     }
 
-    if(params->rec_params.ssg_w < 10)
+    if(showPlaceAsCircle)
     {
+        circle(img,coord,25,  getPlaceColor(ssg.getColor()), -1);
+
+        //Draw Place ids
         stringstream ss;
         ss.str("");
         ss << ssg.getId();
-        Point str_coord(coord.x-5, coord.y+25);
-        putText(img, ss.str(), str_coord, FONT_HERSHEY_SIMPLEX, 0.5, getPlaceColor(ssg.getColor()),2);
-        circle(img,coord,10,  getPlaceColor(ssg.getColor()), -1);
+        if(ssg.getId() < 10)
+        {
+            Point str_coord(coord.x-10, coord.y+8);
+            putText(img, ss.str(), str_coord, FONT_HERSHEY_SIMPLEX, 1, Scalar(255,255,255),2);
+        }
+        else
+        {
+            Point str_coord(coord.x-17, coord.y+8);
+            putText(img, ss.str(), str_coord, FONT_HERSHEY_SIMPLEX, 1, Scalar(255,255,255),2);
+        }
+
+        //        Scalar cat_color = getCategoryColor(getPlaceCategory(ssg.getColor(),ssg.getId()));
+        //        //Draw place cats
+        //        rectangle(img, Point(coord.x-20,40+coord.y-10), Point(coord.x+20,40+coord.y+20),cat_color, CV_FILLED);
+        //        ss.str("");
+        //        ss << getPlaceCategory(ssg.getColor(),ssg.getId());
+        //        Point str_coord(coord.x-10, 40+coord.y+15);
+        //        putText(img, ss.str(), str_coord, FONT_HERSHEY_SIMPLEX, 1, Scalar(255,255,255),2);
+
+
     }
     else
     {
@@ -115,7 +121,7 @@ void Recognition::drawSSG(Mat& img, SSG ssg, Point coord)
         ss.str("");
         ss << ssg.getId();
         Point str_coord(coord.x+params->rec_params.ssg_w, coord.y+params->rec_params.ssg_h/2.0);
-        putText(img, ss.str(), str_coord, FONT_HERSHEY_SIMPLEX, 0.5, getPlaceColor(ssg.getColor()),2);
+        putText(img, ss.str(), str_coord, FONT_HERSHEY_SIMPLEX, 1, getPlaceColor(ssg.getColor()),2);
 
         circle(img,coord,10,  getPlaceColor(ssg.getColor()), -1);
     }
@@ -140,7 +146,7 @@ void Recognition::drawInnerSSG(Mat& img, SSG ssg, Point coord)
     ss.str("");
     ss << ssg.getId();
     Point str_coord(coord.x+params->rec_params.ssg_w/2, coord.y-3);
-    putText(img, ss.str(), str_coord, FONT_HERSHEY_SIMPLEX, 0.5, getPlaceColor(ssg.getColor()),2);
+    putText(img, ss.str(), str_coord, FONT_HERSHEY_SIMPLEX, 1, getPlaceColor(ssg.getColor()),2);
 
     //Predefined size
     resize(img_ssg, img_ssg, cv::Size(params->rec_params.ssg_w,params->rec_params.ssg_h));
@@ -168,14 +174,15 @@ void Recognition::drawSSGWithImages(Mat& img, SSG ssg, Point coord)
         ss.str("");
         ss << ssg.getId();
         Point str_coord(coord.x-5, coord.y+25);
-        putText(img, ss.str(), str_coord, FONT_HERSHEY_SIMPLEX, 0.5, getPlaceColor(ssg.getColor()),2);
+        putText(img, ss.str(), str_coord, FONT_HERSHEY_SIMPLEX, 1, getPlaceColor(ssg.getColor()),2);
         circle(img,coord,10,  getPlaceColor(ssg.getColor()), -1);
     }
     else
     {
-        vector<string> img_files = getFiles("/home/isl-mahmut/Datasets/fr_seq2_cloudy1/std_cam/");
+        string place_folder = getPlaceFolder(ssg.getColor());
+        vector<string> img_files = getFiles(place_folder);
         int img_index = (ssg.getEndFrame()+ssg.getStartFrame())/2;
-        Mat img_real = imread(string("/home/isl-mahmut/Datasets/fr_seq2_cloudy1/std_cam/") + img_files[img_index]);
+        Mat img_real = imread(place_folder + img_files[img_index]);
 
 
         Mat img_ssg(params->ssg_params.img_height, params->ssg_params.img_width, CV_8UC3, Scalar(255,255,255));
@@ -212,7 +219,7 @@ void Recognition::drawSSGWithImages(Mat& img, SSG ssg, Point coord)
         ss.str("");
         ss << ssg.getId();
         Point str_coord(coord.x+params->rec_params.ssg_w, coord.y+params->rec_params.ssg_h/2.0);
-        putText(img, ss.str(), str_coord, FONT_HERSHEY_SIMPLEX, 0.5, getPlaceColor(ssg.getColor()),2);
+        putText(img, ss.str(), str_coord, FONT_HERSHEY_SIMPLEX, 1, getPlaceColor(ssg.getColor()),2);
 
         circle(img,coord,10,  getPlaceColor(ssg.getColor()), -1);
     }
@@ -233,8 +240,11 @@ void Recognition::drawBranch(Mat& img, TreeNode* node, int height, double scale_
             line(img, top, middle, Scalar(0,0,0), 2);
             line(img, middle, bottom, Scalar(0,0,0), 2);
 
-            Point coord(plot_offset+node->getXPos()*scale_x, height - plot_offset - 1 - node->getVal()*scale_y);
-            drawInnerSSG(img, node->getDescriptor()->getMember(0), coord);
+            if(showInnerSSGs)
+            {
+                Point coord(plot_offset+node->getXPos()*scale_x, height - plot_offset - 1 - node->getVal()*scale_y);
+                drawInnerSSG(img, node->getDescriptor()->getMember(0), coord);
+            }
 
             drawBranch(img, node->getChildren()[i], height, scale_x, scale_y);
         }
@@ -247,14 +257,17 @@ void Recognition::drawBranch(Mat& img, TreeNode* node, int height, double scale_
         //Draw Place id
         stringstream ss;
         ss << node->getLabel();
-        Point str_coord(coord.x+10, coord.y-10);
-        putText(img, ss.str(), str_coord, FONT_HERSHEY_SIMPLEX, 0.5, Scalar(255,0,0),2);
+        Point str_coord(coord.x+18, coord.y-18);
+        //putText(img, ss.str(), str_coord, FONT_HERSHEY_SIMPLEX, 1, Scalar(255,0,0),2);
 
         //Draw SSGs
         for(int i = 0; i < node->getDescriptor()->getCount(); i++)
         {
             Point ssg_coord(coord.x, coord.y + i*params->rec_params.ssg_h);
-            drawSSGWithImages(img, node->getDescriptor()->getMember(i), ssg_coord);
+            if(showPlaceAsCircle)
+                drawSSG(img, node->getDescriptor()->getMember(i), ssg_coord);
+            else
+                drawSSGWithImages(img, node->getDescriptor()->getMember(i), ssg_coord);
         }
 
     }
@@ -651,7 +664,7 @@ int Recognition::performRecognition(vector<PlaceSSG>& places, PlaceSSG new_place
 //Performs recognition check for new detected place..
 //If new place is recognized, it's merged with the recognized one and tree is not changed(it should be changed actually)
 //If new place is not recognized, it's placed into tree using SLINK algorithm
-int Recognition::performRecognitionHybrid(vector<PlaceSSG>& places, PlaceSSG new_place, TreeNode** hierarchy)
+int Recognition::performRecognitionHybridOld(vector<PlaceSSG>& places, PlaceSSG new_place, TreeNode** hierarchy)
 {
     int recognition_status = NOT_RECOGNIZED;
     //TODO: Incremental distance matrix creation
@@ -736,6 +749,239 @@ int Recognition::performRecognitionHybrid(vector<PlaceSSG>& places, PlaceSSG new
             }
         }
     }
+
+    //Remove dist_matrix
+    for (int i = 0; i < nrPlaces; i++) delete[] dist_matrix[i];
+    delete[] dist_matrix;
+
+    return recognition_status;
+}
+
+
+//Performs recognition check for new detected place..
+//If new place is recognized, it's merged with the recognized one and tree is not changed(it should be changed actually)
+//If new place is not recognized, it's placed into tree using SLINK algorithm
+int Recognition::performRecognitionHybrid(vector<PlaceSSG>& places, PlaceSSG new_place, TreeNode** hierarchy, vector<vector<vector<pair<int, int> > > >& familiarities)
+{
+    int recognition_status = NOT_RECOGNIZED;
+    //TODO: Incremental distance matrix creation
+    //First create distance matrix (We don't need to calculate distance matrix from scratch)
+
+    //We'll push new place into places vector, then erase at the end
+    places.push_back(new_place);
+
+    //If there is not enough place for recognition
+    if(places.size() < 2)
+        return RECOGNITION_ERROR;
+
+    int nrPlaces = places.size();
+
+    //qDebug() << "New recognition calculation...";
+    double** dist_matrix = calculateDistanceMatrix(places);
+
+    //Find hierarchical tree using SLINK algorithm
+    Node* tree = solveSLink(nrPlaces, nrPlaces, dist_matrix);
+
+    *hierarchy = *convert2Tree(tree, nrPlaces-1, nrPlaces, places);
+
+    //Draw tree
+    drawTree(*hierarchy, nrPlaces, params->rec_params.plot_h, params->rec_params.plot_w);
+
+    //Get pointer to position of new detected place
+    TreeNode* new_place_node = findNodeWithPlaceLabel(nrPlaces-1, *hierarchy);
+
+
+    //Find the ancestor of the detected place which has the highest height but lower than tau_f
+    TreeNode* highest_ancestor = new_place_node;
+
+    while(highest_ancestor->getParent() != NULL && highest_ancestor->getParent()->getVal() < params->rec_params.tau_r)
+    {
+        highest_ancestor = highest_ancestor->getParent();
+    }
+
+    //bool containsPair = false;
+
+    vector<vector<pair<int,int> > > familiar_nodes;
+    //If highest_ancestor is not NULL then check its terminal offsprings for recognition
+    //The familiarity between detected place and terminal offspring nodes is greater than threshold
+    //Therefore these are the candidate nodes
+    if(highest_ancestor != NULL && highest_ancestor->getLabel() != new_place_node->getLabel())
+    {
+        //Get terminal offspring nodes of highest ancestor
+        vector<TreeNode*> terminal_nodes;
+        getTerminalNodes(highest_ancestor, terminal_nodes);
+
+        float best_dissimilarity = -1;
+        TreeNode* closest_node = NULL;
+
+        for(int i = 0; i < terminal_nodes.size(); i++)
+        {
+            TreeNode* node = terminal_nodes[i];
+
+            vector<pair<int, int> > familiar_node_ssgs;
+            for(int j = 0; j < node->getDescriptor()->getCount(); j++)
+            {
+                int site = node->getDescriptor()->getMember(j).getColor();
+                int id = node->getDescriptor()->getMember(j).getId();
+                familiar_node_ssgs.push_back(make_pair(site,id));
+//                bool status = getMatchStatus(node->getDescriptor()->getMember(j).getColor(),
+//                                             node->getDescriptor()->getMember(j).getId(),
+//                                             new_place_node->getDescriptor()->getMember(0).getColor(),
+//                                             new_place_node->getDescriptor()->getMember(0).getId());
+
+//                containsPair |= status;
+            }
+            familiar_nodes.push_back(familiar_node_ssgs);
+
+            if(node->getLabel() != new_place_node->getLabel())
+            {
+                //Check at-least-one-common-ssg-node criteria
+                if(getNumberMatchedSSGNodes(*new_place_node->getDescriptor(), *node->getDescriptor(), params->rec_params.tau_v))
+                {
+                    float dissimilarity = getDistance(*new_place_node->getDescriptor(), *terminal_nodes[i]->getDescriptor());
+                    if(best_dissimilarity == -1 || dissimilarity < best_dissimilarity )
+                    {
+                        best_dissimilarity = dissimilarity;
+                        closest_node = node;
+                    }
+                }
+            }
+        }
+
+        //If closest node is not null, then place is recognized
+        if(closest_node != NULL)
+        {
+            for(int i = 0; i < new_place_node->getDescriptor()->getCount(); i++)
+            {
+                closest_node->getDescriptor()->addMember(new_place_node->getDescriptor()->getMember(i));
+            }
+
+            places.erase(places.end());
+
+            recognition_status = RECOGNIZED;
+        }
+
+    }
+
+    if(new_place_node->getDescriptor()->getMember(0).getColor() == SITE_LJ2)
+        familiarities.push_back(familiar_nodes);
+
+    //Remove dist_matrix
+    for (int i = 0; i < nrPlaces; i++) delete[] dist_matrix[i];
+    delete[] dist_matrix;
+
+    return recognition_status;
+}
+
+
+//Performs recognition check for new detected place..
+//If new place is recognized, it's merged with the recognized one and tree is not changed(it should be changed actually)
+//If new place is not recognized, it's placed into tree using SLINK algorithm
+int Recognition::performRecognitionHybridNoRec(vector<PlaceSSG>& places, PlaceSSG new_place, TreeNode** hierarchy, vector<vector<vector<pair<int, int> > > >& familiarities,
+                                               vector<pair<pair<int,int>, pair<int,int> > >& recognized_places)
+{
+    int recognition_status = NOT_RECOGNIZED;
+    //TODO: Incremental distance matrix creation
+    //First create distance matrix (We don't need to calculate distance matrix from scratch)
+
+    //We'll push new place into places vector, then erase at the end
+    places.push_back(new_place);
+
+    //If there is not enough place for recognition
+    if(places.size() < 2)
+        return RECOGNITION_ERROR;
+
+    int nrPlaces = places.size();
+
+    //qDebug() << "New recognition calculation...";
+    double** dist_matrix = calculateDistanceMatrix(places);
+
+    //Find hierarchical tree using SLINK algorithm
+    Node* tree = solveSLink(nrPlaces, nrPlaces, dist_matrix);
+
+    *hierarchy = *convert2Tree(tree, nrPlaces-1, nrPlaces, places);
+
+    //Draw tree
+    drawTree(*hierarchy, nrPlaces, params->rec_params.plot_h, params->rec_params.plot_w);
+
+    //Get pointer to position of new detected place
+    TreeNode* new_place_node = findNodeWithPlaceLabel(nrPlaces-1, *hierarchy);
+
+
+    //Find the ancestor of the detected place which has the highest height but lower than tau_f
+    TreeNode* highest_ancestor = new_place_node;
+
+    while(highest_ancestor->getParent() != NULL && highest_ancestor->getParent()->getVal() < params->rec_params.tau_r)
+    {
+        highest_ancestor = highest_ancestor->getParent();
+    }
+
+    //bool containsPair = false;
+
+    vector<vector<pair<int,int> > > familiar_nodes;
+    //If highest_ancestor is not NULL then check its terminal offsprings for recognition
+    //The familiarity between detected place and terminal offspring nodes is greater than threshold
+    //Therefore these are the candidate nodes
+    if(highest_ancestor != NULL && highest_ancestor->getLabel() != new_place_node->getLabel())
+    {
+        //Get terminal offspring nodes of highest ancestor
+        vector<TreeNode*> terminal_nodes;
+        getTerminalNodes(highest_ancestor, terminal_nodes);
+
+        float best_dissimilarity = -1;
+        TreeNode* closest_node = NULL;
+
+        for(int i = 0; i < terminal_nodes.size(); i++)
+        {
+            TreeNode* node = terminal_nodes[i];
+
+            vector<pair<int, int> > familiar_node_ssgs;
+            for(int j = 0; j < node->getDescriptor()->getCount(); j++)
+            {
+                int site = node->getDescriptor()->getMember(j).getColor();
+                int id = node->getDescriptor()->getMember(j).getId();
+                familiar_node_ssgs.push_back(make_pair(site,id));
+//                bool status = getMatchStatus(node->getDescriptor()->getMember(j).getColor(),
+//                                             node->getDescriptor()->getMember(j).getId(),
+//                                             new_place_node->getDescriptor()->getMember(0).getColor(),
+//                                             new_place_node->getDescriptor()->getMember(0).getId());
+
+//                containsPair |= status;
+            }
+            familiar_nodes.push_back(familiar_node_ssgs);
+
+
+            if(node->getLabel() != new_place_node->getLabel())
+            {
+                //Check at-least-one-common-ssg-node criteria
+                if(getNumberMatchedSSGNodes(*new_place_node->getDescriptor(), *node->getDescriptor(), params->rec_params.tau_v))
+                {
+                    float dissimilarity = getDistance(*new_place_node->getDescriptor(), *terminal_nodes[i]->getDescriptor());
+                    if(best_dissimilarity == -1 || dissimilarity < best_dissimilarity )
+                    {
+                        best_dissimilarity = dissimilarity;
+                        closest_node = node;
+                    }
+                }
+            }
+        }
+
+        //If closest node is not null, then place is recognized
+        if(closest_node != NULL)
+        {
+            for(int i = 0; i < new_place_node->getDescriptor()->getCount(); i++)
+            {
+                recognized_places.push_back(make_pair(make_pair(closest_node->getDescriptor()->getMember(0).getColor(), closest_node->getDescriptor()->getMember(0).getId()),
+                                                      make_pair(new_place_node->getDescriptor()->getMember(0).getColor(), new_place_node->getDescriptor()->getMember(0).getId())));
+            }
+
+            recognition_status = RECOGNIZED;
+        }
+
+    }
+
+//    if(new_place_node->getDescriptor()->getMember(0).getColor() == SITE_FR2)
+//        familiarities.push_back(familiar_nodes);
 
     //Remove dist_matrix
     for (int i = 0; i < nrPlaces; i++) delete[] dist_matrix[i];
@@ -928,6 +1174,36 @@ void Recognition::calculateRecPerformanceWithHValues(TreeNode* root)
 
 //Experimental
 //Calculate N2N values
+void Recognition::calculateN2NRecPerformance(TreeNode* root)
+{
+    //Fr
+    int site1 = SITE_FR1;
+    int site2 = SITE_FR2;
+    vector<pair<int, int> > matches = getRevisitMatchesFr();
+
+    //Sa
+//    int site1 = SITE_SA1;
+//    int site2 = SITE_SA2;
+//    vector<pair<int, int> > matches = getRevisitMatchesSa();
+
+    //Lj
+//    int site1 = SITE_LJ1;
+//    int site2 = SITE_LJ2;
+//    vector<pair<int, int> > matches = getRevisitMatchesLj();
+
+    qDebug() << "N2N Distances";
+    for(int i = 0; i < matches.size(); i++)
+    {
+        int place1 = matches[i].first;
+        int place2 = matches[i].second;
+
+        int dist = calculateN2NTreeDistance(findNodeWithSSGLabel(site1, place1, root), findNodeWithSSGLabel(site2, place2, root));
+        qDebug() << (int)(dist == 0);
+    }
+}
+
+//Experimental
+//Calculate N2N values
 void Recognition::calculateRecPerformance(TreeNode* root)
 {
     //Fr
@@ -951,8 +1227,250 @@ void Recognition::calculateRecPerformance(TreeNode* root)
         int place1 = matches[i].first;
         int place2 = matches[i].second;
 
-        qDebug() << calculateN2NTreeDistance(findNodeWithSSGLabel(site1, place1, root), findNodeWithSSGLabel(site2, place2, root));
+        TreeNode* place1_node = findNodeWithSSGLabel(site1, place1, root);
+        TreeNode* place2_node = findNodeWithSSGLabel(site2, place2, root);
+
+        if(place1_node->getLabel() == place2_node->getLabel())
+        {
+            qDebug() << 1;
+        }
+        else
+        {
+            if(place2_node->getDescriptor()->getCount() > 1)
+                qDebug() << -1;
+            else
+                qDebug() << 0;
+        }
     }
+}
+
+//Experimental
+void Recognition::calculateRecPerformance(vector<pair<pair<int,int>, pair<int,int> > >& recognized_places)
+{
+    //Fr
+//    int site1 = SITE_FR1;
+//    int site2 = SITE_FR2;
+//    vector<pair<int, int> > matches = getRevisitMatchesFr();
+
+    //Sa
+//    int site1 = SITE_SA1;
+//    int site2 = SITE_SA2;
+//    vector<pair<int, int> > matches = getRevisitMatchesSa();
+
+    //Lj
+    int site1 = SITE_LJ1;
+    int site2 = SITE_LJ2;
+    vector<pair<int, int> > matches = getRevisitMatchesLj();
+
+
+    qDebug() << "Rec performance with no rec";
+
+    qDebug() << params->rec_params.tau_r;
+    qDebug() << params->rec_params.tau_v;
+    qDebug() << params->ssg_params.tau_p;
+    qDebug() << "-";
+
+    for(int i = 0; i < matches.size(); i++)
+    {
+        int isRec = 0;
+        for(int j = 0; j < recognized_places.size(); j++)
+        {
+            if(recognized_places[j].second.first == site2 && recognized_places[j].second.second == matches[i].second)
+            {
+                if(recognized_places[j].first.first == site1 && recognized_places[j].first.second == matches[i].first)
+                {
+                    isRec = 1;
+                }
+                else
+                {
+                    isRec = -1;
+                }
+            }
+        }
+        qDebug() << isRec;
+    }
+}
+
+//Experimental
+void Recognition::calculateRecPerformanceCombined(vector<pair<pair<int,int>, pair<int,int> > >& recognized_places)
+{
+    int site1;
+    int site2;
+    vector<pair<int, int> > matches;
+    vector<int> sites;
+    sites.push_back(SITE_FR2);
+    sites.push_back(SITE_SA2);
+    sites.push_back(SITE_LJ2);
+
+    qDebug() << "Perf check starts >>>>>";
+
+    for(int s = 0; s < sites.size(); s++)
+    {
+        int site = sites[s];
+
+        if(site == SITE_FR2)
+        {
+            site1 = SITE_FR1;
+            site2 = SITE_FR2;
+            matches = getRevisitMatchesFr();
+        }
+        else if(site == SITE_SA2)
+        {
+            site1 = SITE_SA1;
+            site2 = SITE_SA2;
+            matches = getRevisitMatchesSa();
+        }
+        else if(site == SITE_LJ2)
+        {
+            site1 = SITE_LJ1;
+            site2 = SITE_LJ2;
+            matches = getRevisitMatchesLj();
+        }
+
+        qDebug() << "Rec performance with no rec";
+
+        qDebug() << params->rec_params.tau_r;
+        qDebug() << params->rec_params.tau_v;
+        qDebug() << params->ssg_params.tau_p;
+        qDebug() << "-";
+
+        for(int i = 0; i < matches.size(); i++)
+        {
+            int isRec = 0;
+            for(int j = 0; j < recognized_places.size(); j++)
+            {
+                if(recognized_places[j].second.first == site2 && recognized_places[j].second.second == matches[i].second)
+                {
+                    if(recognized_places[j].first.first == site1 && recognized_places[j].first.second == matches[i].first)
+                    {
+                        isRec = 1;
+                    }
+                    else
+                    {
+                        isRec = -1;
+                    }
+                }
+            }
+            qDebug() << isRec;
+        }
+    }
+}
+
+//Experimental
+//Calculate familiarity performance
+void Recognition::calculateFamiliarityPerformance(vector<vector<vector<pair<int,int> > > >& familiarities)
+{
+//    //Fr
+//    int site1 = SITE_FR1;
+//    int site2 = SITE_FR2;
+//    vector<pair<int, int> > matches = getRevisitMatchesFr();
+
+   // Sa
+//    int site1 = SITE_SA1;
+//    int site2 = SITE_SA2;
+//    vector<pair<int, int> > matches = getRevisitMatchesSa();
+
+    //Lj
+    int site1 = SITE_LJ1;
+    int site2 = SITE_LJ2;
+    vector<pair<int, int> > matches = getRevisitMatchesLj();
+
+    qDebug() << "Familiarity performance";
+
+    qDebug() << params->rec_params.tau_r;
+    qDebug() << params->rec_params.tau_v;
+    qDebug() << params->ssg_params.tau_p;
+    qDebug() << "-";
+    for(int i = 0; i < matches.size(); i++)
+    {
+        int place1 = matches[i].first;
+        int place2 = matches[i].second;
+
+        bool isFound = false;
+        for(int j = 0; j < familiarities[place2].size(); j++)
+        {
+            for(int k = 0; k < familiarities[place2][j].size(); k++)
+            {
+                if(familiarities[place2][j][k].second == place1)
+                {
+                    isFound |= true;
+                }
+            }
+
+        }
+
+        qDebug() << (int)isFound << "\t" << familiarities[place2].size();
+    }
+}
+
+//Experimental
+//Returns true if two places are same in real
+bool Recognition::getMatchStatus(int psite1, int place1, int psite2, int place2)
+{
+    //Fr
+    int site1 = SITE_FR1;
+    int site2 = SITE_FR2;
+    vector<pair<int, int> > matches = getRevisitMatchesFr();
+
+    //Sa
+//    int site1 = SITE_SA1;
+//    int site2 = SITE_SA2;
+//    vector<pair<int, int> > matches = getRevisitMatchesSa();
+
+    //Lj
+//    int site1 = SITE_LJ1;
+//    int site2 = SITE_LJ2;
+//    vector<pair<int, int> > matches = getRevisitMatchesLj();
+
+    for(int i = 0; i < matches.size(); i++)
+    {
+        if(psite1 == site1 && psite2 == site2)
+        {
+            if(matches[i].first == place1 && matches[i].second == place2)
+                return true;
+        }
+        else if(psite1 == site2 && psite2 == site1)
+        {
+            if(matches[i].first == place2 && matches[i].second == place1)
+                return true;
+        }
+    }
+
+    return false;
+}
+
+int Recognition::getNumberMatchedSSGNodes(PlaceSSG place1, PlaceSSG place2, float threshold)
+{
+    Mat P, C;
+    int max_nr_matched_nodes = -1;
+    for(int i = 0; i < place1.getCount(); i++)
+    {
+        for(int j = 0; j < place2.getCount(); j++)
+        {
+            gm->matchTwoImages(place1.getMember(i),place2.getMember(j),P,C);
+
+            vector<Point> nonzero_locs;
+            findNonZero(P,nonzero_locs);
+
+            int nr_matched_nodes = 0;
+            for(int k = 0; k < nonzero_locs.size(); k++)
+            {
+                float cost = C.at<float>(nonzero_locs[k].y, nonzero_locs[k].x);
+                if(cost < threshold)
+                {
+                    nr_matched_nodes++;
+                }
+            }
+
+            //Keep the maximum number of matches
+            if(max_nr_matched_nodes == -1 || max_nr_matched_nodes < nr_matched_nodes )
+            {
+                max_nr_matched_nodes = nr_matched_nodes;
+            }
+        }
+    }
+
+    return max_nr_matched_nodes;
 }
 
 //Returns most similar N places to each place
@@ -1023,6 +1541,21 @@ void Recognition::calculateN2NTreeDistanceMatrix(TreeNode* root_node)
 }
 
 //Experimental
+void printCVMat(Mat matrix)
+{
+    for(int i = 0; i < matrix.size().height; i++)
+    {
+        for(int j = 0; j < matrix.size().width; j++)
+        {
+            cout << std::setprecision(2) << std::fixed << matrix.at<float>(i,j) << " ";
+        }
+        cout << ";" << endl;
+    }
+    cout << endl;
+}
+
+
+//Experimental
 //Prints out SSG Distances for each pair of places(terminal nodes of tree)
 void Recognition::calculateSSGDistanceMatrix(TreeNode* root_node)
 {
@@ -1031,6 +1564,7 @@ void Recognition::calculateSSGDistanceMatrix(TreeNode* root_node)
 
     int size = all_terminal_nodes.size();
 
+    qDebug() << "SSG Distance";
     Mat distance_matrix = Mat::zeros(size, size, CV_32F);
     for(int i = 0; i < size; i++)
     {
@@ -1042,8 +1576,10 @@ void Recognition::calculateSSGDistanceMatrix(TreeNode* root_node)
         }
     }
 
-    cerr << distance_matrix << endl;
+    printCVMat(distance_matrix);
+    //cerr << distance_matrix << endl;
 }
+
 
 //Experimental
 //Prints out BD Distances for each pair of places(terminal nodes of tree)
@@ -1054,6 +1590,7 @@ void Recognition::calculateBDDistanceMatrix(TreeNode* root_node)
 
     int size = all_terminal_nodes.size();
 
+    qDebug() << "BD Distance";
     Mat distance_matrix = Mat::zeros(size, size, CV_32F);
     for(int i = 0; i < size; i++)
     {
@@ -1064,7 +1601,8 @@ void Recognition::calculateBDDistanceMatrix(TreeNode* root_node)
         }
     }
 
-    cerr << distance_matrix << endl;
+    printCVMat(distance_matrix);
+    //cerr << distance_matrix << endl;
 }
 
 //Calculate Node-to-Node tree distance

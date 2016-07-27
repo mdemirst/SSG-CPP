@@ -241,6 +241,7 @@ Mat segmentImageGokce(Mat src)
 {
     LUT ::setArray();
 
+    //These files must be in the same folder with the exe file
     keepcolors("SegmentColors.txt");
     createHash("ColorQuantas.txt");
 
@@ -359,13 +360,18 @@ Mat segmentImageGokce(Mat src)
         Mat component_Img = Mat::zeros(myImData.h,myImData.w,CV_8UC1);
         Mat dilated_component_Img,dst;
         Mat eroded_;
+
         // Create binary image of big segment
         for(int comp =0; comp < myImData.connComp.at(numberofcomponents).size(); comp++){
             Point component = myImData.connComp.at(numberofcomponents).at(comp);
             component_Img.at<uchar>(component.y,component.x)=255;
         }
 
+        imshow("ds",component_Img);
+        waitKey(0);
+
         dilate(component_Img,dilated_component_Img,dilation_element);
+
 
         // Obtain adjacent parts
         cv::bitwise_xor(component_Img,dilated_component_Img,dst);
@@ -374,6 +380,8 @@ Mat segmentImageGokce(Mat src)
 
 
         vector<Point> nonZeroCoordinates;		//keep adjacent pixels in here
+
+
 
         findNonZero(dst, nonZeroCoordinates);
 
@@ -435,6 +443,7 @@ Mat segmentImageGokce(Mat src)
                     //ch2.at<uchar>(i,j)= dummy[(nindx)][0];
                     //ch1.at<uchar>(i,j)= dummy[(nindx)][1];
                     //ch0.at<uchar>(i,j)= dummy[(nindx)][2];
+
                 }
             }
         }

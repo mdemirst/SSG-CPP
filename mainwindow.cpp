@@ -72,9 +72,10 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->cb_framebyframe->setChecked(false);
 
     //Fill recognition method combobox
+    ui->combo_rec_method->addItem("Bubble-Color",REC_TYPE_BD_COLOR);
     ui->combo_rec_method->addItem("Bubble",REC_TYPE_BD_NORMAL);
     ui->combo_rec_method->addItem("Bubble-Voting",REC_TYPE_BD_VOTING);
-    ui->combo_rec_method->addItem("Bubble-Color",REC_TYPE_BD_COLOR);
+
     ui->combo_rec_method->addItem("Bubble-Color-wlog",REC_TYPE_BD_COLOR_LOG);
     ui->combo_rec_method->addItem("SSG",REC_TYPE_SSG_NORMAL);
     ui->combo_rec_method->addItem("SSG-Voting",REC_TYPE_SSG_VOTING);
@@ -167,6 +168,7 @@ void MainWindow::on_scroll_tau_p_sliderReleased()
         if(ui->cb_rec_active->isChecked())
         {
             tsc_hybrid->reRecognizeInOrder(method);
+            //tsc_hybrid->reRecognizeInOrderSecondVisits(method);
         }
         else
         {
@@ -185,6 +187,7 @@ void MainWindow::on_scroll_tau_r_sliderReleased()
         if(ui->cb_rec_active->isChecked())
         {
             tsc_hybrid->reRecognizeInOrder(method);
+            //tsc_hybrid->reRecognizeInOrderSecondVisits(method);
         }
         else
         {
@@ -203,6 +206,7 @@ void MainWindow::on_scroll_tau_v_sliderReleased()
         if(ui->cb_rec_active->isChecked())
         {
             tsc_hybrid->reRecognizeInOrder(method);
+            //tsc_hybrid->reRecognizeInOrderSecondVisits(method);
         }
         else
         {
@@ -287,10 +291,6 @@ void MainWindow::on_cb_framebyframe_clicked()
 {
 }
 
-void MainWindow::on_btn_tsc_process_clicked()
-{
-}
-
 void MainWindow::showTrackMap(QImage img)
 {
     ui->lbl_tracking_map->setAlignment(Qt::AlignTop);
@@ -340,29 +340,6 @@ void MainWindow::on_btn_stop_process_clicked()
 {
 }
 
-void MainWindow::on_btn_merged_process_images_clicked()
-{
-    tsc_hybrid = new TSCHybrid(ui->custom_plot_merged_tsc, ui->custom_plot_merged_ssg, ui->place_map, ui->custom_plot_tsc_average,
-                               params,
-                               &datasets[0]);
-    QObject::connect(tsc_hybrid, SIGNAL(showImgOrg(QImage)),
-                     this, SLOT(showImgOrg(QImage)));
-    QObject::connect(tsc_hybrid, SIGNAL(showSSG(QImage)),
-                     this, SLOT(showSSG(QImage)));
-    QObject::connect(tsc_hybrid, SIGNAL(showMap(QImage)),
-                     this, SLOT(showMap(QImage)));
-    QObject::connect(tsc_hybrid->seg_track, SIGNAL(showImgOrg(QImage)),
-                     this, SLOT(showImgOrg(QImage)));
-    QObject::connect(tsc_hybrid->seg_track->gm, SIGNAL(showMatchImage(QImage)),
-                     this, SLOT(showMatchImage(QImage)));
-
-    ui->lbl_map->installEventFilter(tsc_hybrid);
-}
-
-void MainWindow::on_pushButton_clicked()
-{
-}
-
 void MainWindow::showTree(QImage img)
 {
     ui->lbl_tree_draw->setPixmap(QPixmap::fromImage(img));
@@ -372,11 +349,6 @@ void MainWindow::printMessage(QString str)
 {
     ui->te_recognition->insertPlainText(str+"\n");
 }
-
-void MainWindow::on_btn_test_next_clicked()
-{
-}
-
 
 
 void MainWindow::on_btn_process_hierarchical_clicked()
@@ -430,6 +402,7 @@ void MainWindow::on_btn_process_hierarchical_clicked()
         //tsc_hybrid->processImagesHierarchical2(datasets[i].location, datasets[i].start_idx, datasets[i].end_idx, datasets[i].dataset_id);
         //tsc_hybrid->createDatabase(datasets[i].location, datasets[i].start_idx, datasets[i].end_idx, datasets[i].dataset_id);
         //tsc_hybrid->processImagesHierarchicalFromDB(datasets[i].location, datasets[i].start_idx, datasets[i].end_idx, datasets[i].dataset_id);
+        //tsc_hybrid->processImagesHierarchicalTSC(datasets[i].location, datasets[i].start_idx, datasets[i].end_idx, datasets[i].dataset_id);
     }
 }
 
@@ -508,4 +481,19 @@ void MainWindow::on_btn_init_from_db_clicked()
     ui->lbl_map->installEventFilter(tsc_hybrid);
 
     tsc_hybrid->readFromDB();
+}
+
+void MainWindow::on_cb_place_circle_clicked()
+{
+    tsc_hybrid->recognition->setPlaceDisplayType(ui->cb_place_circle->isChecked());
+}
+
+void MainWindow::on_cb_show_inner_ssgs_clicked()
+{
+    tsc_hybrid->recognition->setInnerSSGDisplayType(ui->cb_show_inner_ssgs->isChecked());
+}
+
+void MainWindow::on_btn_init_from_db_2_clicked()
+{
+    on_btn_init_from_db_clicked();
 }

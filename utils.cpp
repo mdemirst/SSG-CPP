@@ -556,3 +556,33 @@ int getMostCoherentFrame(vector<float> coh_scores, int start_frame, int end_fram
 
     return most_coh_id;
 }
+
+void writeFrameSec(float sec)
+{
+    ofstream file;
+
+    stringstream ss;
+    ss << getOutputFolder() << "frame_sec.txt";
+    file.open (ss.str().c_str(),ios_base::app);
+
+    stringstream sss;
+    sss << sec << endl;
+
+    file << sss.str();
+    file.close();
+}
+
+void writeDetectedPlace(int results)
+{
+    ofstream file;
+
+    stringstream ss;
+    ss << getOutputFolder() << "frame_state.txt";
+    file.open (ss.str().c_str(),ios_base::app);
+
+    stringstream sss;
+    sss << results << endl;
+
+    file << sss.str();
+    file.close();
+}

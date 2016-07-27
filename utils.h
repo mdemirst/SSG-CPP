@@ -46,5 +46,6 @@ void readParameters(string filename,
                     Parameters* params);
 int getMostCoherentFrame(vector<float> coh_scores, int start_frame, int end_frame, int start_idx);
 
-
+void writeFrameSec(float sec);
+void writeDetectedPlace(int results);
 #endif // UTILS_H

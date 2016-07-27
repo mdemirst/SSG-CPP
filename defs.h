@@ -1,7 +1,6 @@
 #ifndef DEFS_H
 #define DEFS_H
 
-
 #define OUTPUT_FOLDER "/home/isl-mahmut/Output/"
 
 //#define START_IDX 0
