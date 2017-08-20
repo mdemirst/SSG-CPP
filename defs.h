@@ -1,7 +1,7 @@
 #ifndef DEFS_H
 #define DEFS_H
 
-#define OUTPUT_FOLDER "/home/isl-mahmut/Output/"
+#define OUTPUT_FOLDER "/home/mdemir/Software/SSG-CPP/Config/"
 
 //#define START_IDX 0
 
@@ -112,6 +112,7 @@
 #define PLOT_TRACK_IDX 3
 #define PLOT_UNINFORMATIVE_IDX 4
 #define PLOT_INCOHERENT_IDX 5
+#define PLOT_VPC_IDX 6
 #define PLOT_PLACES_IDX 10
 
 #define COH_PLOT_W 1290

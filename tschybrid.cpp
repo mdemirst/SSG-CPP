@@ -1,7 +1,11 @@
 #include "tschybrid.h"
 #include "experimentalData.h"
 #include "GraphSegmentation/ColoredSegments/coloredSegments.h"
+#include "VPC_toolkit/VPC.h"
 
+#include "VPC_toolkit/VPC.h"
+
+int vpc_label = 0;
 TSCHybrid::TSCHybrid(QCustomPlot* tsc_plot,
                      QCustomPlot* ssg_plot,
                      QCustomPlot* place_map,
@@ -54,6 +58,14 @@ TSCHybrid::TSCHybrid(QCustomPlot* tsc_plot,
     this->ssg_plot->plotLayout()->setAutoMargins(QCP::msNone);
     this->ssg_plot->plotLayout()->setMargins(plot_margin);
 
+    this->ssg_plot->graph(PLOT_VPC_IDX)->setPen(pen2);
+    this->ssg_plot->graph(PLOT_VPC_IDX)->setLineStyle(QCPGraph::lsNone);
+    this->ssg_plot->graph(PLOT_VPC_IDX)->setScatterStyle(QCPScatterStyle::ssCircle);
+
+    this->ssg_plot->graph(PLOT_VPC_IDX+1)->setPen(pen2);
+    this->ssg_plot->graph(PLOT_VPC_IDX+1)->setLineStyle(QCPGraph::lsNone);
+    this->ssg_plot->graph(PLOT_VPC_IDX+1)->setScatterStyle(QCPScatterStyle::ssCircle);
+
 
 
     //Settings for tsc plot
@@ -70,13 +82,15 @@ TSCHybrid::TSCHybrid(QCustomPlot* tsc_plot,
     this->tsc_plot->plotLayout()->setAutoMargins(QCP::msNone);
     this->tsc_plot->plotLayout()->setMargins(plot_margin);
 
-    this->tsc_plot->graph(PLOT_UNINFORMATIVE_IDX)->setPen(pen1);
+    this->tsc_plot->graph(PLOT_UNINFORMATIVE_IDX)->setPen(pen2);
     this->tsc_plot->graph(PLOT_UNINFORMATIVE_IDX)->setLineStyle(QCPGraph::lsNone);
     this->tsc_plot->graph(PLOT_UNINFORMATIVE_IDX)->setScatterStyle(QCPScatterStyle::ssTriangle);
 
     this->tsc_plot->graph(PLOT_INCOHERENT_IDX)->setPen(pen2);
     this->tsc_plot->graph(PLOT_INCOHERENT_IDX)->setLineStyle(QCPGraph::lsNone);
     this->tsc_plot->graph(PLOT_INCOHERENT_IDX)->setScatterStyle(QCPScatterStyle::ssCircle);
+
+
 
 
 
@@ -159,15 +173,15 @@ TSCHybrid::TSCHybrid(QCustomPlot* tsc_plot,
 
     //If you're not running TSC model
     //Filters init
-    string filters_dir = OUTPUT_FOLDER+string("visual_filters");
-    ImageProcess::readFilter(QString(filters_dir.c_str()).append("/filtre0.txt"),29,false,false,false);
-    ImageProcess::readFilter(QString(filters_dir.c_str()).append("/filtre6.txt"),29,false,false,false);
-    ImageProcess::readFilter(QString(filters_dir.c_str()).append("/filtre12.txt"),29,false,false,false);
-    ImageProcess::readFilter(QString(filters_dir.c_str()).append("/filtre18.txt"),29,false,false,false);
-    ImageProcess::readFilter(QString(filters_dir.c_str()).append("/filtre36.txt"),29,false,false,false);
+    //string filters_dir = OUTPUT_FOLDER+string("visual_filters");
+    //ImageProcess::readFilter(QString(filters_dir.c_str()).append("/filtre0.txt"),29,false,false,false);
+    //ImageProcess::readFilter(QString(filters_dir.c_str()).append("/filtre6.txt"),29,false,false,false);
+    //ImageProcess::readFilter(QString(filters_dir.c_str()).append("/filtre12.txt"),29,false,false,false);
+    //ImageProcess::readFilter(QString(filters_dir.c_str()).append("/filtre18.txt"),29,false,false,false);
+    //ImageProcess::readFilter(QString(filters_dir.c_str()).append("/filtre36.txt"),29,false,false,false);
     //Bubble process init
-    bubbleProcess::calculateImagePanAngles(FOCAL_LENGHT_PIXELS, params->ssg_params.img_width, params->ssg_params.img_height);
-    bubbleProcess::calculateImageTiltAngles(FOCAL_LENGHT_PIXELS, params->ssg_params.img_width, params->ssg_params.img_height);
+    //bubbleProcess::calculateImagePanAngles(FOCAL_LENGHT_PIXELS, params->ssg_params.img_width, params->ssg_params.img_height);
+    //bubbleProcess::calculateImageTiltAngles(FOCAL_LENGHT_PIXELS, params->ssg_params.img_width, params->ssg_params.img_height);
 
 
 }
@@ -260,8 +274,208 @@ void TSCHybrid::stopProcessing()
     stop_processing = true;
 }
 
+void compareTransitions(VPC_Input& vpc, vector<int>& ssg)
+{
+    int home = vpc_label;
+
+    cout << "Total image sizes:" << vpc.labels[home].size() << " " << ssg.size() << endl;
+
+    int true_pos = 0;
+    int false_pos = 0;
+    int trans_count = 0;
+
+    int trans_flag = 0;
+    int true_pos_flag = 0;
+
+    int region_count = 0;
+    for(int i = 0; i < ssg.size(); i++)
+    {
+        if(vpc.labels[home].size() < ssg.size())
+            break;
+
+        if(trans_flag > 0 && vpc.labels[home][i] != 0)
+        {
+            cout << "Results for region " << ++region_count  << " " << (float)true_pos_flag/trans_flag << endl;
+
+            trans_flag = 0;
+            true_pos_flag = 0;
+        }
+
+        if(vpc.labels[home][i] == 0)
+        {
+            trans_count++;
+            trans_flag++;
+        }
+
+        if(vpc.labels[home][i] == 0 && ssg[i] < 0)
+        {
+            true_pos++;
+            true_pos_flag++;
+        }
+    }
+
+    if(trans_count > 0)
+        cout << "Total score is: " << (float)true_pos/trans_count << endl;
+    else
+        cout << "No transition in dataset" << endl;
+}
+
+void TSCHybrid::processImagesHierarchicalVPC(const string folder, const int start_idx, const int end_idx, int dataset_id)
+{
+    VPC_Input vpc_input;
+
+
+    VPC_ReadLabelFile(3,vpc_input);
+
+    cout << "Total image sizes:" << vpc_input.labels[vpc_label].size() << endl;
+
+
+    is_processing = true;
+
+    //Read dataset image files
+    img_files = getFiles(folder);
+
+
+    Mat img_org, img;
+    qint64 last_time;
+
+    //SSG related variables
+    static vector<vector<NodeSig> > ns_vec;  //Stores last tau_w node signatures
+    static vector<float> coherency_scores_ssg;   //Stores all coherency scores
+    static vector<int> detected_places_unfiltered;
+    static vector<int> detected_places; //Stores all detected place ids
+    static SSG temp_SSG(0); temp_SSG.setStartFrame(0);
+    static TreeNode* hierarchy_tree;
+    static vector<PlaceSSG> places;
+
+    static int frame_count = 0;
+    last_time = QDateTime::currentMSecsSinceEpoch();
+    static float ssg_best_coherency_score = 0;
+
+    static queue<Mat> img_history;
+    static queue<Mat> img_resized_history;
+    int delay = params->seg_track_params.tau_w/2 + params->ssg_params.tau_n;
+    static queue<int> hist;
+
+
+
+    //Process all images
+    for(int frame_no = start_idx; frame_no < end_idx-1; frame_no++)
+    {
+        qint64 time = QDateTime::currentMSecsSinceEpoch();
+
+        img_org = imread(folder + img_files[frame_no]);
+
+
+        resize(img_org, img, cv::Size(params->ssg_params.img_width, params->ssg_params.img_height));
+
+
+        //Keep last tau_w/2+tau_n images.
+        img_history.push(img_org);
+        img_resized_history.push(img);
+        hist.push(frame_count);
+        if(img_history.size() > delay)
+        {
+            img_history.pop();
+            img_resized_history.pop();            hist.pop();
+        }
+        emit showImgOrg(mat2QImage(img_resized_history.front()));
+
+        ///////////////
+        //Process SSG//
+        ///////////////
+
+        seg_track->processImage(img, ns_vec);
+
+        //Calculate coherency based on existence map
+        calcCohScore(seg_track, coherency_scores_ssg);
+
+
+        //Show connectivity map
+        showMap(seg_track->getM());
+
+        //Decide last frame is whether transition or place
+        //Results are written into detected places
+        int detection_result = detectPlace(coherency_scores_ssg,detected_places_unfiltered,detected_places);
+
+        //Plot transition and place regions
+        plotScoresSSG(coherency_scores_ssg, detected_places, vpc_input.labels[vpc_label]);
+
+        //If started for new place
+        //Create new SSG
+        if(detection_result == DETECTION_PLACE_STARTED)
+        {
+            //Clear SSG
+            temp_SSG.nodes.clear();
+            temp_SSG.mean_invariant.release();
+            temp_SSG.member_invariants.release();
+            temp_SSG.setId(temp_SSG.getId()+1);
+            temp_SSG.setStartFrame(frame_no);
+            Mat map = seg_track->getM();
+            Mat map_col = map.col(map.size().width - 1 - delay);
+            vector<NodeSig> ns = ns_vec[ns_vec.size() - 1 - delay];
+            SSGProc::updateSSG(temp_SSG, ns, map_col);
+            SSGProc::updateSSGInvariants(temp_SSG, img_history.front(), params);
+
+            //Reset coherency score
+            ssg_best_coherency_score = coherency_scores_ssg.back();
+        }
+        else if(detection_result == DETECTION_PLACE_ENDED)
+        {
+            temp_SSG.setEndFrame(frame_no);
+
+            SSGs.push_back(temp_SSG);
+
+            if(temp_SSG.member_invariants.empty() == false)
+            {
+                SSGs.push_back(temp_SSG);
+            }
+
+            //qDebug() << "Place detected" << SSGs.size();
+
+        }
+        else if(detection_result == DETECTION_IN_PLACE)
+        {
+            temp_SSG.basepoints.push_back(ns_vec.back());
+            Mat map = seg_track->getM();
+            Mat map_col = map.col(map.size().width - 1 - delay);
+            vector<NodeSig> ns = ns_vec[ns_vec.size() - 1 - delay];
+            SSGProc::updateSSG(temp_SSG, ns, map_col);
+            //SSGProc::updateSSGInvariants(temp_SSG, img_history.front(), params);
+
+            //If current frame is more coherent, set this frame as sample frame of SSG
+            if(ssg_best_coherency_score < coherency_scores_ssg.back())
+            {
+                temp_SSG.setSampleFrame(folder + img_files[frame_no]);
+                temp_SSG.setColor(dataset_id);
+                ssg_best_coherency_score = coherency_scores_ssg.back();
+            }
+        }
+
+        frame_count++;
+
+        //Free variables
+        img.release();
+        img_org.release();
+
+        //Wait a little for GUI processing
+        waitKey(1);
+
+        if(detected_places.size() > 0)
+            writeDetectedPlace(detected_places.back());
+        else
+            writeDetectedPlace(0);
+    }
+
+    compareTransitions(vpc_input, detected_places);
+}
+
 void TSCHybrid::processImagesHierarchical(const string folder, const int start_idx, const int end_idx, int dataset_id)
 {
+    VPC_Input vpc_input;
+
+    VPC_ReadLabelFile(1,vpc_input);
+
     is_processing = true;
 
     //Read dataset image files
@@ -321,7 +535,10 @@ void TSCHybrid::processImagesHierarchical(const string folder, const int start_i
         }
 
         img_org = imread(folder + img_files[frame_no]);
+
+
         resize(img_org, img, cv::Size(params->ssg_params.img_width, params->ssg_params.img_height));
+
 
         //Remove comments if you want to use
         //Gokce's segmentation results
@@ -356,11 +573,13 @@ void TSCHybrid::processImagesHierarchical(const string folder, const int start_i
         //Results are written into detected places
         int detection_result = detectPlace(coherency_scores_ssg,detected_places_unfiltered,detected_places);
 
+
+
         //cv::Point2f coord = getCoordCold(img_files[dataset->start_idx+detected_places.size()]);
         //coords.push_back(coord);
 
         //Plot transition and place regions
-        plotScoresSSG(coherency_scores_ssg, detected_places);
+        //plotScoresSSG(coherency_scores_ssg, detected_places);
 
         //If started for new place
         //Create new SSG
@@ -454,8 +673,11 @@ void TSCHybrid::processImagesHierarchical(const string folder, const int start_i
             writeDetectedPlace(detected_places.back());
         else
             writeDetectedPlace(0);
+
         //qDebug() << frame_no;
         //next_frame = false;
+
+
     }
 
     if(save2database)
@@ -467,6 +689,8 @@ void TSCHybrid::processImagesHierarchical(const string folder, const int start_i
 
     is_processing = false;
     stop_processing = false;
+
+    compareTransitions(vpc_input, detected_places);
 }
 
 void TSCHybrid::TSCPlaces2SSGPlaces(vector<Place>& TSC_places, vector<SSG>& SSG_places)
@@ -784,6 +1008,7 @@ float TSCHybrid::calcCohScore(SegmentTrack* seg_track, vector<float>& coh_scores
     // coherency_score = (1 - a^(-coherency)) - (incoherency)
     coh_score = 1-pow(params->ssg_params.coeff_coh_exp_base,-1*coherency) - (incoherency/active_nodes);
 
+    //cout << coh_score << endl;
     coh_scores.push_back(coh_score);
 
     return coh_score;
@@ -1853,7 +2078,7 @@ void TSCHybrid::plotDetectedPlacesBD(vector<SSG> SSGs, const vector<string>& ima
 }
 
 // Plots places and coherency scores
-void TSCHybrid::plotScoresSSG(vector<float> coherency_scores, vector<int> detected_places, cv::Point2f coord, bool reset)
+void TSCHybrid::plotScoresSSG(vector<float> coherency_scores, vector<int> detected_places, vector<int>& vpc, cv::Point2f coord, bool reset)
 {
     static int graph_idx = PLOT_PLACES_IDX;
     static int thres_cursor = 0;
@@ -1910,6 +2135,29 @@ void TSCHybrid::plotScoresSSG(vector<float> coherency_scores, vector<int> detect
 
         //Add coh score
         ssg_plot->graph(PLOT_SCORES_IDX)->addData(detected_places.size(),coherency_scores[detected_places.size()-1]+margin);
+
+        //Add VPC results
+        if(detected_places.size() > 0)
+        {
+            if(vpc[detected_places.size()-1] == 0) //transition in vpc
+            {
+                QPen dumPen;
+                dumPen.setWidth(3);
+                dumPen.setColor(QColor(0, 0, 255, 100));
+                this->ssg_plot->graph(PLOT_VPC_IDX)->setPen(dumPen);
+
+                ssg_plot->graph(PLOT_VPC_IDX)->addData(detected_places.size(),this->params->ssg_params.tau_c+1.0);
+            }
+            else
+            {
+                QPen dumPen;
+                dumPen.setWidth(3);
+                dumPen.setColor(QColor(255, 0, 0, 100));
+                this->ssg_plot->graph(PLOT_VPC_IDX+1)->setPen(dumPen);
+
+                ssg_plot->graph(PLOT_VPC_IDX+1)->addData(detected_places.size(),this->params->ssg_params.tau_c+1.0);
+            }
+        }
     }
 
     //Add thresold line

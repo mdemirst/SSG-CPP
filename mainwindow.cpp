@@ -10,6 +10,7 @@
 #include "recognition.h"
 
 
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -29,10 +30,15 @@ MainWindow::MainWindow(QWidget *parent) :
     {
         stringstream ss;
         ss << OUTPUT_FOLDER << "parameters-" << datasets[i].dataset_id << ".txt";
+
         Parameters* params = new Parameters();
         readParameters(ss.str(), params);
         params_all.push_back(params);
     }
+
+
+
+
 
     //Assign first parameter set as default
     params = params_all[0];
@@ -398,7 +404,7 @@ void MainWindow::on_btn_process_hierarchical_clicked()
         bubbleProcess::calculateImagePanAngles(FOCAL_LENGHT_PIXELS, params->ssg_params.img_org_width, params->ssg_params.img_org_height);
         bubbleProcess::calculateImageTiltAngles(FOCAL_LENGHT_PIXELS, params->ssg_params.img_org_width, params->ssg_params.img_org_height);
 
-        tsc_hybrid->processImagesHierarchical(datasets[i].location, datasets[i].start_idx, datasets[i].end_idx, datasets[i].dataset_id);
+        tsc_hybrid->processImagesHierarchicalVPC(datasets[i].location, datasets[i].start_idx, datasets[i].end_idx, datasets[i].dataset_id);
         //tsc_hybrid->processImagesHierarchical2(datasets[i].location, datasets[i].start_idx, datasets[i].end_idx, datasets[i].dataset_id);
         //tsc_hybrid->createDatabase(datasets[i].location, datasets[i].start_idx, datasets[i].end_idx, datasets[i].dataset_id);
         //tsc_hybrid->processImagesHierarchicalFromDB(datasets[i].location, datasets[i].start_idx, datasets[i].end_idx, datasets[i].dataset_id);

@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui sql
+QT       += core gui sql printsupport
 
 CONFIG += console
 
@@ -50,7 +50,9 @@ SOURCES += main.cpp\
     experimentalData.cpp \
     GraphSegmentation/ColoredSegments/LUT.cpp \
     GraphSegmentation/ColoredSegments/mycolors.cpp \
-    GraphSegmentation/ColoredSegments/ColoredSegments.cpp
+    GraphSegmentation/ColoredSegments/ColoredSegments.cpp \
+    VPC_toolkit/util.cpp \
+    VPC_toolkit/VPC_IO.cpp
 
 HEADERS  += mainwindow.h \
       segmentation.h \
@@ -94,7 +96,10 @@ HEADERS  += mainwindow.h \
     GraphSegmentation/ColoredSegments/LUT.h \
     GraphSegmentation/ColoredSegments/coor.h \
     GraphSegmentation/ColoredSegments/MyLibConstants.h \
-    GraphSegmentation/ColoredSegments/coloredSegments.h
+    GraphSegmentation/ColoredSegments/coloredSegments.h \
+    VPC_toolkit/mdarray.h \
+    VPC_toolkit/util.h \
+    VPC_toolkit/VPC.h
 
 FORMS    += mainwindow.ui
 

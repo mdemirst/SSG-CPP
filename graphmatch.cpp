@@ -13,8 +13,14 @@ GraphMatch::GraphMatch(Parameters* params)
 float GraphMatch::drawMatches(vector<NodeSig> ns1, vector<NodeSig> ns2,
                                 Mat img1, Mat img2)
 {
+
+
     bool draw_matches = false;
 #ifdef DRAW_MATCHES
+
+    //static qint64 avg_time = 0;
+    //static int avg_time_count = 0;
+
     Mat assignment, cost;
     //Construct [rowsxcols] cost matrix using pairwise
     //distance between node signature
@@ -38,8 +44,14 @@ float GraphMatch::drawMatches(vector<NodeSig> ns1, vector<NodeSig> ns2,
     // initialize the hungarian_problem using the cost matrix
     hungarian_init(&p, cost_matrix , rows, cols, HUNGARIAN_MODE_MINIMIZE_COST);
 
+    //qint64 start_time = QDateTime::currentMSecsSinceEpoch();
     // solve the assignment problem
     hungarian_solve(&p);
+
+    //qint64 end_time = QDateTime::currentMSecsSinceEpoch();
+
+    //avg_time = (avg_time * avg_time_count + (end_time-start_time) ) / (++avg_time_count);
+    //cout << "Time stats: " << max(rows,cols) << " " << start_time << " " << end_time << " " << end_time-start_time << " " << avg_time << endl;
 
     //Convert results to OpenCV format
     assignment = array2Mat8U(p.assignment,rows,cols);

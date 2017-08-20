@@ -139,6 +139,7 @@ void SegmentTrack::processImage(const Mat cur_img, vector<vector<NodeSig> > &ns_
     //If we are processing the first tau_w images
     if(ns_vec.size() == 0)
     {
+
         vector<NodeSig> ns = seg->segmentImage(cur_img, cur_img_seg);
 
         ns_vec.push_back(ns);
@@ -172,10 +173,18 @@ void SegmentTrack::processImage(const Mat cur_img, vector<vector<NodeSig> > &ns_
         //emit showImgOrg(mat2QImage(cur_img));
 
         //Drawing purposes only
-        gm->drawMatches(ns_vec[ns_vec.size()-2], ns_vec.back(), prev_img_seg, cur_img_seg);
+        //gm->drawMatches(ns_vec[ns_vec.size()-2], ns_vec.back(), prev_img_seg, cur_img_seg);
+
+        //qint64 start_time = QDateTime::currentMSecsSinceEpoch();
 
         //Fill node existence map
         fillNodeMap(ns_vec);
+
+        //qint64 end_time = QDateTime::currentMSecsSinceEpoch();
+
+        //avg_time = (avg_time * avg_time_count + (end_time-start_time) ) / (++avg_time_count);
+        //cout << "Time stats: " << end_time-start_time  << endl;
+
 
         prev_img = cur_img;
         prev_img_seg = cur_img_seg;

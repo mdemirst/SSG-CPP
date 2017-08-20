@@ -28,7 +28,7 @@
 
 #include <QObject>
 #include <QPointer>
-#include <QWidget>
+#include <QtWidgets/QWidget>
 #include <QPainter>
 #include <QPaintEvent>
 #include <QMouseEvent>

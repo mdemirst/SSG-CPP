@@ -26,6 +26,7 @@ vector<NodeSig> Segmentation::segmentImage(const Mat &img, Mat &img_seg)
     //Segment image
     int nr_segments;
     pair<image<rgb>*, universe*> segments;
+
     segments = segment_image(img_, params->sigma, params->k, params->min_size, &nr_segments);
 
     //Calculate statistics of segments
