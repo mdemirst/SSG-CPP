@@ -86,9 +86,106 @@ bool DatabaseHandler::createTables()
                                "color_b integer, "
                                "area integer)");
 
+
+    QSqlQuery basepoint_query(QSqlDatabase::database(conn_name));
+    ret &= basepoint_query.exec("create table basepoint "
+                              "(id integer primary key autoincrement, "
+                              "basepoint_nr integer, "
+                              "filename varchar(100))");
+
+    QSqlQuery basepoint_ns_query(QSqlDatabase::database(conn_name));
+    ret &= basepoint_ns_query.exec("create table basepoint_ns "
+                               "(id integer primary key autoincrement, "
+                               "basepoint_nr integer, "
+                               "nodesig_id integer, "
+                               "center_x integer, "
+                               "center_y integer, "
+                               "color_r integer, "
+                               "color_g integer, "
+                               "color_b integer, "
+                               "area integer)");
+
     return ret;
 
 }
+
+
+bool DatabaseHandler::insertBasepoint(BasePointSSG& basepoint)
+{
+  bool ret = true;
+  if(db.isOpen())
+  {
+    QSqlQuery query(QSqlDatabase::database(conn_name));
+
+    query.prepare(QString("replace into basepoint (basepoint_nr, filename) values(?, ?)"));
+
+    query.addBindValue(basepoint.getNumber());
+    query.addBindValue(QString(basepoint.getFilename().c_str()));
+
+    ret &= query.exec();
+
+
+      for(int i = 0; i < basepoint.getRAG().size(); i++)
+      {
+          QSqlQuery ns_query(QSqlDatabase::database(conn_name));
+
+          ns_query.prepare(QString("replace into basepoint_ns (basepoint_nr , nodesig_id, center_x, center_y, color_r, color_g, color_b, area) values(?, ?, ?, ?, ?, ?, ?, ?)"));
+
+          ns_query.addBindValue(basepoint.getNumber());
+          ns_query.addBindValue(basepoint.getRAG()[i].id);
+          ns_query.addBindValue(basepoint.getRAG()[i].center.x);
+          ns_query.addBindValue(basepoint.getRAG()[i].center.y);
+          ns_query.addBindValue(basepoint.getRAG()[i].colorR);
+          ns_query.addBindValue(basepoint.getRAG()[i].colorG);
+          ns_query.addBindValue(basepoint.getRAG()[i].colorB);
+          ns_query.addBindValue(basepoint.getRAG()[i].area);
+
+          ret &= ns_query.exec();
+
+      }
+  }
+
+  return ret;
+}
+
+bool DatabaseHandler::getBasepoint(int basepoint_nr, BasePointSSG& basepoint)
+{
+    if(db.isOpen())
+    {
+        QSqlQuery query(QSqlDatabase::database(conn_name));
+        query.prepare(QString("select * from basepoint where basepoint_nr = :basepoint_nr"));
+        query.bindValue(":basepoint_nr", basepoint_nr);
+        query.exec();
+        while(query.next())
+        {
+            basepoint.number = query.value(1).toInt();
+            basepoint.filename = query.value(2).toString().toStdString();
+
+            QSqlQuery query(QSqlDatabase::database(conn_name));
+            query.prepare(QString("select * from basepoint_ns where basepoint_nr = :basepoint_nr"));
+            query.bindValue(":basepoint_nr", basepoint_nr);
+            query.exec();
+            while(query.next())
+            {
+                NodeSig ns;
+                ns.id = query.value(2).toInt();
+                Point center(query.value(3).toInt(), query.value(4).toInt());
+                ns.center = center;
+                ns.colorR = query.value(5).toInt();
+                ns.colorG = query.value(6).toInt();
+                ns.colorB = query.value(7).toInt();
+                ns.area = query.value(8).toInt();
+
+                basepoint.rag.push_back(ns);
+            }
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
 
 bool DatabaseHandler::insertFrame(FrameDesc frame_desc)
 {

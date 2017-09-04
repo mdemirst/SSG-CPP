@@ -6,6 +6,7 @@
 #include "segmenttrack.h"
 #include "tschybrid.h"
 #include "recognition.h"
+#include "pipeline.h"
 #include <memory>
 
 namespace Ui {
@@ -23,6 +24,8 @@ public:
     GraphMatch* gm;
     Segmentation* seg;
     TSCHybrid* tsc_hybrid;
+
+    Pipeline* pipeline;
     Parameters* params;
     vector<Parameters*> params_all;
     vector<Dataset> datasets;

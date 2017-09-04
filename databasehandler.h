@@ -27,6 +27,8 @@ public:
     bool createTables();
     bool insertSSG(SSG& ssg);
     bool insertFrame(FrameDesc frame_desc);
+    bool insertBasepoint(BasePointSSG& basepoint);
+    bool getBasepoint(int basepoint_nr, BasePointSSG& basepoint);
     FrameDesc getFrame(int frame_nr);
     vector<SSG> getAllSSGs();
     vector<SSG> getAllSSGsNew();

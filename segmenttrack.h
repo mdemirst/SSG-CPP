@@ -21,10 +21,12 @@ public:
     bool eventFilter( QObject* watched, QEvent* event );
     void drawMap();
     void processImage(const Mat cur_img, vector<vector<NodeSig> > &ns_vec);
+    void processImageFromNS(vector<NodeSig>& ns, vector<vector<NodeSig> > &ns_vec);
     void processImageFromDB(const Mat cur_img, vector<vector<NodeSig> > &ns_vec, FrameDesc& frame_desc);
     Mat readBOWDict();
     GraphMatch* gm;
     Segmentation* seg;
+    Mat cur_img_seg_m;
 
 public:
     int mapScaleFactor;

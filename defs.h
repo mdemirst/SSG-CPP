@@ -3,88 +3,12 @@
 
 #define OUTPUT_FOLDER "/home/mdemir/Software/SSG-CPP/Config/"
 
-//#define START_IDX 0
-
-//#define DATASET_FOLDER "/home/isl-mahmut/Datasets/seq1_cloudy1/std_cam/"
-//#define END_IDX 1400
-
-//#define DATASET_FOLDER "/home/isl-mahmut/Datasets/seq1_cloudy2/std_cam/"
-//#define END_IDX 1832
-
-//#define DATASET_FOLDER "/home/isl-mahmut/Datasets/seq1_cloudy3/std_cam/"
-//#define END_IDX 1672
-
-//#define DATASET_FOLDER "/home/isl-mahmut/Datasets/seq1_night1/std_cam/"
-//#define END_IDX 1911
-
-//#define DATASET_FOLDER "/home/isl-mahmut/Datasets/seq1_night2/std_cam/"
-//#define END_IDX 1582
-
-//#define DATASET_FOLDER "/home/isl-mahmut/Datasets/seq1_night3/std_cam/"
-//#define END_IDX 1703
-
-//#define DATASET_FOLDER "/home/isl-mahmut/Datasets/seq1_sunny1/std_cam/"
-//#define END_IDX 1598
-
-//#define DATASET_FOLDER "/home/isl-mahmut/Datasets/seq1_sunny2/std_cam/"
-//#define END_IDX 1514
-
-//#define DATASET_FOLDER "/home/isl-mahmut/Datasets/seq1_sunny3/std_cam/"
-//#define END_IDX 1551
-
-//#define DATASET_FOLDER "/home/isl-mahmut/Datasets/seq1_sunny4/std_cam/"
-//#define END_IDX 1777
-
-//#define DATASET_FOLDER "/home/isl-mahmut/Datasets/seq2_cloudy1/std_cam/"
-//#define END_IDX 2267
-
-//#define DATASET_FOLDER "/home/isl-mahmut/Datasets/sa_seq1_cloudy1/std_cam/"
-//#define END_IDX 997
-
-//#define DATASET_FOLDER "/home/isl-mahmut/Datasets/New-College/"
-//#define END_IDX 7855
-
-//#define DATASET_FOLDER "/home/isl-mahmut/Datasets/CamVid-8-10/"
-//#define END_IDX 10
-
-//#define DATASET_FOLDER "/home/isl-mahmut/Datasets/Cagatay/"
-//#define END_IDX 4
-
-//#define DATASET_FOLDER "/home/isl-mahmut/Datasets/CamVid-Full/"
-//#define END_IDX 500
-
 
 #define PEN_WIDTH1 1
 #define PEN_WIDTH2 2
 #define PEN_WIDTH3 3
 #define IMG_RESCALE_RAT 0.5
 
-//#define INIT_TAU_N 10
-//#define INIT_TAU_C 0.5
-//#define INIT_TAU_W 30
-//#define INIT_TAU_M 0.05
-//#define INIT_TAU_F 15
-//#define INIT_TAU_D 1.0
-//#define INIT_TAU_P 0.6
-
-//#define COEFF_NODE_DISAPPEAR_1 0.0
-//#define COEFF_NODE_DISAPPEAR_2 0.0
-//#define COEFF_NODE_APPEAR 0.0
-//#define COEFF_COH_EXP_BASE 10
-//#define COEFF_COH_APPEAR_THRES 0.90
-
-//Predefined segmentation parameters
-//#define SEG_SIGMA       0.8
-//#define SEG_K           300
-//#define SEG_MIN_SIZE    1500
-//#define SEG_SCALE       1.0
-
-//#define POS_WEIGHT 0.8
-//#define COLOR_WEIGHT 0.5
-//#define AREA_WEIGHT 0.7
-//#define BOW_WEIGHT 0.5
-
-//#define BOW_APPROACH_USED
 #define BOW_DICT_SIZE 1000
 #define BOW_NR_RETRIES 100
 #define BOW_TC_COUNT 50
@@ -92,15 +16,6 @@
 #define BOW_DESC_TYPE SIFT
 #define BOW_MATCHER_TYPE "FlannBased"
 #define BOW_DICT_NAME "dict.xml"
-
-//Recognition parameters
-//#define INIT_TAU_R 0.075
-//#define INIT_TAU_V 0.075
-
-//#define INIT_TREE_PLOT_H 1000
-//#define INIT_TREE_PLOT_W 3000
-//#define INIT_TREE_SSG_H 90
-//#define INIT_TREE_SSG_W 60
 
 #define MAP_FILTER_SIZE 3
 
@@ -113,6 +28,7 @@
 #define PLOT_UNINFORMATIVE_IDX 4
 #define PLOT_INCOHERENT_IDX 5
 #define PLOT_VPC_IDX 6
+#define PLOT_ODOM_IDX 6
 #define PLOT_PLACES_IDX 10
 
 #define COH_PLOT_W 1290

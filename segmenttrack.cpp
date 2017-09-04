@@ -130,6 +130,40 @@ bool SegmentTrack::eventFilter( QObject* watched, QEvent* event ) {
     return true;
 }
 
+
+
+void SegmentTrack::processImageFromNS(vector<NodeSig>& ns, vector<vector<NodeSig> > &ns_vec)
+{
+    //If we are processing the first tau_w images
+    if(ns_vec.size() == 0)
+    {
+        ns_vec.push_back(ns);
+
+        //Initialize M matrix (Existence "M"ap)
+        M = Mat(ns.size(), 1, CV_32S, -1);
+
+        for(int i = 0; i < ns.size(); i++)
+        {
+            M.at<int>(i,0) = i; //Nodes are placed in order in the first column of M
+
+            //Initialize avg node signatures list
+            pair<NodeSig, int> new_node(ns[i], 1);
+
+            M_ns.push_back(new_node);
+        }
+    }
+    else
+    {
+        ns_vec.push_back(ns);
+
+        if(ns_vec.size() > params->seg_track_params.tau_w)
+            ns_vec.erase(ns_vec.begin());
+
+        //Fill node existence map
+        fillNodeMap(ns_vec);
+    }
+}
+
 void SegmentTrack::processImage(const Mat cur_img, vector<vector<NodeSig> > &ns_vec)
 {
     static Mat prev_img, prev_img_seg;
@@ -141,6 +175,8 @@ void SegmentTrack::processImage(const Mat cur_img, vector<vector<NodeSig> > &ns_
     {
 
         vector<NodeSig> ns = seg->segmentImage(cur_img, cur_img_seg);
+
+        cur_img_seg_m = cur_img_seg;
 
         ns_vec.push_back(ns);
 
@@ -170,7 +206,7 @@ void SegmentTrack::processImage(const Mat cur_img, vector<vector<NodeSig> > &ns_
         //Show original images on the window
         //emit showImg1(mat2QImage(prev_img));
         //emit showImg2(mat2QImage(cur_img_seg));
-        //emit showImgOrg(mat2QImage(cur_img));
+        emit showImgOrg(mat2QImage(cur_img_seg));
 
         //Drawing purposes only
         //gm->drawMatches(ns_vec[ns_vec.size()-2], ns_vec.back(), prev_img_seg, cur_img_seg);

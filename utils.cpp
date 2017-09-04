@@ -194,6 +194,32 @@ cv::Point2f getCoordCold(std::string filename)
     return coord;
 }
 
+cv::Point3f getCoordCold2(std::string filename)
+{
+    cv::Point3f coord;
+
+    int start = filename.find("_x") + 2;
+    int end = filename.find("_y");
+
+    std::stringstream ss_x(filename.substr(start,end));
+    ss_x >> coord.x;
+
+    start = filename.find("_y") + 2;
+    end = filename.find("_a");
+
+    std::stringstream ss_y(filename.substr(start,end));
+    ss_y >> coord.y;
+
+    start = filename.find("_a") + 2;
+    end = filename.find(".jpeg");
+
+    std::stringstream ss_a(filename.substr(start,end));
+    ss_a >> coord.z;
+
+
+    return coord;
+}
+
 int getMedian(vector<int> v)
 {
     std::nth_element(v.begin(), v.begin() + v.size()/2, v.end());
@@ -585,4 +611,94 @@ void writeDetectedPlace(int results)
 
     file << sss.str();
     file.close();
+}
+
+
+void saveNodeSigAsCSV(std::vector<NodeSig> ns_vec, string filename)
+{
+  ofstream output_file;
+  output_file.open(filename);
+
+  int id;
+  cv::Point center;
+  float colorR;
+  float colorG;
+  float colorB;
+  int   area;
+
+  output_file << "id center.x center.y colorR colorG colorB area" << endl;
+
+  for(int i = 0; i < ns_vec.size(); ++i)
+  {
+    NodeSig ns = ns_vec[i];
+    output_file << ns.id << " "
+                << ns.center.x << " "
+                << ns.center.y << " "
+                << ns.colorR << " "
+                << ns.colorG << " "
+                << ns.colorB << " "
+                << ns.area << endl;
+  }
+
+  output_file.close();
+}
+
+bool readNodeSigFromCSV(std::vector<NodeSig>& ns_vec, string filename)
+{
+  try
+  {
+    io::CSVReader<7, io::trim_chars<>, io::no_quote_escape<' '> >
+        in(filename);
+    in.read_header(io::ignore_extra_column, "id",
+                                            "center.x",
+                                            "center.y",
+                                            "colorR",
+                                            "colorG",
+                                            "colorB",
+                                            "area");
+
+    NodeSig ns;
+    while(in.read_row(ns.id, ns.center.x, ns.center.y, ns.colorR, ns.colorG, ns.colorB, ns.area))
+    {
+      ns_vec.push_back(ns);
+    }
+
+
+
+    return true;
+  }
+  catch (const std::exception & e)
+  {
+    std::cerr << "Caught exception while reading file: "
+              << e.what() << std::endl;
+
+    return false;
+  }
+}
+
+std::map<string, string> getPlaceCategories(string filename)
+{
+  string line;
+  ifstream myfile (filename);
+
+  map<string, string> my_map;
+
+  if (myfile.is_open())
+  {
+    while ( getline (myfile,line) )
+    {
+        stringstream ss(line);
+
+        string path, category;
+
+        ss >> path >> category;
+
+        my_map[path] = category;
+
+        cout << "Path: " << path << " Category: " << category << endl;
+    }
+    myfile.close();
+  }
+
+  return my_map;
 }

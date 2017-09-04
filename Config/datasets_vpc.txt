@@ -1,7 +1,7 @@
 count 7
 location /home/mdemir/Software/SSG-CPP/Data/Home1/0/
 start 1
-end 2390
+end 2391
 location /home/mdemir/Software/SSG-CPP/Data/Home1/1/
 start 1
 end 5925
@@ -21,4 +21,4 @@ location /home/mdemir/Software/SSG-CPP/Data/Home3/1/
 start 1
 end 6839
 active_num 1
-ids 7
+ids 1

@@ -15,6 +15,8 @@
 #include "graphmatch.h"
 #include "defs.h"
 #include <QDir>
+#include <csv.h>
+#include <fstream>
 
 
 
@@ -31,6 +33,8 @@ std::string getFilePath(std::string dir, std::string folder, std::string prefix,
 void scaleUpMap(Mat &img, Mat &img_scaled, int factor_x, int factor_y);
 std::vector<std::string> getFiles(std::string dir);
 cv::Point2f getCoordCold(std::string filename);
+cv::Point3f getCoordCold2(std::string filename);
+
 int getMedian(vector<int> v);
 bool getRegionStatus(vector<int> v);
 string getOutputFolder(bool = false);
@@ -48,4 +52,7 @@ int getMostCoherentFrame(vector<float> coh_scores, int start_frame, int end_fram
 
 void writeFrameSec(float sec);
 void writeDetectedPlace(int results);
+void saveNodeSigAsCSV(std::vector<NodeSig> ns_vec, string filename);
+bool readNodeSigFromCSV(std::vector<NodeSig>& ns_vec, string filename);
+std::map<string, string> getPlaceCategories(string filename);
 #endif // UTILS_H

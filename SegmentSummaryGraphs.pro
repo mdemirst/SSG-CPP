@@ -11,7 +11,7 @@ CONFIG += console
 TARGET = SegmentSummaryGraphs
 TEMPLATE = app
 
-QMAKE_CXXFLAGS += -Wno-sign-compare
+QMAKE_CXXFLAGS += -Wno-sign-compare -std=c++11
 
 SOURCES += main.cpp\
       mainwindow.cpp \
@@ -52,7 +52,8 @@ SOURCES += main.cpp\
     GraphSegmentation/ColoredSegments/mycolors.cpp \
     GraphSegmentation/ColoredSegments/ColoredSegments.cpp \
     VPC_toolkit/util.cpp \
-    VPC_toolkit/VPC_IO.cpp
+    VPC_toolkit/VPC_IO.cpp \
+    pipeline.cpp
 
 HEADERS  += mainwindow.h \
       segmentation.h \
@@ -99,7 +100,8 @@ HEADERS  += mainwindow.h \
     GraphSegmentation/ColoredSegments/coloredSegments.h \
     VPC_toolkit/mdarray.h \
     VPC_toolkit/util.h \
-    VPC_toolkit/VPC.h
+    VPC_toolkit/VPC.h \
+    pipeline.h
 
 FORMS    += mainwindow.ui
 

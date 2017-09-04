@@ -20,7 +20,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     tsc_hybrid = NULL;
 
-    string datasets_filename = string(OUTPUT_FOLDER) + string("/datasets.txt");
+    string datasets_filename = string(OUTPUT_FOLDER) + string("/datasets_cold.txt");
 
     //Read dataset info
     readDatasets(datasets_filename, datasets);
@@ -37,6 +37,7 @@ MainWindow::MainWindow(QWidget *parent) :
     }
 
 
+    pipeline = NULL;
 
 
 
@@ -359,57 +360,125 @@ void MainWindow::printMessage(QString str)
 
 void MainWindow::on_btn_process_hierarchical_clicked()
 {
-    if(tsc_hybrid == NULL)
-    {
-        tsc_hybrid = new TSCHybrid(ui->custom_plot_merged_tsc, ui->custom_plot_merged_ssg, ui->place_map, ui->custom_plot_tsc_average,
-                                   params,
-                                   &datasets[0]);
+//    if(tsc_hybrid == NULL)
+//    {
+//        tsc_hybrid = new TSCHybrid(ui->custom_plot_merged_tsc, ui->custom_plot_merged_ssg, ui->place_map, ui->custom_plot_tsc_average,
+//                                   params,
+//                                   &datasets[0]);
 
-        QObject::connect(tsc_hybrid, SIGNAL(showImgOrg(QImage)),
-                         this, SLOT(showImgOrg(QImage)));
-        QObject::connect(tsc_hybrid, SIGNAL(showSSG(QImage)),
-                         this, SLOT(showSSG(QImage)));
-        QObject::connect(tsc_hybrid, SIGNAL(showMap(QImage)),
-                         this, SLOT(showMap(QImage)));
-        QObject::connect(tsc_hybrid->seg_track, SIGNAL(showImgOrg(QImage)),
-                         this, SLOT(showImgOrg(QImage)));
-        QObject::connect(tsc_hybrid->seg_track->gm, SIGNAL(showMatchImage(QImage)),
-                         this, SLOT(showMatchImage(QImage)));
-        QObject::connect(tsc_hybrid->recognition, SIGNAL(showTree(QImage)),
-                         this, SLOT(showTree(QImage)));
-        QObject::connect(tsc_hybrid->recognition, SIGNAL(printMessage(QString)),
-                         this, SLOT(printMessage(QString)));
+//        QObject::connect(tsc_hybrid, SIGNAL(showImgOrg(QImage)),
+//                         this, SLOT(showImgOrg(QImage)));
+//        QObject::connect(tsc_hybrid, SIGNAL(showSSG(QImage)),
+//                         this, SLOT(showSSG(QImage)));
+//        QObject::connect(tsc_hybrid, SIGNAL(showMap(QImage)),
+//                         this, SLOT(showMap(QImage)));
+//        QObject::connect(tsc_hybrid->seg_track, SIGNAL(showImgOrg(QImage)),
+//                         this, SLOT(showImgOrg(QImage)));
+//        QObject::connect(tsc_hybrid->seg_track->gm, SIGNAL(showMatchImage(QImage)),
+//                         this, SLOT(showMatchImage(QImage)));
+//        QObject::connect(tsc_hybrid->recognition, SIGNAL(showTree(QImage)),
+//                         this, SLOT(showTree(QImage)));
+//        QObject::connect(tsc_hybrid->recognition, SIGNAL(printMessage(QString)),
+//                         this, SLOT(printMessage(QString)));
 
-        ui->lbl_map->installEventFilter(tsc_hybrid);
-    }
-    else
-    {
-        if(tsc_hybrid->is_processing)
-        {
-            qDebug() << "Stop process first!";
-            return;
-        }
-    }
+//        ui->lbl_map->installEventFilter(tsc_hybrid);
+//    }
+//    else
+//    {
+//        if(tsc_hybrid->is_processing)
+//        {
+//            qDebug() << "Stop process first!";
+//            return;
+//        }
+//    }
 
-    for(int i = 0; i < datasets.size(); i++)
-    {
-        *params = *params_all[i];
+//    for(int i = 0; i < datasets.size(); i++)
+//    {
+//        *params = *params_all[i];
 
-        //Save parameters
-        stringstream ss;
-        ss << getOutputFolder(false) << "parameters-" << datasets[i].dataset_id << ".txt";
-        saveParameters(ss.str(),params);
+//        //Save parameters
+//        stringstream ss;
+//        ss << getOutputFolder(false) << "parameters-" << datasets[i].dataset_id << ".txt";
+//        saveParameters(ss.str(),params);
 
-        //Bubble process init
-        bubbleProcess::calculateImagePanAngles(FOCAL_LENGHT_PIXELS, params->ssg_params.img_org_width, params->ssg_params.img_org_height);
-        bubbleProcess::calculateImageTiltAngles(FOCAL_LENGHT_PIXELS, params->ssg_params.img_org_width, params->ssg_params.img_org_height);
+//        //Bubble process init
+//        bubbleProcess::calculateImagePanAngles(FOCAL_LENGHT_PIXELS, params->ssg_params.img_org_width, params->ssg_params.img_org_height);
+//        bubbleProcess::calculateImageTiltAngles(FOCAL_LENGHT_PIXELS, params->ssg_params.img_org_width, params->ssg_params.img_org_height);
 
-        tsc_hybrid->processImagesHierarchicalVPC(datasets[i].location, datasets[i].start_idx, datasets[i].end_idx, datasets[i].dataset_id);
-        //tsc_hybrid->processImagesHierarchical2(datasets[i].location, datasets[i].start_idx, datasets[i].end_idx, datasets[i].dataset_id);
-        //tsc_hybrid->createDatabase(datasets[i].location, datasets[i].start_idx, datasets[i].end_idx, datasets[i].dataset_id);
-        //tsc_hybrid->processImagesHierarchicalFromDB(datasets[i].location, datasets[i].start_idx, datasets[i].end_idx, datasets[i].dataset_id);
-        //tsc_hybrid->processImagesHierarchicalTSC(datasets[i].location, datasets[i].start_idx, datasets[i].end_idx, datasets[i].dataset_id);
-    }
+//        tsc_hybrid->processImagesHierarchicalVPC(datasets[i].location, datasets[i].start_idx, datasets[i].end_idx, datasets[i].dataset_id);
+//        //tsc_hybrid->processImagesHierarchical2(datasets[i].location, datasets[i].start_idx, datasets[i].end_idx, datasets[i].dataset_id);
+//        //tsc_hybrid->createDatabase(datasets[i].location, datasets[i].start_idx, datasets[i].end_idx, datasets[i].dataset_id);
+//        //tsc_hybrid->processImagesHierarchicalFromDB(datasets[i].location, datasets[i].start_idx, datasets[i].end_idx, datasets[i].dataset_id);
+//        //tsc_hybrid->processImagesHierarchicalTSC(datasets[i].location, datasets[i].start_idx, datasets[i].end_idx, datasets[i].dataset_id);
+//    }
+
+
+
+  cout << "a" << endl;
+  if(pipeline == NULL)
+  {
+    cout << "b" << endl;
+      pipeline = new Pipeline(params,
+                              &datasets[0],
+                              ui->custom_plot_merged_ssg);
+
+      cout << "c" << endl;
+      QObject::connect(pipeline, SIGNAL(showImgOrg(QImage)),
+                       this, SLOT(showImgOrg(QImage)));
+      QObject::connect(pipeline, SIGNAL(showSSG(QImage)),
+                       this, SLOT(showSSG(QImage)));
+      QObject::connect(pipeline, SIGNAL(showMap(QImage)),
+                       this, SLOT(showMap(QImage)));
+      QObject::connect(pipeline->seg_track, SIGNAL(showImgOrg(QImage)),
+                       this, SLOT(showImgOrg(QImage)));
+
+      cout << "d" << endl;
+      ui->lbl_map->installEventFilter(tsc_hybrid);
+  }
+  else
+  {cout << "e" << endl;
+
+      if(pipeline->is_processing)
+      {
+          qDebug() << "Stop process first!";
+          return;
+      }
+  }
+
+  cout << "f" << endl;
+
+  for(int i = 0; i < datasets.size(); i++)
+  {
+      *params = *params_all[i];
+
+      //Save parameters
+      stringstream ss;
+      ss << getOutputFolder(false) << "parameters-" << datasets[i].dataset_id << ".txt";
+      saveParameters(ss.str(),params);
+
+      DBUsage db_usage = DBUsage::DONT_USE_DB;
+      pipeline->processImages(db_usage);
+  }
+
+//  for(int i = 0; i < datasets.size(); i++)
+//  {
+//      *params = *params_all[i];
+
+//      //Save parameters
+//      stringstream ss;
+//      ss << getOutputFolder(false) << "parameters-" << datasets[i].dataset_id << ".txt";
+//      saveParameters(ss.str(),params);
+
+//      //Bubble process init
+//      bubbleProcess::calculateImagePanAngles(FOCAL_LENGHT_PIXELS, params->ssg_params.img_org_width, params->ssg_params.img_org_height);
+//      bubbleProcess::calculateImageTiltAngles(FOCAL_LENGHT_PIXELS, params->ssg_params.img_org_width, params->ssg_params.img_org_height);
+
+//      tsc_hybrid->processImagesHierarchicalVPC(datasets[i].location, datasets[i].start_idx, datasets[i].end_idx, datasets[i].dataset_id);
+//      //tsc_hybrid->processImagesHierarchical2(datasets[i].location, datasets[i].start_idx, datasets[i].end_idx, datasets[i].dataset_id);
+//      //tsc_hybrid->createDatabase(datasets[i].location, datasets[i].start_idx, datasets[i].end_idx, datasets[i].dataset_id);
+//      //tsc_hybrid->processImagesHierarchicalFromDB(datasets[i].location, datasets[i].start_idx, datasets[i].end_idx, datasets[i].dataset_id);
+//      //tsc_hybrid->processImagesHierarchicalTSC(datasets[i].location, datasets[i].start_idx, datasets[i].end_idx, datasets[i].dataset_id);
+//  }
 }
 
 
@@ -444,9 +513,9 @@ void MainWindow::on_btn_save_settings_clicked()
 
 void MainWindow::on_btn_hierarchical_stop_clicked()
 {
-    if(tsc_hybrid != NULL)
+    if(pipeline != NULL)
     {
-        tsc_hybrid->stopProcessing();
+        pipeline->stop_processing = true;
     }
 }
 

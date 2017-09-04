@@ -364,28 +364,33 @@ void TSCHybrid::processImagesHierarchicalVPC(const string folder, const int star
     {
         qint64 time = QDateTime::currentMSecsSinceEpoch();
 
-        img_org = imread(folder + img_files[frame_no]);
+//        img_org = imread(folder + img_files[frame_no]);
 
 
-        resize(img_org, img, cv::Size(params->ssg_params.img_width, params->ssg_params.img_height));
+//        resize(img_org, img, cv::Size(params->ssg_params.img_width, params->ssg_params.img_height));
 
 
-        //Keep last tau_w/2+tau_n images.
-        img_history.push(img_org);
-        img_resized_history.push(img);
-        hist.push(frame_count);
-        if(img_history.size() > delay)
-        {
-            img_history.pop();
-            img_resized_history.pop();            hist.pop();
-        }
-        emit showImgOrg(mat2QImage(img_resized_history.front()));
+//        //Keep last tau_w/2+tau_n images.
+//        img_history.push(img_org);
+//        img_resized_history.push(img);
+//        hist.push(frame_count);
+//        if(img_history.size() > delay)
+//        {
+//            img_history.pop();
+//            img_resized_history.pop();
+//            hist.pop();
+//        }
+        //emit showImgOrg(mat2QImage(img_resized_history.front()));
 
         ///////////////
         //Process SSG//
         ///////////////
 
-        seg_track->processImage(img, ns_vec);
+
+//        seg_track->processImage(img, ns_vec);
+//        saveNodeSigAsCSV(ns_vec.back(), folder + "/seg/" + img_files[frame_no]);
+
+        //seg_track->processImageFromNS(folder + "/seg/" + img_files[frame_no], ns_vec);
 
         //Calculate coherency based on existence map
         calcCohScore(seg_track, coherency_scores_ssg);
@@ -415,7 +420,7 @@ void TSCHybrid::processImagesHierarchicalVPC(const string folder, const int star
             Mat map_col = map.col(map.size().width - 1 - delay);
             vector<NodeSig> ns = ns_vec[ns_vec.size() - 1 - delay];
             SSGProc::updateSSG(temp_SSG, ns, map_col);
-            SSGProc::updateSSGInvariants(temp_SSG, img_history.front(), params);
+            //SSGProc::updateSSGInvariants(temp_SSG, img_history.front(), params);
 
             //Reset coherency score
             ssg_best_coherency_score = coherency_scores_ssg.back();
@@ -446,7 +451,7 @@ void TSCHybrid::processImagesHierarchicalVPC(const string folder, const int star
             //If current frame is more coherent, set this frame as sample frame of SSG
             if(ssg_best_coherency_score < coherency_scores_ssg.back())
             {
-                temp_SSG.setSampleFrame(folder + img_files[frame_no]);
+                //temp_SSG.setSampleFrame(folder + img_files[frame_no]);
                 temp_SSG.setColor(dataset_id);
                 ssg_best_coherency_score = coherency_scores_ssg.back();
             }
@@ -455,8 +460,8 @@ void TSCHybrid::processImagesHierarchicalVPC(const string folder, const int star
         frame_count++;
 
         //Free variables
-        img.release();
-        img_org.release();
+        //img.release();
+        //img_org.release();
 
         //Wait a little for GUI processing
         waitKey(1);

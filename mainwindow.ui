@@ -197,7 +197,7 @@ QGroupBox::title {
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>98</width>
+                  <width>1686</width>
                   <height>198</height>
                  </rect>
                 </property>
@@ -1370,7 +1370,7 @@ QGroupBox::title {
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_31">
              <item>
-              <widget class="QScrollArea" name="scrollArea_4">
+              <widget class="QScrollArea" name="scroll_images">
                <property name="minimumSize">
                 <size>
                  <width>0</width>
@@ -1516,79 +1516,58 @@ QGroupBox::title {
               </widget>
              </item>
              <item>
-              <layout class="QVBoxLayout" name="verticalLayout_28">
-               <item>
-                <widget class="QLabel" name="label_21">
-                 <property name="text">
-                  <string>Segment Tracking / Node Existence Map (White = Tracked Nodes)</string>
-                 </property>
-                 <property name="alignment">
-                  <set>Qt::AlignCenter</set>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QScrollArea" name="scrollArea">
-                 <property name="minimumSize">
-                  <size>
-                   <width>0</width>
-                   <height>10</height>
-                  </size>
-                 </property>
-                 <property name="maximumSize">
-                  <size>
-                   <width>16777215</width>
-                   <height>10</height>
-                  </size>
-                 </property>
-                 <property name="widgetResizable">
-                  <bool>true</bool>
-                 </property>
-                 <widget class="QWidget" name="scrollAreaWidgetContents">
-                  <property name="geometry">
-                   <rect>
-                    <x>0</x>
-                    <y>0</y>
-                    <width>1360</width>
-                    <height>38</height>
-                   </rect>
-                  </property>
-                  <layout class="QHBoxLayout" name="horizontalLayout_3">
-                   <item>
-                    <widget class="QLabel" name="lbl_map">
-                     <property name="focusPolicy">
-                      <enum>Qt::StrongFocus</enum>
-                     </property>
-                     <property name="text">
-                      <string>Map</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item>
-                    <spacer name="horizontalSpacer_8">
-                     <property name="orientation">
-                      <enum>Qt::Horizontal</enum>
-                     </property>
-                     <property name="sizeHint" stdset="0">
-                      <size>
-                       <width>40</width>
-                       <height>20</height>
-                      </size>
-                     </property>
-                    </spacer>
-                   </item>
-                  </layout>
-                 </widget>
-                </widget>
-               </item>
-              </layout>
-             </item>
-             <item>
-              <widget class="QScrollArea" name="scrollArea_5">
+              <widget class="QScrollArea" name="scroll_map">
                <property name="minimumSize">
                 <size>
                  <width>0</width>
-                 <height>400</height>
+                 <height>300</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>16777215</width>
+                 <height>300</height>
+                </size>
+               </property>
+               <property name="widgetResizable">
+                <bool>true</bool>
+               </property>
+               <widget class="QWidget" name="scrollAreaWidgetContents">
+                <property name="geometry">
+                 <rect>
+                  <x>0</x>
+                  <y>0</y>
+                  <width>1378</width>
+                  <height>298</height>
+                 </rect>
+                </property>
+                <layout class="QHBoxLayout" name="horizontalLayout_3">
+                 <item>
+                  <widget class="QLabel" name="lbl_map">
+                   <property name="focusPolicy">
+                    <enum>Qt::StrongFocus</enum>
+                   </property>
+                   <property name="text">
+                    <string>Map</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </widget>
+             </item>
+             <item>
+              <widget class="QScrollArea" name="scroll_score">
+               <property name="minimumSize">
+                <size>
+                 <width>0</width>
+                 <height>200</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>16777215</width>
+                 <height>200</height>
                 </size>
                </property>
                <property name="widgetResizable">
@@ -1600,20 +1579,10 @@ QGroupBox::title {
                   <x>0</x>
                   <y>0</y>
                   <width>1378</width>
-                  <height>398</height>
+                  <height>198</height>
                  </rect>
                 </property>
                 <layout class="QVBoxLayout" name="verticalLayout">
-                 <item>
-                  <widget class="QLabel" name="label_22">
-                   <property name="text">
-                    <string>Detected Places</string>
-                   </property>
-                   <property name="alignment">
-                    <set>Qt::AlignCenter</set>
-                   </property>
-                  </widget>
-                 </item>
                  <item>
                   <widget class="QCustomPlot" name="custom_plot_merged_ssg" native="true">
                    <property name="minimumSize">
@@ -1629,40 +1598,27 @@ QGroupBox::title {
                    <property name="minimumSize">
                     <size>
                      <width>0</width>
-                     <height>100</height>
+                     <height>1</height>
                     </size>
                    </property>
                   </widget>
-                 </item>
-                 <item>
-                  <spacer name="verticalSpacer_7">
-                   <property name="orientation">
-                    <enum>Qt::Vertical</enum>
-                   </property>
-                   <property name="sizeHint" stdset="0">
-                    <size>
-                     <width>20</width>
-                     <height>40</height>
-                    </size>
-                   </property>
-                  </spacer>
                  </item>
                 </layout>
                </widget>
               </widget>
              </item>
              <item>
-              <widget class="QScrollArea" name="scrollArea_7">
+              <widget class="QScrollArea" name="scroll_tsc">
                <property name="minimumSize">
                 <size>
                  <width>0</width>
-                 <height>10</height>
+                 <height>1</height>
                 </size>
                </property>
                <property name="maximumSize">
                 <size>
                  <width>16777215</width>
-                 <height>10</height>
+                 <height>1</height>
                 </size>
                </property>
                <property name="widgetResizable">
@@ -1673,8 +1629,8 @@ QGroupBox::title {
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>1362</width>
-                  <height>147</height>
+                  <width>1364</width>
+                  <height>139</height>
                  </rect>
                 </property>
                 <layout class="QVBoxLayout" name="verticalLayout_33">
@@ -1697,19 +1653,6 @@ QGroupBox::title {
                     </size>
                    </property>
                   </widget>
-                 </item>
-                 <item>
-                  <spacer name="verticalSpacer_9">
-                   <property name="orientation">
-                    <enum>Qt::Vertical</enum>
-                   </property>
-                   <property name="sizeHint" stdset="0">
-                    <size>
-                     <width>20</width>
-                     <height>40</height>
-                    </size>
-                   </property>
-                  </spacer>
                  </item>
                 </layout>
                </widget>
@@ -1902,7 +1845,7 @@ QGroupBox::title {
                   <x>0</x>
                   <y>0</y>
                   <width>1686</width>
-                  <height>441</height>
+                  <height>445</height>
                  </rect>
                 </property>
                 <layout class="QVBoxLayout" name="verticalLayout_23">
@@ -2115,7 +2058,7 @@ QGroupBox::title {
              <x>0</x>
              <y>0</y>
              <width>1708</width>
-             <height>729</height>
+             <height>756</height>
             </rect>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_35">
@@ -2168,7 +2111,7 @@ QGroupBox::title {
      <x>0</x>
      <y>0</y>
      <width>2058</width>
-     <height>25</height>
+     <height>20</height>
     </rect>
    </property>
   </widget>

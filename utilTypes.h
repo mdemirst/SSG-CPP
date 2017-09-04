@@ -87,6 +87,7 @@ public:
 
 class Dataset{
 public:
+    Dataset(){}
     Dataset(string location, int start_idx, int end_idx, int dataset_id);
     int nr_files;
     int start_idx;
@@ -213,10 +214,12 @@ public:
 
 class BasePointSSG
 {
+  public:
     int number;
     string filename;
     vector<NodeSig> rag;
-public:
+
+    BasePointSSG(){}
     BasePointSSG(int number, string filename, vector<NodeSig>& rag)
     {
         this->number = number;
@@ -292,6 +295,15 @@ public:
     Mat bd;
     bubbleStatistics bs;
     vector<NodeSig> ns;
+};
+
+struct FrameInfo
+{
+  double translation;
+  double rotation;
+  string cat;
+  double transition_prob;
+  string frame_path;
 };
 
 #endif // UTILTYPES_H
