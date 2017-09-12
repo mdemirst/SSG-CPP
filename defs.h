@@ -29,6 +29,7 @@
 #define PLOT_INCOHERENT_IDX 5
 #define PLOT_VPC_IDX 6
 #define PLOT_ODOM_IDX 6
+#define PLOT_ROT_IDX 7
 #define PLOT_PLACES_IDX 10
 
 #define COH_PLOT_W 1290
@@ -40,7 +41,7 @@
 #define TSC_PLOT_MARGIN -15
 
 #define EXISTENCE_MAP_W 1290
-#define EXISTENCE_MAP_H 250
+#define EXISTENCE_MAP_H 500
 
 
 //Defs for Cold-Sa

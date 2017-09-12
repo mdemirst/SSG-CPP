@@ -40,6 +40,8 @@ private slots:
     void showMap(QImage img);
     void showSSG(QImage img);
     void showTree(QImage img);
+    void showHist(QImage img);
+    void showHist2(QImage img);
     void printMessage(QString str);
 
     void showTrackMap(QImage img);

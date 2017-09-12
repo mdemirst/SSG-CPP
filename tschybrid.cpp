@@ -32,7 +32,7 @@ TSCHybrid::TSCHybrid(QCustomPlot* tsc_plot,
     pen2.setWidth(PEN_WIDTH2);
     pen2.setColor(Qt::black);
 
-    pen3.setWidth(PEN_WIDTH2);
+    pen3.setWidth(PEN_WIDTH3);
     pen3.setColor(Qt::red);
 
     pen4.setWidth(PEN_WIDTH3);

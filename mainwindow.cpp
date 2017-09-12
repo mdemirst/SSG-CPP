@@ -352,6 +352,16 @@ void MainWindow::showTree(QImage img)
     ui->lbl_tree_draw->setPixmap(QPixmap::fromImage(img));
 }
 
+void MainWindow::showHist(QImage img)
+{
+    ui->lbl_histogram->setPixmap(QPixmap::fromImage(img));
+}
+
+void MainWindow::showHist2(QImage img)
+{
+    ui->lbl_histogram2->setPixmap(QPixmap::fromImage(img));
+}
+
 void MainWindow::printMessage(QString str)
 {
     ui->te_recognition->insertPlainText(str+"\n");
@@ -431,6 +441,10 @@ void MainWindow::on_btn_process_hierarchical_clicked()
                        this, SLOT(showMap(QImage)));
       QObject::connect(pipeline->seg_track, SIGNAL(showImgOrg(QImage)),
                        this, SLOT(showImgOrg(QImage)));
+      QObject::connect(pipeline, SIGNAL(showHist(QImage)),
+                       this, SLOT(showHist(QImage)));
+      QObject::connect(pipeline, SIGNAL(showHist2(QImage)),
+                       this, SLOT(showHist2(QImage)));
 
       cout << "d" << endl;
       ui->lbl_map->installEventFilter(tsc_hybrid);
@@ -456,7 +470,7 @@ void MainWindow::on_btn_process_hierarchical_clicked()
       ss << getOutputFolder(false) << "parameters-" << datasets[i].dataset_id << ".txt";
       saveParameters(ss.str(),params);
 
-      DBUsage db_usage = DBUsage::DONT_USE_DB;
+      DBUsage db_usage = DBUsage::READ_FROM_DB;
       pipeline->processImages(db_usage);
   }
 

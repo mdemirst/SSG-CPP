@@ -55,4 +55,37 @@ void writeDetectedPlace(int results);
 void saveNodeSigAsCSV(std::vector<NodeSig> ns_vec, string filename);
 bool readNodeSigFromCSV(std::vector<NodeSig>& ns_vec, string filename);
 std::map<string, string> getPlaceCategories(string filename);
+
+class Statistics
+{
+public:
+    vector<double> data;
+
+    Statistics(vector<double> data)
+    {
+        this->data = data;
+    }
+
+    double getMean()
+    {
+        double sum = 0.0;
+        for(int i = 0; i < data.size(); ++i)
+            sum += data[i];
+        return sum/data.size();
+    }
+
+    double getVariance()
+    {
+        double mean = getMean();
+        double temp = 0;
+        for(int i = 0; i < data.size(); ++i)
+            temp += (data[i]-mean)*(data[i]-mean);
+        return temp/(data.size()-1);
+    }
+
+    double getStdDev()
+    {
+        return sqrt(getVariance());
+    }
+};
 #endif // UTILS_H

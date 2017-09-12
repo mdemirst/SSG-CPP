@@ -64,6 +64,11 @@ public:
                    vector<int>& detected_places_unfiltered,
                    vector<int>& detected_places);
 
+  bool calcCoherencyHistogram(const Mat& coh_matrix, Mat& hist, Mat& hist2);
+  int checkIfAppeared(const Mat& segment);
+  int checkIfDisappeared(const Mat& segment);
+
+
 
 public slots:
 
@@ -71,6 +76,8 @@ signals:
     void showSSG(QImage img);
     void showImgOrg(QImage img);
     void showMap(QImage img);
+    void showHist(QImage img);
+    void showHist2(QImage img);
 
 };
 

@@ -304,6 +304,12 @@ struct FrameInfo
   string cat;
   double transition_prob;
   string frame_path;
+  double odom_diff;
+};
+
+struct OdomScan
+{
+  vector<double> scan;
 };
 
 #endif // UTILTYPES_H

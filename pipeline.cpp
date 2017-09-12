@@ -20,7 +20,7 @@ Pipeline::Pipeline(Parameters* params,
   pen2.setWidth(PEN_WIDTH2);
   pen2.setColor(Qt::black);
 
-  pen3.setWidth(PEN_WIDTH2);
+  pen3.setWidth(PEN_WIDTH3);
   pen3.setColor(Qt::red);
 
   pen4.setWidth(PEN_WIDTH3);
@@ -46,13 +46,19 @@ Pipeline::Pipeline(Parameters* params,
   this->ssg_plot->plotLayout()->setAutoMargins(QCP::msNone);
   this->ssg_plot->plotLayout()->setMargins(plot_margin);
 
-  this->ssg_plot->graph(PLOT_VPC_IDX)->setPen(pen2);
-  this->ssg_plot->graph(PLOT_VPC_IDX)->setLineStyle(QCPGraph::lsNone);
-  this->ssg_plot->graph(PLOT_VPC_IDX)->setScatterStyle(QCPScatterStyle::ssCircle);
+  //this->ssg_plot->graph(PLOT_VPC_IDX)->setPen(pen2);
+  //this->ssg_plot->graph(PLOT_VPC_IDX)->setLineStyle(QCPGraph::lsNone);
+  //this->ssg_plot->graph(PLOT_VPC_IDX)->setScatterStyle(QCPScatterStyle::ssCircle);
 
-  this->ssg_plot->graph(PLOT_VPC_IDX+1)->setPen(pen2);
-  this->ssg_plot->graph(PLOT_VPC_IDX+1)->setLineStyle(QCPGraph::lsNone);
-  this->ssg_plot->graph(PLOT_VPC_IDX+1)->setScatterStyle(QCPScatterStyle::ssCircle);
+  this->ssg_plot->graph(PLOT_ODOM_IDX)->setPen(pen2);
+  //this->ssg_plot->graph(PLOT_ODOM_IDX)->setLineStyle(QCPGraph::lsNone);
+  //this->ssg_plot->graph(PLOT_ODOM_IDX)->setScatterStyle(QCPScatterStyle::ssCircle);
+
+  this->ssg_plot->graph(PLOT_PLACES_IDX)->setPen(pen1);
+  //this->ssg_plot->graph(PLOT_PLACES_IDX)->setLineStyle(QCPGraph::lsNone);
+  //this->ssg_plot->graph(PLOT_PLACES_IDX)->setScatterStyle(QCPScatterStyle::ssCross);
+
+  this->ssg_plot->graph(PLOT_ROT_IDX)->setPen(pen4);
 
   is_processing = false;
   stop_processing = false;
@@ -73,6 +79,41 @@ double getDist(cv::Point3f a, cv::Point3f b)
 double getDistAlpha(cv::Point3f a, cv::Point3f b)
 {
   return fabs(a.z - b.z);
+}
+
+
+vector<OdomScan> getOdomScans(string path)
+{
+  vector<OdomScan> odom_scans;
+  string line;
+  ifstream myfile (path);
+
+  if (myfile.is_open())
+  {
+    while ( getline (myfile,line) )
+    {
+        stringstream ss(line);
+        OdomScan odom_scan;
+
+        double dum;
+        for(int i = 0; i < 16; i++)
+        {
+          ss >> dum;
+        }
+
+        for(int i = 0; i < 181; i++)
+        {
+          double range;
+          ss >> range;
+          odom_scan.scan.push_back(range);
+        }
+
+        odom_scans.push_back(odom_scan);
+    }
+    myfile.close();
+  }
+
+  return odom_scans;
 }
 
 vector<FrameInfo> getFrameInfos(string path)
@@ -135,10 +176,47 @@ vector<FrameInfo> getFrameInfos(string path)
     frame_info.cat = place_cats[img_files[i]];
     frame_info.rotation = getDistAlpha(getCoordCold2(img_files[i]), getCoordCold2(img_files[i+1]));
 
+    if(i<10)
+    {
+      frame_info.odom_diff = getDist(getCoordCold2(img_files[0]), getCoordCold2(img_files[i]));
+    }
+    else
+    {
+      frame_info.odom_diff = getDist(getCoordCold2(img_files[i-10]), getCoordCold2(img_files[i]));
+    }
+
     frame_infos.push_back(frame_info);
   }
 
   return frame_infos;
+}
+
+bool Pipeline::calcCoherencyHistogram(const Mat& coh_matrix, Mat& hist, Mat& hist2)
+{
+  if(coh_matrix.cols < params.seg_track_params.tau_w)
+  {
+    return false;
+  }
+
+  Mat roi = coh_matrix(cv::Rect(coh_matrix.cols - params.seg_track_params.tau_w, 0, params.seg_track_params.tau_w, coh_matrix.rows));
+  //cout << roi.rows << " " << roi.cols << endl;
+
+  for(int i = 0; i < coh_matrix.rows; ++i)
+  {
+    //cout << roi.row(i) << endl;
+    int appeared = checkIfAppeared(roi.row(i));
+    int disappeared = checkIfDisappeared(roi.row(i));
+
+    if(appeared > 0)
+      hist.at<int>(appeared,0) = hist.at<int>(appeared,0) + 30;
+
+    if(disappeared > 0)
+      hist2.at<int>(disappeared,0) = hist2.at<int>(disappeared,0) + 30;
+  }
+
+
+
+  return true;
 }
 
 void Pipeline::processImages(DBUsage db_usage)
@@ -148,6 +226,10 @@ void Pipeline::processImages(DBUsage db_usage)
     vector<string> img_files = getFiles(dataset.location+"/std_cam");
     //map<string,string> place_cats = getPlaceCategories(dataset.location+"/localization/places.lst");
     vector<FrameInfo> frame_infos = getFrameInfos(dataset.location);
+    vector<OdomScan> odom_scans = getOdomScans(dataset.location+"/odom_scans/scans.tdf");
+
+    for(int i = 0; i < odom_scans[0].scan.size(); i++)
+      cout << odom_scans[0].scan[i] << " ";
 
     Mat img_org, img;
 
@@ -176,6 +258,9 @@ void Pipeline::processImages(DBUsage db_usage)
       db.createTables();
     }
 
+    Mat hist_img = Mat::zeros(params.seg_track_params.tau_w,dataset.end_idx,CV_8U);
+    Mat hist_img2 = Mat::zeros(params.seg_track_params.tau_w,dataset.end_idx,CV_8U);
+
 
     //Process all images
     for(int frame_no = dataset.start_idx; frame_no < dataset.end_idx-1; frame_no++)
@@ -195,6 +280,11 @@ void Pipeline::processImages(DBUsage db_usage)
           BasePointSSG basepoint;
           db.getBasepoint(frame_no, basepoint);
 
+          img_org = imread(dataset.location+"/std_cam" + "/" + img_files[frame_no]);
+
+          resize(img_org, img, cv::Size(params.ssg_params.img_width, params.ssg_params.img_height));
+          emit showImgOrg(mat2QImage(img));
+
           seg_track->processImageFromNS(basepoint.rag,ns_vec);
         }
         else
@@ -205,6 +295,17 @@ void Pipeline::processImages(DBUsage db_usage)
 
           seg_track->processImage(img, ns_vec);
         }
+
+        Mat hist = Mat::zeros(cv::Size(1,params.seg_track_params.tau_w),CV_8U);
+        Mat hist2 = Mat::zeros(cv::Size(1,params.seg_track_params.tau_w),CV_8U);
+        calcCoherencyHistogram(seg_track->getM(), hist, hist2);
+
+        hist.copyTo(hist_img(cv::Rect(frame_no,0,1,params.seg_track_params.tau_w)));
+        hist2.copyTo(hist_img2(cv::Rect(frame_no,0,1,params.seg_track_params.tau_w)));
+
+
+        emit(showHist(mat2QImage(hist_img)));
+        emit(showHist2(mat2QImage(hist_img2)));
 
 
         if(db_usage == DBUsage::SAVE_TO_DB)
@@ -229,7 +330,7 @@ void Pipeline::processImages(DBUsage db_usage)
 
 //        }
 
-        cout << frame_infos[frame_no].cat << " " << frame_infos[frame_no].transition_prob << " " << frame_infos[frame_no].translation << endl;
+        //cout << frame_infos[frame_no].cat << " " << frame_infos[frame_no].transition_prob << " " << frame_infos[frame_no].translation << endl;
 
         //Show connectivity map
         showMap(seg_track->getM());
@@ -292,8 +393,8 @@ void Pipeline::plotScoresSSG(vector<float> coherency_scores, vector<int> detecte
             if(detected_places.back() > 0)
             {
                 //Place
-                this->ssg_plot->graph(graph_idx)->setPen(QPen(Qt::red));
-                this->ssg_plot->graph(graph_idx)->setBrush(QBrush(QColor(255, 0, 0, 80)));
+                //this->ssg_plot->graph(graph_idx)->setPen(QPen(Qt::red));
+                //this->ssg_plot->graph(graph_idx)->setBrush(QBrush(QColor(255, 0, 0, 80)));
 
                 QPen dumPen;
                 dumPen.setWidth(1);
@@ -302,8 +403,8 @@ void Pipeline::plotScoresSSG(vector<float> coherency_scores, vector<int> detecte
             else
             {
                 //Transition
-                this->ssg_plot->graph(graph_idx)->setPen(QPen(Qt::blue));
-                this->ssg_plot->graph(graph_idx)->setBrush(QBrush(QColor(0, 0, 255, 80)));
+                //this->ssg_plot->graph(graph_idx)->setPen(QPen(Qt::blue));
+                //this->ssg_plot->graph(graph_idx)->setBrush(QBrush(QColor(0, 0, 255, 80)));
 
                 QPen dumPen;
                 dumPen.setWidth(3);
@@ -315,17 +416,71 @@ void Pipeline::plotScoresSSG(vector<float> coherency_scores, vector<int> detecte
         ssg_plot->graph(graph_idx)->addData(detected_places.size(),1.0+margin);
 
         //Add coh score
-        ssg_plot->graph(PLOT_SCORES_IDX)->addData(detected_places.size(),coherency_scores[detected_places.size()-1]+margin);
+        //ssg_plot->graph(PLOT_SCORES_IDX)->addData(detected_places.size(),coherency_scores[detected_places.size()-1]+margin);
+
+        vector<double> stats_data;
+        for(int i = coherency_scores.size()-5; i < coherency_scores.size(); i++)
+        {
+          stats_data.push_back(coherency_scores[i]);
+        }
+        Statistics stats(stats_data);
+
+        //ssg_plot->graph(PLOT_ROT_IDX)->addData(detected_places.size(),stats.getMean()+margin);
+        //ssg_plot->graph(PLOT_ODOM_IDX)->addData(detected_places.size(),10*stats.getVariance());
+
+
+
 
     }
 
     //Add thresold line
-    ssg_plot->graph(PLOT_THRES_IDX)->addData(thres_cursor,params.ssg_params.tau_c+margin);
-    ssg_plot->graph(PLOT_ODOM_IDX)->addData(thres_cursor,10*frame_infos[coherency_scores.size()].rotation);
+//    ssg_plot->graph(PLOT_THRES_IDX)->addData(thres_cursor,params.ssg_params.tau_c+margin);
+//    ssg_plot->graph(PLOT_ODOM_IDX)->addData(thres_cursor,2*frame_infos[coherency_scores.size()].odom_diff);
+    ssg_plot->graph(PLOT_PLACES_IDX)->addData(thres_cursor,frame_infos[coherency_scores.size()].transition_prob);
+//    ssg_plot->graph(PLOT_ROT_IDX)->addData(thres_cursor,min(10*frame_infos[coherency_scores.size()].rotation,2));
+
     thres_cursor++;
 
     ssg_plot->rescaleAxes();
     ssg_plot->replot();
+}
+
+int Pipeline::checkIfAppeared(const Mat& segment)
+{
+  bool appeared = false;
+  int appeared_size = 0;
+  for(int i = 0; i < segment.cols-1; ++i)
+  {
+    if(segment.at<int>(0,i) >= 0)
+      appeared_size++;
+
+    if(segment.at<int>(0,i) == -1 && segment.at<int>(0,i+1) >= 0)
+      appeared = true;
+  }
+
+  if(appeared == true)
+    return appeared_size;
+  else
+    return 0;
+}
+
+int Pipeline::checkIfDisappeared(const Mat& segment)
+{
+  bool appeared = false;
+  int appeared_size = 0;
+  for(int i = 0; i < segment.cols-1; ++i)
+  {
+    if(segment.at<int>(0,i) >= 0)
+      appeared_size++;
+
+    if(segment.at<int>(0,i) >= 0 && segment.at<int>(0,i+1) == -1)
+      appeared = true;
+  }
+
+  if(appeared == true)
+    return appeared_size;
+  else
+    return 0;
 }
 
 float Pipeline::calcCohScore(SegmentTrack* seg_track, vector<float>& coh_scores)

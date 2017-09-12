@@ -1578,11 +1578,37 @@ QGroupBox::title {
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>1378</width>
-                  <height>198</height>
+                  <width>1364</width>
+                  <height>336</height>
                  </rect>
                 </property>
                 <layout class="QVBoxLayout" name="verticalLayout">
+                 <item>
+                  <widget class="QLabel" name="lbl_histogram">
+                   <property name="minimumSize">
+                    <size>
+                     <width>0</width>
+                     <height>50</height>
+                    </size>
+                   </property>
+                   <property name="text">
+                    <string>TextLabel</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="lbl_histogram2">
+                   <property name="minimumSize">
+                    <size>
+                     <width>0</width>
+                     <height>50</height>
+                    </size>
+                   </property>
+                   <property name="text">
+                    <string>TextLabel</string>
+                   </property>
+                  </widget>
+                 </item>
                  <item>
                   <widget class="QCustomPlot" name="custom_plot_merged_ssg" native="true">
                    <property name="minimumSize">
@@ -1598,7 +1624,7 @@ QGroupBox::title {
                    <property name="minimumSize">
                     <size>
                      <width>0</width>
-                     <height>1</height>
+                     <height>100</height>
                     </size>
                    </property>
                   </widget>
