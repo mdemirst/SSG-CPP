@@ -463,6 +463,7 @@ void MainWindow::on_btn_process_hierarchical_clicked()
 
   for(int i = 0; i < datasets.size(); i++)
   {
+    cout << "x" << endl;
       *params = *params_all[i];
 
       //Save parameters

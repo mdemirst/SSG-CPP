@@ -10,6 +10,7 @@
 #include <queue>
 #include "databasehandler.h"
 #include "utilTypes.h"
+#include "libsvm/svm.h"
 
 #include "experimentalData.h"
 #include "GraphSegmentation/ColoredSegments/coloredSegments.h"
@@ -67,6 +68,8 @@ public:
   bool calcCoherencyHistogram(const Mat& coh_matrix, Mat& hist, Mat& hist2);
   int checkIfAppeared(const Mat& segment);
   int checkIfDisappeared(const Mat& segment);
+  void normalizeSVM(svm_problem* problem, int dim, std::vector<double>& scaling);
+
 
 
 

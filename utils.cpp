@@ -1,8 +1,14 @@
 #include "utils.h"
 
 //Convert Mat to QImage
-QImage mat2QImage(const Mat& mat)
+QImage mat2QImage(const Mat& mat2)
 {
+    Mat mat;
+    if(mat2.type() == CV_32F)
+      mat2.convertTo(mat,CV_8U);
+    else
+      mat = mat2;
+
     // 8-bits unsigned, NO. OF CHANNELS=1
     if(mat.type()==CV_8UC1)
     {
@@ -695,10 +701,12 @@ std::map<string, string> getPlaceCategories(string filename)
 
         my_map[path] = category;
 
-        cout << "Path: " << path << " Category: " << category << endl;
+        //cout << "Path: " << path << " Category: " << category << endl;
     }
     myfile.close();
   }
 
   return my_map;
 }
+
+

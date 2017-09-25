@@ -53,7 +53,10 @@ SOURCES += main.cpp\
     GraphSegmentation/ColoredSegments/ColoredSegments.cpp \
     VPC_toolkit/util.cpp \
     VPC_toolkit/VPC_IO.cpp \
-    pipeline.cpp
+    pipeline.cpp \
+    libsvm/svm.cpp
+    libsvm/svm.cpp
+
 
 HEADERS  += mainwindow.h \
       segmentation.h \
@@ -101,7 +104,8 @@ HEADERS  += mainwindow.h \
     VPC_toolkit/mdarray.h \
     VPC_toolkit/util.h \
     VPC_toolkit/VPC.h \
-    pipeline.h
+    pipeline.h \
+    libsvm/svm.h
 
 FORMS    += mainwindow.ui
 

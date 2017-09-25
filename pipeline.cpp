@@ -208,15 +208,43 @@ bool Pipeline::calcCoherencyHistogram(const Mat& coh_matrix, Mat& hist, Mat& his
     int disappeared = checkIfDisappeared(roi.row(i));
 
     if(appeared > 0)
-      hist.at<int>(appeared,0) = hist.at<int>(appeared,0) + 30;
+      hist.at<float>(appeared,0) = hist.at<float>(appeared,0) + 1;
 
     if(disappeared > 0)
-      hist2.at<int>(disappeared,0) = hist2.at<int>(disappeared,0) + 30;
+      hist2.at<float>(disappeared,0) = hist2.at<float>(disappeared,0) + 1;
   }
 
 
 
   return true;
+}
+
+void Pipeline::normalizeSVM(svm_problem* problem, int dim, std::vector<double>& scaling)
+{
+  std::vector<double> max_vals(dim);
+
+  for(int d = 0; d < dim; ++d)
+  {
+    max_vals[d] = 0.0;
+    for(int i = 0; i < problem->l; ++i)
+    {
+      if(problem->x[i][d].value > max_vals[d])
+        max_vals[d] = problem->x[i][d].value;
+    }
+
+    if(max_vals[d] > 0.0)
+    {
+      for(int i = 0; i < problem->l; ++i)
+      {
+        problem->x[i][d].value /= max_vals[d];
+      }
+      scaling.push_back(1/max_vals[d]);
+    }
+    else
+    {
+      scaling.push_back(1.0);
+    }
+  }
 }
 
 void Pipeline::processImages(DBUsage db_usage)
@@ -258,10 +286,59 @@ void Pipeline::processImages(DBUsage db_usage)
       db.createTables();
     }
 
-    Mat hist_img = Mat::zeros(params.seg_track_params.tau_w,dataset.end_idx,CV_8U);
-    Mat hist_img2 = Mat::zeros(params.seg_track_params.tau_w,dataset.end_idx,CV_8U);
+    Mat hist_img = Mat::zeros(params.seg_track_params.tau_w,dataset.end_idx,CV_32F);
+    Mat hist_img2 = Mat::zeros(params.seg_track_params.tau_w,dataset.end_idx,CV_32F);
 
 
+    struct svm_parameter ssg_svm_param;
+    // default values
+    ssg_svm_param.svm_type = ONE_CLASS;
+    ssg_svm_param.kernel_type = LINEAR;
+    ssg_svm_param.degree = 3;
+    ssg_svm_param.gamma = 0;	// 1/num_features
+    ssg_svm_param.coef0 = 0;
+    ssg_svm_param.nu = 0.5;
+    ssg_svm_param.cache_size =500;
+    ssg_svm_param.C = 1;
+    ssg_svm_param.eps = 1e-6;
+    ssg_svm_param.p = 0.1;
+    ssg_svm_param.shrinking = 1;
+    ssg_svm_param.probability = 0;
+    ssg_svm_param.nr_weight = 0;
+    ssg_svm_param.weight_label = NULL;
+    ssg_svm_param.weight = NULL;
+
+    struct svm_model *ssg_svm_model;
+
+    svm_problem ssg_svm_problem;
+    ssg_svm_problem.l = dataset.end_idx-dataset.start_idx-1-params.seg_track_params.tau_w;
+
+    ssg_svm_problem.y = new double[ssg_svm_problem.l-1];
+    ssg_svm_problem.x = new struct svm_node*[ssg_svm_problem.l-1];
+    for(int i = 0; i < ssg_svm_problem.l-1; i++)
+      ssg_svm_problem.x[i] = new struct svm_node[params.seg_track_params.tau_w*2+1];
+
+    double transition_thres = 0.5;
+
+    bool svm_prediction_enabled = true;
+    string model_output_path = OUTPUT_FOLDER;
+    model_output_path += "/svm_model.model";
+    string scaling_output_path = OUTPUT_FOLDER;
+    scaling_output_path += "/scaling.vector";
+    std::vector<double> scaling;
+
+
+    if(svm_prediction_enabled == true && (ssg_svm_model=svm_load_model(model_output_path.c_str()))==0)
+    {
+      std::cout << "Cannot load model" << std::endl;
+      return;
+    }
+    if(svm_prediction_enabled)
+    {
+      readVector<double>(scaling_output_path, scaling);
+    }
+
+    int total_correct_prediction = 0;
     //Process all images
     for(int frame_no = dataset.start_idx; frame_no < dataset.end_idx-1; frame_no++)
     {
@@ -296,12 +373,77 @@ void Pipeline::processImages(DBUsage db_usage)
           seg_track->processImage(img, ns_vec);
         }
 
-        Mat hist = Mat::zeros(cv::Size(1,params.seg_track_params.tau_w),CV_8U);
-        Mat hist2 = Mat::zeros(cv::Size(1,params.seg_track_params.tau_w),CV_8U);
+        Mat hist = Mat::zeros(cv::Size(1,params.seg_track_params.tau_w),CV_32F);
+        Mat hist2 = Mat::zeros(cv::Size(1,params.seg_track_params.tau_w),CV_32F);
         calcCoherencyHistogram(seg_track->getM(), hist, hist2);
+
+        //std::cout << frame_no << "-"<< seg_track->getM().size() << endl;
 
         hist.copyTo(hist_img(cv::Rect(frame_no,0,1,params.seg_track_params.tau_w)));
         hist2.copyTo(hist_img2(cv::Rect(frame_no,0,1,params.seg_track_params.tau_w)));
+
+
+        if((frame_no-dataset.start_idx) >= params.seg_track_params.tau_w )
+        {
+          int svm_index = frame_no-dataset.start_idx -  params.seg_track_params.tau_w;
+          double trans_prob = frame_infos[frame_no-dataset.start_idx-params.seg_track_params.tau_w/2].transition_prob;
+          int label = trans_prob > transition_thres ? 1 : -1;
+
+
+
+          for(int i = 0; i < hist.rows; ++i)
+          {
+            ssg_svm_problem.x[svm_index][i].index = i+1;
+            if(svm_prediction_enabled)
+              ssg_svm_problem.x[svm_index][i].value = scaling[i]*hist.at<float>(i,0);
+            else
+              ssg_svm_problem.x[svm_index][i].value = hist.at<float>(i,0);
+
+            ssg_svm_problem.x[svm_index][i+hist.rows].index = i+1+params.seg_track_params.tau_w;
+
+            if(svm_prediction_enabled)
+              ssg_svm_problem.x[svm_index][i+hist.rows].value = scaling[i+hist.rows]*hist2.at<float>(i,0);
+            else
+              ssg_svm_problem.x[svm_index][i+hist.rows].value = hist2.at<float>(i,0);
+
+
+            ssg_svm_problem.y[svm_index] = label;
+
+//            ssg_svm_problem.x[svm_index][i].index = i+1;
+//            if(svm_prediction_enabled)
+//              ssg_svm_problem.x[svm_index][i].value = scaling[i]*trans_prob;
+//            else
+//              ssg_svm_problem.x[svm_index][i].value = trans_prob;
+
+//            ssg_svm_problem.x[svm_index][i+hist.rows].index = i+1+params.seg_track_params.tau_w;
+
+//            if(svm_prediction_enabled)
+//              ssg_svm_problem.x[svm_index][i+hist.rows].value = scaling[i+hist.rows]*trans_prob;
+//            else
+//              ssg_svm_problem.x[svm_index][i+hist.rows].value = trans_prob;
+
+
+//            ssg_svm_problem.y[svm_index] = label;
+
+
+
+          }
+
+          ssg_svm_problem.x[svm_index][hist.rows*2].index = -1;
+
+
+          if(svm_prediction_enabled)
+          {
+            int predict_label = svm_predict(ssg_svm_model,ssg_svm_problem.x[svm_index]);
+            std::cout << label << " " << predict_label << std::endl;
+
+            if(label == predict_label)
+              total_correct_prediction++;
+          }
+        }
+
+
+
 
 
         emit(showHist(mat2QImage(hist_img)));
@@ -360,12 +502,47 @@ void Pipeline::processImages(DBUsage db_usage)
         waitKey(1);
     }
 
+    std::cout << "Prediction rate: " << (double)total_correct_prediction/ssg_svm_problem.l << std::endl;
+
+    if(svm_prediction_enabled == false)
+    {
+      normalizeSVM(&ssg_svm_problem,params.seg_track_params.tau_w*2,scaling);
+
+      writeVector<double>(scaling_output_path,scaling);
+
+      const char *error_msg = svm_check_parameter(&ssg_svm_problem,&ssg_svm_param);
+
+      if(error_msg)
+      {
+        std::cout << "Error in SVM problem construction" << std::endl;
+      }
+
+      ssg_svm_model = svm_train(&ssg_svm_problem,&ssg_svm_param);
+
+
+      if(svm_save_model(model_output_path.c_str(),ssg_svm_model))
+      {
+        std::cout << "Cannot save svm model" << std::endl;
+      }
+
+      std::cout << "Finished saving model " << std::endl;
+
+      std::cout << "Freed model " << std::endl;
+    }
+
+    svm_free_and_destroy_model(&ssg_svm_model);
+    svm_destroy_param(&ssg_svm_param);
+    //delete[] ssg_svm_problem.y;
+    //delete[] ssg_svm_problem.x;
+
     if(db_usage == DBUsage::READ_FROM_DB || db_usage == DBUsage::SAVE_TO_DB)
     {
       db.closeDB();
     }
 
     is_processing = false;
+
+    std::cout << "Finished" << std::endl;
 }
 
 // Plots places and coherency scores

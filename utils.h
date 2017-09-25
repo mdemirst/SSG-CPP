@@ -88,4 +88,49 @@ public:
         return sqrt(getVariance());
     }
 };
+
+template <class T>
+void readVector(std::string filename, std::vector<T>& vec)
+{
+    ifstream file;
+    file.open (filename.c_str());
+
+    string line;
+
+    if (file.is_open())
+    {
+      while ( getline (file,line) )
+      {
+          stringstream ss(line);
+
+          T item;
+
+          ss >> item;
+
+          vec.push_back(item);
+
+          std::cout << item << std::endl;
+      }
+      file.close();
+    }
+
+}
+
+template <class T>
+void writeVector(std::string filename, std::vector<T>& vec)
+{
+    ofstream file;
+    file.open (filename.c_str());
+
+    if (file.is_open())
+    {
+      for(int i = 0; i < vec.size(); ++i)
+      {
+        file << vec[i] << endl;
+      }
+
+      file.close();
+    }
+
+}
 #endif // UTILS_H
